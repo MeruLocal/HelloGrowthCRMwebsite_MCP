@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HelloGrowthCRM — Sitemap Index
+  Canonical domain: https://hellogrowthcrm.com
+  Master sitemap served at: https://hellogrowthcrm.com/sitemap-index.xml
+  This file mirrors the live sitemap-index structure for crawler testing.
+  Last synced: 2026-05-15
+-->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Main pages (homepage, pricing, features, compare, industries, tools, etc.) -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/sitemap.xml</loc>
+    <lastmod>2026-05-15</lastmod>
+  </sitemap>
+
+  <!-- Blog posts -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/blog-sitemap.xml</loc>
+    <lastmod>2026-05-15</lastmod>
+  </sitemap>
+
+  <!-- Free sales tools (150+ pages) -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/tools-sitemap.xml</loc>
+    <lastmod>2026-05-14</lastmod>
+  </sitemap>
+
+  <!-- Industry-specific CRM pages -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/industries-sitemap.xml</loc>
+    <lastmod>2026-05-14</lastmod>
+  </sitemap>
+
+  <!-- Competitor alternative pages -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/alternatives-sitemap.xml</loc>
+    <lastmod>2026-05-14</lastmod>
+  </sitemap>
+
+  <!-- Agentic AI sub-pages -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/agentic-ai-sitemap.xml</loc>
+    <lastmod>2026-05-13</lastmod>
+  </sitemap>
+
+  <!-- Help & documentation pages -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/help-sitemap.xml</loc>
+    <lastmod>2026-05-13</lastmod>
+  </sitemap>
+
+  <!-- Image metadata -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/image-sitemap.xml</loc>
+    <lastmod>2026-05-12</lastmod>
+  </sitemap>
+
+  <!-- Video metadata -->
+  <sitemap>
+    <loc>https://hellogrowthcrm.com/video-sitemap.xml</loc>
+    <lastmod>2026-05-12</lastmod>
+  </sitemap>
+
+</sitemapindex>

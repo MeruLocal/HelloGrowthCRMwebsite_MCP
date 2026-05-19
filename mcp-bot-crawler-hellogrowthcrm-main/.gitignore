@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+.env.example
+*.log
+.DS_Store
+.idea/
+.vscode/
+reports/
+!reports/.gitkeep
+*.tsbuildinfo

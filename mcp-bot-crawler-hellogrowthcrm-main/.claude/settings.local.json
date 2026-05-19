@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(cd \"c:\\\\Users\\\\Ghanshyam\\\\Documents\\\\GitHub\\\\mcp-bot-crawler\" && cat \"C:\\\\Users\\\\Ghanshyam\\\\AppData\\\\Local\\\\npm-cache\\\\_logs\\\\2026-05-15T09_17_39_015Z-debug-0.log\" | tail -30)",
+      "Read(//c/Users/Ghanshyam/AppData/Local/npm-cache/_logs/**)",
+      "Bash(node -e \"const p = require\\('./node_modules/@modelcontextprotocol/sdk/package.json'\\); const exports = p.exports; const keys = Object.keys\\(exports\\).filter\\(k => k.includes\\('sse'\\) || k.includes\\('stdio'\\) || k.includes\\('server'\\)\\); console.log\\(JSON.stringify\\(keys, null, 2\\)\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/@modelcontextprotocol/sdk/package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.exports\\), null, 2\\)\\)\")",
+      "Bash(node -e \"import\\('./node_modules/@modelcontextprotocol/sdk/dist/esm/server/sse.js'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
+      "Bash(npx tsx *)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-Process -Id 28008)",
+      "PowerShell(Get-Process -Id 28008 -ErrorAction SilentlyContinue)",
+      "Bash(curl -s http://localhost:3008/)",
+      "Bash(node test-mcp.mjs)"
+    ]
+  }
+}
