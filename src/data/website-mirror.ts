@@ -259,7 +259,7 @@ export interface HreflangTag {
 function normalizePath(currentPath: string): string {
   const withoutHash = currentPath.split("#")[0] ?? currentPath;
   const [pathname] = withoutHash.split("?");
-  const normalized = (pathname ?? "").replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+  const normalized = (pathname ?? "").replaceAll(/\/+/g, "/").replace(/\/$/, "") || "/";
   return normalized.startsWith("/") ? normalized : `/${normalized}`;
 }
 
@@ -336,6 +336,79 @@ const COUNTRY_LANG_SUBPAGES: Record<string, ReadonlyArray<{ hreflang: string; pa
   "/bd": [{ hreflang: "bn-BD", path: "/bd/crm-bangla" }],
 };
 
+/** Exact single-language pages → their hreflang (faithful port). */
+const SINGLE_LANG_EXACT: Record<string, string> = {
+  "/crm-singapore": "en-SG",
+  "/crm-uae": "en-AE",
+  "/crm-dubai": "en-AE",
+  "/crm-nigeria": "en-NG",
+  "/crm-kenya": "en-KE",
+  "/crm-canada": "en-CA",
+  "/crm-usa": "en-US",
+  "/crm-uk": "en-GB",
+  "/crm-philippines": "en-PH",
+  "/crm-south-africa": "en-ZA",
+  "/crm-malaysia": "en-MY",
+};
+
+/** Slug suffix → hreflang for `/crm-for-…-<region>` style pages. */
+const SINGLE_LANG_SUFFIX: ReadonlyArray<{ suffix: string; lang: string }> = [
+  { suffix: "-uk", lang: "en-GB" },
+  { suffix: "-philippines", lang: "en-PH" },
+  { suffix: "-south-africa", lang: "en-ZA" },
+  { suffix: "-malaysia", lang: "en-MY" },
+];
+
+function singleLangTags(path: string, lang: string): HreflangTag[] {
+  return [
+    { hreflang: lang, href: toAbsoluteUrl(path) },
+    { hreflang: "en", href: toAbsoluteUrl(path) },
+    { hreflang: "x-default", href: BASE_URL },
+  ];
+}
+
+function germanTags(path: string): HreflangTag[] {
+  return [
+    { hreflang: "de-DE", href: toAbsoluteUrl(path) },
+    { hreflang: "de", href: toAbsoluteUrl(path) },
+    { hreflang: "x-default", href: BASE_URL },
+  ];
+}
+
+/** Resolve single-language / single-country marketing pages, or null. */
+function getSingleLangHreflang(path: string): HreflangTag[] | null {
+  if (path === "/crm-germany" || path.endsWith("-germany")) return germanTags(path);
+
+  const exact = SINGLE_LANG_EXACT[path];
+  if (exact) return singleLangTags(path, exact);
+
+  const suffixRule = SINGLE_LANG_SUFFIX.find((r) => path.endsWith(r.suffix));
+  if (suffixRule) return singleLangTags(path, suffixRule.lang);
+
+  if (path === "/crm-usa") return singleLangTags(path, "en-US");
+  if (path.startsWith("/crm-for-") && !path.endsWith("-australia")) {
+    return singleLangTags(path, "en-US");
+  }
+
+  return null;
+}
+
+/** Resolve country-hub clusters (e.g. /ng, /pk, …), or null. */
+function getCountryHubHreflang(path: string): HreflangTag[] | null {
+  const countryPrefix = Object.keys(COUNTRY_HUB_HREFLANG).find(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+  if (!countryPrefix) return null;
+
+  const hubHreflang = COUNTRY_HUB_HREFLANG[countryPrefix]!;
+  const subpages = COUNTRY_LANG_SUBPAGES[countryPrefix] ?? [];
+  return [
+    { hreflang: hubHreflang, href: toAbsoluteUrl(countryPrefix) },
+    ...subpages.map((s) => ({ hreflang: s.hreflang, href: toAbsoluteUrl(s.path) })),
+    { hreflang: "x-default", href: BASE_URL },
+  ];
+}
+
 /** Faithful port of website getHreflangTags(currentPath). */
 export function getHreflangTags(currentPath: string): HreflangTag[] {
   const normalizedPath = normalizePath(currentPath);
@@ -355,55 +428,11 @@ export function getHreflangTags(currentPath: string): HreflangTag[] {
     ];
   }
 
-  const single = (lang: string): HreflangTag[] => [
-    { hreflang: lang, href: toAbsoluteUrl(normalizedPath) },
-    { hreflang: "en", href: toAbsoluteUrl(normalizedPath) },
-    { hreflang: "x-default", href: BASE_URL },
-  ];
+  const singleLangTagsResult = getSingleLangHreflang(normalizedPath);
+  if (singleLangTagsResult) return singleLangTagsResult;
 
-  if (normalizedPath === "/crm-singapore") return single("en-SG");
-  if (normalizedPath === "/crm-uae" || normalizedPath === "/crm-dubai") return single("en-AE");
-  if (normalizedPath === "/crm-nigeria") return single("en-NG");
-  if (normalizedPath === "/crm-kenya") return single("en-KE");
-  if (normalizedPath === "/crm-canada") return single("en-CA");
-
-  if (
-    normalizedPath === "/crm-usa" ||
-    (normalizedPath.startsWith("/crm-for-") &&
-      !normalizedPath.endsWith("-australia") &&
-      !normalizedPath.endsWith("-uk") &&
-      !normalizedPath.endsWith("-philippines") &&
-      !normalizedPath.endsWith("-south-africa") &&
-      !normalizedPath.endsWith("-malaysia") &&
-      !normalizedPath.endsWith("-germany"))
-  ) {
-    return single("en-US");
-  }
-
-  if (normalizedPath === "/crm-uk" || normalizedPath.endsWith("-uk")) return single("en-GB");
-  if (normalizedPath === "/crm-philippines" || normalizedPath.endsWith("-philippines")) return single("en-PH");
-  if (normalizedPath === "/crm-south-africa" || normalizedPath.endsWith("-south-africa")) return single("en-ZA");
-  if (normalizedPath === "/crm-malaysia" || normalizedPath.endsWith("-malaysia")) return single("en-MY");
-  if (normalizedPath === "/crm-germany" || normalizedPath.endsWith("-germany")) {
-    return [
-      { hreflang: "de-DE", href: toAbsoluteUrl(normalizedPath) },
-      { hreflang: "de", href: toAbsoluteUrl(normalizedPath) },
-      { hreflang: "x-default", href: BASE_URL },
-    ];
-  }
-
-  const countryPrefix = Object.keys(COUNTRY_HUB_HREFLANG).find(
-    (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`),
-  );
-  if (countryPrefix) {
-    const hubHreflang = COUNTRY_HUB_HREFLANG[countryPrefix]!;
-    const subpages = COUNTRY_LANG_SUBPAGES[countryPrefix] ?? [];
-    return [
-      { hreflang: hubHreflang, href: toAbsoluteUrl(countryPrefix) },
-      ...subpages.map((s) => ({ hreflang: s.hreflang, href: toAbsoluteUrl(s.path) })),
-      { hreflang: "x-default", href: BASE_URL },
-    ];
-  }
+  const countryHubTags = getCountryHubHreflang(normalizedPath);
+  if (countryHubTags) return countryHubTags;
 
   if (normalizedPath === "/") {
     return [

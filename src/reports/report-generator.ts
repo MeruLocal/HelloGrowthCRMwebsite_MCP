@@ -85,33 +85,37 @@ function renderCsv(summaries: BotSummary[]): string {
 }
 
 function csvCell(value: unknown): string {
-  const str = value == null ? "" : String(value);
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  if (value == null) return "";
+  const str = typeof value === "object" ? JSON.stringify(value) : String(value);
+  return /[",\n]/.test(str) ? `"${str.replaceAll('"', '""')}"` : str;
 }
 
 function renderMarkdown(summaries: BotSummary[], meta: ReportMeta): string {
   const totalHits = summaries.reduce((sum, b) => sum + b.hits, 0);
   const lines: string[] = [];
 
-  lines.push("# Bot Activity Report");
-  lines.push("");
-  lines.push(`- **Generated:** ${new Date().toISOString()}`);
+  lines.push(
+    "# Bot Activity Report",
+    "",
+    `- **Generated:** ${new Date().toISOString()}`,
+  );
   if (meta.targetUrl) lines.push(`- **Target:** ${meta.targetUrl}`);
   if (meta.source) lines.push(`- **Source:** ${meta.source}`);
-  lines.push(`- **Bots detected:** ${summaries.length}`);
-  lines.push(`- **Total hits:** ${totalHits}`);
-  lines.push("");
+  lines.push(
+    `- **Bots detected:** ${summaries.length}`,
+    `- **Total hits:** ${totalHits}`,
+    "",
+  );
 
   if (summaries.length === 0) {
-    lines.push("_No bot activity detected._");
-    lines.push("");
+    lines.push("_No bot activity detected._", "");
     return lines.join("\n");
   }
 
   lines.push(
     "| Bot | Category | Hits | Unique IPs | Error rate | Risk | Status | Action |",
+    "| --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
   );
-  lines.push("| --- | --- | ---: | ---: | ---: | ---: | --- | --- |");
   for (const b of summaries) {
     lines.push(
       `| ${b.name} | ${b.category} | ${b.hits} | ${b.uniqueIps} | ${(
@@ -123,8 +127,7 @@ function renderMarkdown(summaries: BotSummary[], meta: ReportMeta): string {
 
   const flagged = summaries.filter((b) => b.notes.length > 0);
   if (flagged.length > 0) {
-    lines.push("## Notes");
-    lines.push("");
+    lines.push("## Notes", "");
     for (const b of flagged) {
       lines.push(`### ${b.name}`);
       for (const note of b.notes) lines.push(`- ${note}`);
@@ -160,6 +163,6 @@ export async function writeReport(
 }
 
 function defaultFilename(format: ReportFormat): string {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const stamp = new Date().toISOString().replaceAll(/[:.]/g, "-");
   return `bot-report-${stamp}.${EXTENSIONS[format]}`;
 }

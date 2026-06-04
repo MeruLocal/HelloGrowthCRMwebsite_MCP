@@ -988,7 +988,7 @@ export const featuresList = defineTool({
       }
 
       if (args.plan !== "all") {
-        const tier = args.plan as "free" | "t1" | "t2" | "t3";
+        const tier = args.plan;
         results = results.filter((f) => {
           const val = f[tier];
           return val !== false && val !== undefined;

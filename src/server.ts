@@ -7,9 +7,13 @@
  */
 
 import http from "http";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+// NOSONAR — the low-level `Server` is intentionally used for this advanced,
+// resource-heavy MCP setup (the SDK explicitly supports `Server` for advanced
+// use cases). `SSEServerTransport` is retained for backward compatibility with
+// already-connected /sse clients; a StreamableHTTP migration is tracked separately.
+import { Server } from "@modelcontextprotocol/sdk/server/index.js"; // NOSONAR
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"; // NOSONAR
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -28,8 +32,8 @@ import {
   SYNCED_AT,
 } from "./data/website-mirror.js";
 
-export function buildServer(): Server {
-  const server = new Server(
+export function buildServer(): Server { // NOSONAR — advanced low-level Server (see import note)
+  const server = new Server( // NOSONAR
     {
       name: "hellogrowthcrm-bot-crawler",
       version: "1.0.0",
@@ -138,7 +142,7 @@ export function buildServer(): Server {
     if (uri === "hellocrmwebsite://site/industries") {
       const industries = ["Real Estate", "Legal", "Healthcare", "Manufacturing", "SaaS", "Recruitment", "Finance", "Construction", "Education", "Insurance", "Retail", "E-commerce", "Hospitality", "Logistics", "Automotive", "Professional Services", "Non-Profit", "Technology", "Media", "Consulting"].map((name) => ({
         name,
-        url: `https://hellogrowthcrm.com/crm-for-${name.toLowerCase().replace(/\s+/g, "-")}`,
+        url: `https://hellogrowthcrm.com/crm-for-${name.toLowerCase().replaceAll(/\s+/g, "-")}`,
       }));
       return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(industries, null, 2) }] };
     }
@@ -234,7 +238,7 @@ class IpRateLimiter {
   private prune(): void {
     const cutoff = Date.now() - this.windowMs;
     for (const [ip, hits] of this.buckets) {
-      if (hits[hits.length - 1]! <= cutoff) this.buckets.delete(ip);
+      if (hits.at(-1)! <= cutoff) this.buckets.delete(ip);
     }
   }
 }
@@ -254,13 +258,13 @@ export async function runServer(): Promise<void> {
   }
 
   // HTTP + SSE transport
-  const port = parseInt(process.env.PORT ?? "3008", 10);
-  const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
-  const rateLimitMax    = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
+  const port = Number.parseInt(process.env.PORT ?? "3008", 10);
+  const rateLimitWindow = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
+  const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
   const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax);
 
   // One SSEServerTransport per connected client
-  const transports = new Map<string, SSEServerTransport>();
+  const transports = new Map<string, SSEServerTransport>(); // NOSONAR — see import note
 
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", `http://localhost:${port}`);
@@ -275,7 +279,7 @@ export async function runServer(): Promise<void> {
         logger.warn("Rate limit hit", { ip });
         return;
       }
-      const sseTransport = new SSEServerTransport("/message", res);
+      const sseTransport = new SSEServerTransport("/message", res); // NOSONAR — see import note
       transports.set(sseTransport.sessionId, sseTransport);
 
       res.on("close", () => transports.delete(sseTransport.sessionId));
