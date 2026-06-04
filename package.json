@@ -19,6 +19,9 @@
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
     "prepublishOnly": "npm run clean && npm run build"
   },
@@ -45,9 +48,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "@vitest/coverage-v8": "^2.1.8",
     "rimraf": "^5.0.10",
     "tsx": "^4.16.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=18.18"
