@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool, ok } from "./tool-types.js";
+import { COUNTRY_PRICING, SYNCED_AT } from "../data/website-mirror.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pricing data — sourced from hellocrmwebsite/src/lib/pricing-india-data.ts
@@ -422,6 +423,54 @@ export const pricingComparePlans = defineTool({
       },
       plan_a_features: a.features,
       plan_b_features: b.features,
+    });
+  },
+});
+
+// ── pricing_get_country_plans ──────────────────────────────────────────────────
+// Country-localized pricing summaries (sourced from lib/pricing-*-data.ts).
+// The full global/India plan detail lives in pricing_get_plans; this surfaces the
+// 8 localized hubs (currency, Starter/Growth short prices, pricing page href).
+
+export const pricingGetCountryPlans = defineTool({
+  schema: z.object({
+    country: z
+      .string()
+      .optional()
+      .describe("Country slug (in, usa, uk, canada, au, uae, singapore, new-zealand). Omit for all."),
+  }),
+  definition: {
+    name: "pricing_get_country_plans",
+    description:
+      "Get HelloGrowthCRM country-localized pricing summaries for the 8 market hubs: currency, Starter & Growth short prices, and the country pricing page URL.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        country: {
+          type: "string",
+          description: "in | usa | uk | canada | au | uae | singapore | new-zealand",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  async handle(args) {
+    const rows = args.country
+      ? COUNTRY_PRICING.filter((p) => p.countrySlug === args.country!.toLowerCase())
+      : COUNTRY_PRICING;
+    if (args.country && rows.length === 0) {
+      return ok({
+        error: `Country "${args.country}" not found. Available: ${COUNTRY_PRICING.map((p) => p.countrySlug).join(", ")}.`,
+      });
+    }
+    return ok({
+      synced_at: SYNCED_AT,
+      count: rows.length,
+      country_pricing: rows.map((p) => ({
+        ...p,
+        home_url: `https://hellogrowthcrm.com${p.homeHref}`,
+        pricing_url: `https://hellogrowthcrm.com${p.pricingHref}`,
+      })),
     });
   },
 });

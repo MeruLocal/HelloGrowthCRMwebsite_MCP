@@ -68,6 +68,7 @@ import {
   pricingGetAddons,
   pricingGetFaq,
   pricingComparePlans,
+  pricingGetCountryPlans,
 } from "./pricing.js";
 
 // ── Features ──────────────────────────────────────────────────────────────────
@@ -81,6 +82,24 @@ import {
 import {
   analyticsSocialProof,
 } from "./analytics.js";
+
+// ── Countries (country-specific markets & SEO) ─────────────────────────────────
+import { countriesList, countryGet } from "./countries.js";
+
+// ── Company / contact ──────────────────────────────────────────────────────────
+import { companyGetProfile, companyGetContacts } from "./company.js";
+
+// ── SEO (site config, hreflang, canonical, sitemaps, schema) ───────────────────
+import {
+  seoGetSiteConfig,
+  seoGetHreflang,
+  seoGetCanonical,
+  seoGetSitemaps,
+  seoGetSchema,
+} from "./seo.js";
+
+// ── Products ──────────────────────────────────────────────────────────────────
+import { productsList, productGet } from "./products.js";
 
 import type { RegisteredTool } from "./tool-types.js";
 
@@ -137,6 +156,7 @@ export const tools: RegisteredTool[] = [
   pricingGetAddons,
   pricingGetFaq,
   pricingComparePlans,
+  pricingGetCountryPlans,
 
   // Features
   featuresList,
@@ -145,6 +165,25 @@ export const tools: RegisteredTool[] = [
 
   // Analytics
   analyticsSocialProof,
+
+  // Countries (country-specific markets & SEO)
+  countriesList,
+  countryGet,
+
+  // Company / contact
+  companyGetProfile,
+  companyGetContacts,
+
+  // SEO (site config, hreflang, canonical, sitemaps, schema)
+  seoGetSiteConfig,
+  seoGetHreflang,
+  seoGetCanonical,
+  seoGetSitemaps,
+  seoGetSchema,
+
+  // Products
+  productsList,
+  productGet,
 ];
 
 export const toolsByName: Map<string, RegisteredTool> = new Map(

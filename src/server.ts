@@ -20,6 +20,13 @@ import {
 import { toolsByName } from "./tools/index.js";
 import { logger } from "./utils/logger.js";
 import { getSupabase } from "./lib/supabase.js";
+import {
+  COMPANY,
+  CONTACTS,
+  COUNTRIES,
+  COUNTRY_PRICING,
+  SYNCED_AT,
+} from "./data/website-mirror.js";
 
 export function buildServer(): Server {
   const server = new Server(
@@ -93,6 +100,9 @@ export function buildServer(): Server {
     { uri: "hellocrmwebsite://site/comparisons", name: "Competitor Comparisons", description: "All competitor comparison page slugs and names", mimeType: "application/json" },
     { uri: "hellocrmwebsite://site/case-studies", name: "Case Studies", description: "All case study scenarios grouped by industry", mimeType: "application/json" },
     { uri: "hellocrmwebsite://site/industries", name: "Industry Pages", description: "All industry vertical page slugs", mimeType: "application/json" },
+    { uri: "hellocrmwebsite://site/countries", name: "Country Markets", description: "8 country-specific market hubs with currency, locale, and pricing summary", mimeType: "application/json" },
+    { uri: "hellocrmwebsite://site/company", name: "Company Profile", description: "Legal entities, registered address, social profiles, and brand info", mimeType: "application/json" },
+    { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
   ];
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
@@ -131,6 +141,41 @@ export function buildServer(): Server {
         url: `https://hellogrowthcrm.com/crm-for-${name.toLowerCase().replace(/\s+/g, "-")}`,
       }));
       return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(industries, null, 2) }] };
+    }
+
+    if (uri === "hellocrmwebsite://site/countries") {
+      const countries = COUNTRIES.map((c) => {
+        const pricing = COUNTRY_PRICING.find((p) => p.countrySlug === c.code) ?? null;
+        return {
+          code: c.code,
+          label: c.label,
+          url: `https://hellogrowthcrm.com${c.routePrefix}`,
+          currency: c.currency,
+          locale: c.inLanguage,
+          tax_ref: c.taxRef,
+          pricing_summary: pricing,
+        };
+      });
+      return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify({ synced_at: SYNCED_AT, countries }, null, 2) }] };
+    }
+
+    if (uri === "hellocrmwebsite://site/company") {
+      const company = {
+        synced_at: SYNCED_AT,
+        name: COMPANY.name,
+        legal_name: COMPANY.legalName,
+        india_legal_entity: COMPANY.indiaLegalEntity,
+        url: COMPANY.url,
+        founding_date: COMPANY.foundingDate,
+        registered_address: COMPANY.address,
+        same_as: COMPANY.sameAs,
+        brand: COMPANY.brand,
+      };
+      return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(company, null, 2) }] };
+    }
+
+    if (uri === "hellocrmwebsite://site/contacts") {
+      return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify({ synced_at: SYNCED_AT, contacts: CONTACTS }, null, 2) }] };
     }
 
     if (uri === "hellocrmwebsite://site/case-studies") {
