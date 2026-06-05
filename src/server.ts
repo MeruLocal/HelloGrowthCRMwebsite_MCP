@@ -2,18 +2,23 @@
  * MCP server setup.
  *
  * Supports two transports selected by the TRANSPORT env var:
- *   http  (default) — HTTP + SSE on PORT (default 3008)
+ *   http  (default) — Streamable HTTP on PORT (default 3008), endpoint POST/GET/DELETE /mcp.
+ *                     The legacy SSE endpoint (/sse + /message) is kept for backward
+ *                     compatibility with already-connected clients.
  *   stdio           — stdin/stdout for MCP host processes
  */
 
 import http from "http";
+import { randomUUID } from "node:crypto";
 // NOSONAR — the low-level `Server` is intentionally used for this advanced,
 // resource-heavy MCP setup (the SDK explicitly supports `Server` for advanced
 // use cases). `SSEServerTransport` is retained for backward compatibility with
-// already-connected /sse clients; a StreamableHTTP migration is tracked separately.
+// already-connected /sse clients; new clients should use the StreamableHTTP /mcp endpoint.
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"; // NOSONAR
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"; // NOSONAR
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -257,58 +262,130 @@ export async function runServer(): Promise<void> {
     return;
   }
 
-  // HTTP + SSE transport
+  // Streamable HTTP transport (with legacy SSE kept for backward compatibility)
   const port = Number.parseInt(process.env.PORT ?? "3008", 10);
   const rateLimitWindow = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
   const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
   const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax);
 
-  // One SSEServerTransport per connected client
-  const transports = new Map<string, SSEServerTransport>(); // NOSONAR — see import note
-
-  const httpServer = http.createServer(async (req, res) => {
-    const url = new URL(req.url ?? "/", `http://localhost:${port}`);
-    const ip = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim()
+  const clientIp = (req: http.IncomingMessage): string =>
+    (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim()
       ?? req.socket.remoteAddress
       ?? "unknown";
 
-    if (req.method === "GET" && url.pathname === "/sse") {
-      if (!limiter.allow(ip)) {
-        res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": String(Math.ceil(rateLimitWindow / 1000)) })
-          .end(`Rate limit exceeded — max ${rateLimitMax} requests per ${rateLimitWindow / 1000}s`);
-        logger.warn("Rate limit hit", { ip });
+  const sendRateLimited = (res: http.ServerResponse, ip: string): void => {
+    res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": String(Math.ceil(rateLimitWindow / 1000)) })
+      .end(`Rate limit exceeded — max ${rateLimitMax} requests per ${rateLimitWindow / 1000}s`);
+    logger.warn("Rate limit hit", { ip });
+  };
+
+  // Read and JSON-parse a request body (StreamableHTTP needs the parsed body
+  // to detect the `initialize` request that opens a new session).
+  const readJsonBody = (req: http.IncomingMessage): Promise<unknown> =>
+    new Promise((resolve) => {
+      let raw = "";
+      req.on("data", (chunk) => { raw += chunk; });
+      req.on("end", () => {
+        if (!raw) { resolve(undefined); return; }
+        try { resolve(JSON.parse(raw)); } catch { resolve(undefined); }
+      });
+      req.on("error", () => resolve(undefined));
+    });
+
+  // StreamableHTTP sessions, keyed by mcp-session-id
+  const httpTransports = new Map<string, StreamableHTTPServerTransport>();
+  // Legacy SSE sessions, keyed by sessionId
+  const sseTransports = new Map<string, SSEServerTransport>(); // NOSONAR — see import note
+
+  const handleStreamableHttp = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+
+    // GET (server→client notification stream) and DELETE (session teardown)
+    // are routed to the existing session's transport.
+    if (req.method === "GET" || req.method === "DELETE") {
+      const transport = sessionId ? httpTransports.get(sessionId) : undefined;
+      if (!transport) {
+        res.writeHead(400, { "Content-Type": "text/plain" }).end("Invalid or missing session ID");
         return;
       }
+      await transport.handleRequest(req, res);
+      return;
+    }
+
+    if (req.method !== "POST") {
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, POST, DELETE" }).end("Method not allowed");
+      return;
+    }
+
+    const body = await readJsonBody(req);
+    let transport = sessionId ? httpTransports.get(sessionId) : undefined;
+
+    if (!transport) {
+      if (sessionId || !isInitializeRequest(body)) {
+        res.writeHead(400, { "Content-Type": "application/json" }).end(JSON.stringify({
+          jsonrpc: "2.0",
+          error: { code: -32000, message: "Bad Request: no valid session ID for a non-initialize request" },
+          id: null,
+        }));
+        return;
+      }
+
+      // New session: the SDK assigns the id on initialize and reports it via onsessioninitialized.
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (sid) => { httpTransports.set(sid, transport!); },
+      });
+      transport.onclose = () => {
+        if (transport!.sessionId) httpTransports.delete(transport!.sessionId);
+      };
+
+      const server = buildServer();
+      await server.connect(transport);
+    }
+
+    await transport.handleRequest(req, res, body);
+  };
+
+  const handleLegacySse = async (req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> => {
+    if (req.method === "GET" && url.pathname === "/sse") {
       const sseTransport = new SSEServerTransport("/message", res); // NOSONAR — see import note
-      transports.set(sseTransport.sessionId, sseTransport);
-
-      res.on("close", () => transports.delete(sseTransport.sessionId));
-
+      sseTransports.set(sseTransport.sessionId, sseTransport);
+      res.on("close", () => sseTransports.delete(sseTransport.sessionId));
       const server = buildServer();
       await server.connect(sseTransport);
       return;
     }
 
-    if (req.method === "POST" && url.pathname === "/message") {
-      if (!limiter.allow(ip)) {
-        res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": String(Math.ceil(rateLimitWindow / 1000)) })
-          .end(`Rate limit exceeded — max ${rateLimitMax} requests per ${rateLimitWindow / 1000}s`);
-        logger.warn("Rate limit hit", { ip });
-        return;
-      }
-      const sessionId = url.searchParams.get("sessionId") ?? "";
-      const sseTransport = transports.get(sessionId);
-      if (!sseTransport) {
-        res.writeHead(404).end("No SSE session found");
-        return;
-      }
-      await sseTransport.handlePostMessage(req, res);
+    // req.method === "POST" && url.pathname === "/message"
+    const sessionId = url.searchParams.get("sessionId") ?? "";
+    const sseTransport = sseTransports.get(sessionId);
+    if (!sseTransport) {
+      res.writeHead(404).end("No SSE session found");
+      return;
+    }
+    await sseTransport.handlePostMessage(req, res);
+  };
+
+  const httpServer = http.createServer(async (req, res) => {
+    const url = new URL(req.url ?? "/", `http://localhost:${port}`);
+    const ip = clientIp(req);
+
+    if (url.pathname === "/mcp") {
+      if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
+      await handleStreamableHttp(req, res);
+      return;
+    }
+
+    if ((req.method === "GET" && url.pathname === "/sse")
+      || (req.method === "POST" && url.pathname === "/message")) {
+      if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
+      await handleLegacySse(req, res, url);
       return;
     }
 
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }).end(
-        "MCP Bot Crawler — connect via GET /sse"
+        "MCP Bot Crawler — connect via the Streamable HTTP endpoint at /mcp"
       );
       return;
     }
@@ -319,7 +396,7 @@ export async function runServer(): Promise<void> {
   await new Promise<void>((resolve) => httpServer.listen(port, resolve));
   logger.info("hellogrowthcrm-bot-crawler ready (http)", {
     url: `http://localhost:${port}`,
-    sse: `http://localhost:${port}/sse`,
+    mcp: `http://localhost:${port}/mcp`,
     site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
     tools: [...toolsByName.keys()],
   });
