@@ -167,6 +167,14 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 | `CRAWLER_USER_AGENT` | `mcp-bot-crawler/1.0 (+...)` | Outbound UA. |
 | `REPORT_OUTPUT_DIR` | `./reports` | Where exports land. |
 | `LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug`. |
+| `ENABLE_MCP_ANALYTICS` | `false` | Master switch for MCP/SSE analytics — must be `true` to send. |
+| `GA4_MEASUREMENT_ID` | — | GA4 stream id for MCP/SSE analytics (optional). |
+| `GA4_API_SECRET` | — | GA4 Measurement Protocol API secret (optional). |
+
+Privacy-first MCP/SSE usage analytics (connections, requests, tools, bots) are
+emitted to GA4 **only when `ENABLE_MCP_ANALYTICS=true` and the `GA4_*` vars are
+set** — and silently no-op otherwise. No raw IP, User-Agent, request body, or
+tool arguments are ever tracked. See [`docs/MCP_ANALYTICS.md`](docs/MCP_ANALYTICS.md).
 
 ## Extending
 
