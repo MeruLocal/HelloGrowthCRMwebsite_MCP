@@ -30,6 +30,12 @@ import { toolsByName } from "./tools/index.js";
 import { logger } from "./utils/logger.js";
 import { getSupabase } from "./lib/supabase.js";
 import {
+  buildSafeMeta,
+  trackMcpMessage,
+  trackSseConnectionOpen,
+  trackSseConnectionClose,
+} from "./middleware/mcpSseAnalytics.js";
+import {
   COMPANY,
   CONTACTS,
   COUNTRIES,
@@ -343,6 +349,27 @@ export async function runServer(): Promise<void> {
       await server.connect(transport);
     }
 
+    // Non-blocking analytics: emit once the response finishes. Derived from the
+    // already-parsed body (method/tool name only — never arguments).
+    try {
+      const meta = buildSafeMeta(req, {
+        endpoint: "/mcp",
+        transport: "streamable-http",
+        sessionId: req.headers["mcp-session-id"] as string | undefined,
+      });
+      const startedAt = Date.now();
+      res.on("finish", () => {
+        trackMcpMessage({
+          meta,
+          body,
+          statusCode: res.statusCode,
+          responseTimeMs: Date.now() - startedAt,
+        });
+      });
+    } catch (err) {
+      logger.debug("mcp analytics setup failed", { err: (err as Error).message });
+    }
+
     await transport.handleRequest(req, res, body);
   };
 
@@ -350,7 +377,17 @@ export async function runServer(): Promise<void> {
     if (req.method === "GET" && url.pathname === "/sse") {
       const sseTransport = new SSEServerTransport("/message", res); // NOSONAR — see import note
       sseTransports.set(sseTransport.sessionId, sseTransport);
-      res.on("close", () => sseTransports.delete(sseTransport.sessionId));
+
+      // Non-blocking SSE connection analytics. Tracking is fully guarded and
+      // must never affect the stream itself.
+      const analytics = trackSseConnectionOpen(req, { sessionId: sseTransport.sessionId });
+      let streamErrored = false;
+      res.on("error", () => { streamErrored = true; });
+      res.on("close", () => {
+        sseTransports.delete(sseTransport.sessionId);
+        trackSseConnectionClose(analytics, { errored: streamErrored });
+      });
+
       const server = buildServer();
       await server.connect(sseTransport);
       return;
@@ -363,7 +400,30 @@ export async function runServer(): Promise<void> {
       res.writeHead(404).end("No SSE session found");
       return;
     }
-    await sseTransport.handlePostMessage(req, res);
+
+    // Parse the body once so we can both feed it to the transport (avoiding a
+    // double stream read) and derive safe analytics (method/tool name only).
+    const body = await readJsonBody(req);
+    try {
+      const meta = buildSafeMeta(req, {
+        endpoint: "/message",
+        transport: "sse",
+        sessionId,
+      });
+      const startedAt = Date.now();
+      res.on("finish", () => {
+        trackMcpMessage({
+          meta,
+          body,
+          statusCode: res.statusCode,
+          responseTimeMs: Date.now() - startedAt,
+        });
+      });
+    } catch (err) {
+      logger.debug("sse message analytics setup failed", { err: (err as Error).message });
+    }
+
+    await sseTransport.handlePostMessage(req, res, body);
   };
 
   const httpServer = http.createServer(async (req, res) => {
