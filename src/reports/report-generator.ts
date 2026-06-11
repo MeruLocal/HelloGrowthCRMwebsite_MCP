@@ -86,7 +86,14 @@ function renderCsv(summaries: BotSummary[]): string {
 
 function csvCell(value: unknown): string {
   if (value == null) return "";
-  const str = typeof value === "object" ? JSON.stringify(value) : String(value);
+  let str: string;
+  if (typeof value === "string") {
+    str = value;
+  } else if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    str = value.toString();
+  } else {
+    str = JSON.stringify(value) ?? "";
+  }
   return /[",\n]/.test(str) ? `"${str.replaceAll('"', '""')}"` : str;
 }
 

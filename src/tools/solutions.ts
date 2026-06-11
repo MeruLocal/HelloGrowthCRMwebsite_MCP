@@ -920,7 +920,7 @@ export const solutionsGetManagedRevops = defineTool({
   },
   async handle(args) {
     if (args.city) {
-      const slug = args.city.trim().toLowerCase().replace(/\s+/g, "-");
+      const slug = args.city.trim().toLowerCase().replaceAll(/\s+/g, "-");
       const entry = REVOPS_CITIES.find((c) => c.slug === slug);
       if (!entry) {
         return fail(

@@ -1333,58 +1333,8 @@ export const alternativesList = defineTool({
     },
   },
   async handle(args) {
-    const seen = new Set<string>();
-    const rows: Array<{ slug: string; competitor: string; route: string | null; url: string | null; positioning: string | null; note?: string }> = [];
-
-    for (const [slug, entry] of Object.entries(ALTERNATIVES_SHORTLIST)) {
-      const us = entry.picks.find((p) => p.isUs);
-      rows.push({
-        slug,
-        competitor: entry.competitor,
-        route: entry.route,
-        url: entry.route ? `${SITE}${entry.route}` : null,
-        positioning: us ? us.blurb : null,
-      });
-      seen.add(slug);
-      if (entry.route) seen.add(entry.route);
-    }
-
-    for (const wa of WA_ALTERNATIVES) {
-      if (seen.has(wa.slug)) continue;
-      rows.push({
-        slug: wa.slug,
-        competitor: wa.name,
-        route: wa.route,
-        url: `${SITE}${wa.route}`,
-        positioning: wa.tagline,
-      });
-      seen.add(wa.slug);
-      seen.add(wa.route);
-    }
-
-    for (const page of ALTERNATIVE_PAGES) {
-      if (seen.has(page.route)) continue;
-      rows.push({
-        slug: page.route.replace(/^\//, ""),
-        competitor: page.competitor,
-        route: page.route,
-        url: `${SITE}${page.route}`,
-        positioning: null,
-        ...(page.note ? { note: page.note } : {}),
-      });
-    }
-
-    let filtered = rows;
-    if (args.search) {
-      const q = args.search.toLowerCase();
-      filtered = rows.filter(
-        (r) =>
-          r.competitor.toLowerCase().includes(q) ||
-          r.slug.includes(q) ||
-          (r.route ?? "").includes(q) ||
-          (r.positioning ?? "").toLowerCase().includes(q),
-      );
-    }
+    const rows = collectAlternativeRows();
+    const filtered = filterAlternativeRows(rows, args.search);
 
     return ok({
       synced_at: SYNCED_AT,
@@ -1394,6 +1344,72 @@ export const alternativesList = defineTool({
     });
   },
 });
+
+interface AlternativeRow {
+  slug: string;
+  competitor: string;
+  route: string | null;
+  url: string | null;
+  positioning: string | null;
+  note?: string;
+}
+
+function collectAlternativeRows(): AlternativeRow[] {
+  const seen = new Set<string>();
+  const rows: AlternativeRow[] = [];
+
+  for (const [slug, entry] of Object.entries(ALTERNATIVES_SHORTLIST)) {
+    const us = entry.picks.find((p) => p.isUs);
+    rows.push({
+      slug,
+      competitor: entry.competitor,
+      route: entry.route,
+      url: entry.route ? `${SITE}${entry.route}` : null,
+      positioning: us ? us.blurb : null,
+    });
+    seen.add(slug);
+    if (entry.route) seen.add(entry.route);
+  }
+
+  for (const wa of WA_ALTERNATIVES) {
+    if (seen.has(wa.slug)) continue;
+    rows.push({
+      slug: wa.slug,
+      competitor: wa.name,
+      route: wa.route,
+      url: `${SITE}${wa.route}`,
+      positioning: wa.tagline,
+    });
+    seen.add(wa.slug);
+    seen.add(wa.route);
+  }
+
+  for (const page of ALTERNATIVE_PAGES) {
+    if (seen.has(page.route)) continue;
+    rows.push({
+      slug: page.route.replace(/^\//, ""),
+      competitor: page.competitor,
+      route: page.route,
+      url: `${SITE}${page.route}`,
+      positioning: null,
+      ...(page.note ? { note: page.note } : {}),
+    });
+  }
+
+  return rows;
+}
+
+function filterAlternativeRows(rows: AlternativeRow[], search: string | undefined): AlternativeRow[] {
+  if (!search) return rows;
+  const q = search.toLowerCase();
+  return rows.filter(
+    (r) =>
+      r.competitor.toLowerCase().includes(q) ||
+      r.slug.includes(q) ||
+      (r.route ?? "").includes(q) ||
+      (r.positioning ?? "").toLowerCase().includes(q),
+  );
+}
 
 // ── alternatives_get ─────────────────────────────────────────────────────────
 
@@ -1433,7 +1449,7 @@ export const alternativesGet = defineTool({
     if (!shortlist && !waDetail) {
       const valid = [
         ...new Set([...Object.keys(ALTERNATIVES_SHORTLIST), ...WA_ALTERNATIVES.map((w) => w.slug)]),
-      ].sort();
+      ].sort((a, b) => a.localeCompare(b));
       return fail(`Alternative "${args.slug}" not found. Valid slugs: ${valid.join(", ")}`);
     }
 

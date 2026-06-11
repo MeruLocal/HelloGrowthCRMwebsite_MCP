@@ -18,8 +18,8 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js"; // NOSONAR
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"; // NOSONAR
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import {
+  isInitializeRequest,
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
