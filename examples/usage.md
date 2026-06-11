@@ -131,3 +131,47 @@ Or run in dev mode without compiling:
 ```bash
 npm run dev
 ```
+
+## Website feature tools — sample requests (added 2026-06-11)
+
+```jsonc
+// Full integrations catalog, filtered
+{ "name": "integrations_list", "arguments": { "category": "communication", "search": "whatsapp" } }
+{ "name": "integrations_get", "arguments": { "slug": "mailchimp" } }
+{ "name": "integrations_list_categories", "arguments": {} }
+
+// AI agents (Agentic AI)
+{ "name": "agents_list", "arguments": {} }
+{ "name": "agents_get", "arguments": { "slug": "voice-agent" } }
+{ "name": "agents_get_autonomy_levels", "arguments": {} }
+{ "name": "agents_list_comparisons", "arguments": {} }
+
+// Glossary / templates / feature guides
+{ "name": "glossary_list_terms", "arguments": { "search": "lead" } }
+{ "name": "glossary_get_term", "arguments": { "slug": "lead-scoring" } }
+{ "name": "templates_list", "arguments": { "category": "pipeline" } }
+{ "name": "templates_get", "arguments": { "slug": "sales-pipeline-template" } }
+{ "name": "guides_list", "arguments": {} }
+{ "name": "guides_get", "arguments": { "slug": "contact-management" } }
+
+// Alternatives & switch-from migration
+{ "name": "alternatives_list", "arguments": { "search": "hubspot" } }
+{ "name": "alternatives_get", "arguments": { "slug": "hubspot" } }
+{ "name": "switch_list_competitors", "arguments": {} }
+{ "name": "switch_get_guide", "arguments": { "slug": "zoho" } }
+
+// Changelog, FAQs, media, partners, solutions
+{ "name": "changelog_list_releases", "arguments": { "limit": 5 } }
+{ "name": "changelog_get_release", "arguments": { "version": "1.5.0" } }
+{ "name": "faqs_get_site", "arguments": { "search": "pricing" } }
+{ "name": "media_list_videos", "arguments": {} }
+{ "name": "media_list_testimonials", "arguments": { "type": "text" } }
+{ "name": "partners_get_program", "arguments": {} }
+{ "name": "partners_get_application_schema", "arguments": {} }
+{ "name": "solutions_list_whatsapp_use_cases", "arguments": {} }
+{ "name": "solutions_get_managed_revops", "arguments": { "city": "atlanta" } }
+```
+
+All of these are static read-mirrors of hellogrowthcrm.com — no env vars or
+network access needed. Unknown slugs return `isError: true` with the list of
+valid values.

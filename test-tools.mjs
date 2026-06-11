@@ -21,7 +21,8 @@ function assert(cond, msg) {
 async function call(name, args = {}) {
   const tool = toolsByName.get(name);
   if (!tool) throw new Error(`Tool not registered: ${name}`);
-  const res = await tool.handle(args);
+  const parsed = tool.schema.safeParse(args);
+  const res = await tool.handle(parsed.success ? parsed.data : args);
   const text = res.content?.[0]?.text ?? "";
   try {
     return JSON.parse(text);
@@ -108,6 +109,98 @@ const cp = await call("pricing_get_country_plans");
 assert(cp.count === 8, "country pricing has 8 entries");
 const ukp = await call("pricing_get_country_plans", { country: "uk" });
 assert(ukp.country_pricing[0].currencyCode === "GBP", "UK pricing GBP");
+
+// ─────────────────────────────// ─────────────────────────────────────────────────────────────────────────────
+// Website feature coverage tools (integrations, agents, glossary, templates,
+// guides, alternatives/switch, changelog, FAQs, media, partners, solutions)
+// — added 2026-06-11
+// ─────────────────────────────────────────────────────────────────────────────
+
+// integrations
+const ints = await call("integrations_list");
+assert(ints.items.length >= 390, `integrations_list >= 390 (got ${ints.items.length})`);
+const intsWa = await call("integrations_list", { search: "whatsapp" });
+assert(intsWa.filtered_count >= 1, "integrations_list search=whatsapp finds results");
+const intCats = await call("integrations_list_categories");
+assert(intCats.category_count >= 50, `integrations categories >= 50 (got ${intCats.category_count})`);
+const mailchimp = await call("integrations_get", { slug: "mailchimp" });
+assert(mailchimp.integration?.slug === "mailchimp" || mailchimp.slug === "mailchimp", "integrations_get mailchimp");
+const badInt = await (async () => { const t = toolsByName.get("integrations_get"); return t.handle({ slug: "zzz-nope" }); })();
+assert(badInt.isError === true, "integrations_get unknown slug fails");
+
+// AI agents
+const agents = await call("agents_list");
+assert(agents.agents.length === 12, `agents_list returns 12 agents (got ${agents.agents.length})`);
+const voice = await call("agents_get", { slug: "voice-agent" });
+assert(JSON.stringify(voice).toLowerCase().includes("voice"), "agents_get voice-agent");
+const levels = await call("agents_get_autonomy_levels");
+assert(levels.levels.length === 3, "autonomy levels = 3");
+assert(levels.capability_matrix.length === 9, "autonomy capability matrix = 9 rows");
+const agentVs = await call("agents_list_comparisons");
+assert(agentVs.count === 4, "agent comparisons = 4 (agentforce, breeze, zia, copilot)");
+
+// glossary
+const gl = await call("glossary_list_terms");
+assert(gl.total === 44, `glossary has 44 terms (got ${gl.total})`);
+const term = await call("glossary_get_term", { slug: gl.terms[0].slug });
+assert(typeof JSON.stringify(term) === "string" && !term.isError, "glossary_get_term first term");
+
+// templates
+const tpl = await call("templates_list");
+assert(tpl.total === 42, `templates has 42 entries (got ${tpl.total})`);
+assert(tpl.categories.length === 7, "templates have 7 categories");
+const tplOne = await call("templates_get", { slug: tpl.templates[0].slug });
+assert(!tplOne.isError, "templates_get first template");
+
+// feature guides
+const guides = await call("guides_list");
+assert(guides.total === 32, `guides has 32 entries (got ${guides.total})`);
+const guideOne = await call("guides_get", { slug: guides.guides[0].slug });
+assert(!guideOne.isError, "guides_get first guide");
+
+// alternatives & switch
+const alts = await call("alternatives_list");
+assert(alts.total >= 40, `alternatives_list >= 40 (got ${alts.total})`);
+const altHs = await call("alternatives_get", { slug: "hubspot" });
+assert(!altHs.isError, "alternatives_get hubspot");
+const sw = await call("switch_list_competitors");
+assert(sw.switch_pages.length >= 26, `switch pages >= 26 (got ${sw.switch_pages.length})`);
+const swZoho = await call("switch_get_guide", { slug: "zoho" });
+assert(!swZoho.isError, "switch_get_guide zoho");
+
+// changelog
+const cl = await call("changelog_list_releases", { limit: 3 });
+assert(cl.total_releases === 6, `changelog has 6 releases (got ${cl.total_releases})`);
+assert(cl.returned === 3, "changelog limit=3 respected");
+const rel = await call("changelog_get_release", { version: "1.5.0" });
+assert(!rel.isError, "changelog_get_release 1.5.0");
+
+// site FAQs
+const faqs = await call("faqs_get_site");
+assert(faqs.groups.length === 2, "site FAQs have 2 groups");
+assert(faqs.groups[0].items?.length >= 15, "site FAQ group 1 has 15+ entries");
+
+// media
+const vids = await call("media_list_videos");
+assert(vids.videos.length >= 5, `media_list_videos >= 5 (got ${vids.videos.length})`);
+const tst = await call("media_list_testimonials", { type: "text" });
+assert(JSON.stringify(tst).includes("text_testimonials"), "media_list_testimonials text");
+
+// partners
+const pp = await call("partners_get_program");
+assert(pp.faqs.length === 8, `partner FAQs = 8 (got ${pp.faqs.length})`);
+const pa = await call("partners_get_application_schema");
+assert(pa.field_count >= 27, `partner application fields >= 27 (got ${pa.field_count})`);
+
+// solutions
+const wa = await call("solutions_list_whatsapp_use_cases");
+assert(wa.count === 5, `whatsapp use cases = 5 (got ${wa.count})`);
+const revops = await call("solutions_get_managed_revops");
+assert(JSON.stringify(revops).includes("atlanta"), "managed revops lists city pages");
+const revopsCity = await call("solutions_get_managed_revops", { city: "atlanta" });
+assert(!revopsCity.isError, "managed revops atlanta city page");
+const revopsBad = await (async () => { const t = toolsByName.get("solutions_get_managed_revops"); return t.handle({ city: "zzz-nope" }); })();
+assert(revopsBad.isError === true, "managed revops unknown city fails");
 
 console.log(`\n${passed} passed, ${failed} failed.`);
 process.exit(failed === 0 ? 0 : 1);

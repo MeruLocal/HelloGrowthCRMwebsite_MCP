@@ -101,6 +101,59 @@ import {
 // ── Products ──────────────────────────────────────────────────────────────────
 import { productsList, productGet } from "./products.js";
 
+// ── Integrations catalog ──────────────────────────────────────────────────────
+import {
+  integrationsList,
+  integrationsGet,
+  integrationsListCategories,
+} from "./integrations.js";
+
+// ── AI Agents (Agentic AI) ────────────────────────────────────────────────────
+import {
+  agentsList,
+  agentsGet,
+  agentsGetAutonomyLevels,
+  agentsListComparisons,
+} from "./agents.js";
+
+// ── Glossary ──────────────────────────────────────────────────────────────────
+import { glossaryListTerms, glossaryGetTerm } from "./glossary.js";
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+import { templatesList, templatesGet } from "./templates.js";
+
+// ── Feature guides ────────────────────────────────────────────────────────────
+import { guidesList, guidesGet } from "./guides.js";
+
+// ── Alternatives & switch-from migration guides ───────────────────────────────
+import {
+  alternativesList,
+  alternativesGet,
+  switchListCompetitors,
+  switchGetGuide,
+} from "./alternatives.js";
+
+// ── Changelog / What's New ────────────────────────────────────────────────────
+import { changelogListReleases, changelogGetRelease } from "./changelog.js";
+
+// ── Site FAQs ─────────────────────────────────────────────────────────────────
+import { faqsGetSite } from "./faqs.js";
+
+// ── Media (videos & testimonials) ─────────────────────────────────────────────
+import { mediaListVideos, mediaListTestimonials } from "./media.js";
+
+// ── Partner program ───────────────────────────────────────────────────────────
+import {
+  partnersGetProgram,
+  partnersGetApplicationSchema,
+} from "./partners.js";
+
+// ── Solutions (WhatsApp use cases, Managed RevOps) ────────────────────────────
+import {
+  solutionsListWhatsappUseCases,
+  solutionsGetManagedRevops,
+} from "./solutions.js";
+
 import type { RegisteredTool } from "./tool-types.js";
 
 export const tools: RegisteredTool[] = [
@@ -184,6 +237,54 @@ export const tools: RegisteredTool[] = [
   // Products
   productsList,
   productGet,
+
+  // Integrations catalog
+  integrationsList,
+  integrationsGet,
+  integrationsListCategories,
+
+  // AI Agents (Agentic AI)
+  agentsList,
+  agentsGet,
+  agentsGetAutonomyLevels,
+  agentsListComparisons,
+
+  // Glossary
+  glossaryListTerms,
+  glossaryGetTerm,
+
+  // Templates
+  templatesList,
+  templatesGet,
+
+  // Feature guides
+  guidesList,
+  guidesGet,
+
+  // Alternatives & switch-from migration guides
+  alternativesList,
+  alternativesGet,
+  switchListCompetitors,
+  switchGetGuide,
+
+  // Changelog / What's New
+  changelogListReleases,
+  changelogGetRelease,
+
+  // Site FAQs
+  faqsGetSite,
+
+  // Media (videos & testimonials)
+  mediaListVideos,
+  mediaListTestimonials,
+
+  // Partner program
+  partnersGetProgram,
+  partnersGetApplicationSchema,
+
+  // Solutions (WhatsApp use cases, Managed RevOps)
+  solutionsListWhatsappUseCases,
+  solutionsGetManagedRevops,
 ];
 
 export const toolsByName: Map<string, RegisteredTool> = new Map(

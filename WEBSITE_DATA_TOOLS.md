@@ -43,3 +43,31 @@ mirror tools without needing a running server.
   handler was ever written, so they fall through to `en` / `en-US` / `x-default`
   instead of `en-AU`. The mirror reproduces this faithfully; the website team
   should add an `-australia` → `en-AU` handler if `en-AU` targeting is intended.
+
+## Website feature-coverage tools (added 2026-06-11)
+
+Second alignment pass: every remaining website module is now exposed as an MCP
+tool. Same read-mirror policy — website is the source of truth, data blocks
+carry `SYNCED_AT 2026-06-11` provenance comments.
+
+| Tool | Purpose | Website source |
+|------|---------|----------------|
+| `integrations_list` / `integrations_get` / `integrations_list_categories` | Full 397-entry integrations catalog (55 categories) incl. route aliases | `lib/integrations-catalog-data.ts`, `lib/generated-integrations-report-catalog.ts`, `lib/integration-routes.ts` |
+| `agents_list` / `agents_get` | 12 Agentic-AI agents (voice, post-call, deal-risk, MCP + 8 alias pages) | `views/agentic/*.tsx`, `app/(public)/agentic-ai/[slug]/page.tsx` |
+| `agents_get_autonomy_levels` | 3 autonomy levels, 9-row capability matrix, safety rails | `views/agentic/AutonomyLevelsPage.tsx` |
+| `agents_list_comparisons` | vs Agentforce / Breeze / Zia / Copilot positioning | `views/agentic/Vs*.tsx` |
+| `glossary_list_terms` / `glossary_get_term` | 44 CRM glossary terms | `lib/glossary-data.ts` |
+| `templates_list` / `templates_get` | 42 downloadable templates, 7 categories | `lib/templates-data.ts` |
+| `guides_list` / `guides_get` | 32 feature guides | `lib/feature-guide-data.ts` |
+| `alternatives_list` / `alternatives_get` | 42 competitor/alternatives pages incl. WhatsApp-CRM detail | `lib/alternatives-shortlist.ts`, `lib/wa-alternatives-data.ts`, `app/(public)/*-alternative` |
+| `switch_list_competitors` / `switch_get_guide` | 26 switch-from migration pages (22 with full guide data) | `lib/switch-data.ts` |
+| `changelog_list_releases` / `changelog_get_release` | 6 product releases, 7-tag taxonomy | `lib/changelog-curated.ts`, `lib/changelog-types.ts` |
+| `faqs_get_site` | 17 site-level FAQs + FAQ category labels | `lib/site-faqs.ts`, `lib/faq-data.ts` |
+| `media_list_videos` | Seeded YouTube product videos (`/videos`) | `lib/home-youtube-videos.ts`, `lib/youtube-videos.ts` |
+| `media_list_testimonials` | Text testimonials + video-testimonial record shape | `lib/home-testimonials.ts`, `lib/video-testimonials.ts` |
+| `partners_get_program` / `partners_get_application_schema` | Partner program terms + 28-field application schema | `lib/partner-program-content.ts`, `lib/partner-apply-schema.ts`, `/partners` |
+| `solutions_list_whatsapp_use_cases` | 5 WhatsApp CRM use cases | `lib/whatsappUseCases.ts` |
+| `solutions_get_managed_revops` | Managed RevOps: 9 market variants + 25 US city pages + related offerings | `lib/managed-revops-content.ts`, `app/(public)/managed-revops-*` |
+
+No new environment variables are required — all of the above are static mirrors.
+`node test-tools.mjs` now runs 62 assertions covering both alignment passes.

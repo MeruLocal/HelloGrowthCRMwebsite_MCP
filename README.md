@@ -115,6 +115,45 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
 
 Full payload examples live in [`examples/usage.md`](examples/usage.md).
 
+## Full MCP tool catalog (81 tools)
+
+Beyond the original eight bot-governance tools, this server exposes the entire
+hellogrowthcrm.com website — every module, feature, product, pricing table, AI
+agent, and integration — as MCP tools. Live content (blog, help, newsletter,
+forms, social proof) is served from Supabase; everything else is a read-mirror
+of the website source files (see [`WEBSITE_DATA_TOOLS.md`](WEBSITE_DATA_TOOLS.md)).
+
+| Category | Tools |
+|----------|-------|
+| Bot governance (8) | `scan_website_bots`, `analyze_access_logs`, `verify_bot_identity`, `list_allowed_bots`, `list_blocked_bots`, `generate_robots_txt`, `suggest_bot_policy`, `export_bot_report` |
+| Blog (7) | `blog_list`, `blog_get`, `blog_search`, `blog_create`, `blog_update`, `blog_revalidate`, `blog_get_categories` |
+| Help center (6) | `help_list_categories`, `help_list_articles`, `help_get_article`, `help_search`, `help_create_article`, `help_update_article` |
+| Newsletter (4) | `newsletter_subscribe`, `newsletter_unsubscribe`, `newsletter_get_subscribers`, `newsletter_get_stats` |
+| Contact forms (4) | `forms_submit`, `forms_list_submissions`, `forms_get_submission`, `forms_export_csv` |
+| Static content (6) | `content_list_case_studies`, `content_list_comparisons`, `content_get_comparison`, `content_list_industries`, `content_list_tools`, `content_get_seo_rules` |
+| Pricing (5) | `pricing_get_plans`, `pricing_get_addons`, `pricing_get_faq`, `pricing_compare_plans`, `pricing_get_country_plans` |
+| Features (3) | `features_list`, `features_get`, `features_list_products` |
+| Analytics (1) | `analytics_social_proof` |
+| Countries (2) | `countries_list`, `country_get` |
+| Company (2) | `company_get_profile`, `company_get_contacts` |
+| SEO (5) | `seo_get_site_config`, `seo_get_hreflang`, `seo_get_canonical`, `seo_get_sitemaps`, `seo_get_schema` |
+| Products (2) | `products_list`, `product_get` |
+| Integrations (3) | `integrations_list`, `integrations_get`, `integrations_list_categories` — 397-entry catalog, 55 categories |
+| AI Agents / Agentic AI (4) | `agents_list`, `agents_get`, `agents_get_autonomy_levels`, `agents_list_comparisons` — 12 agents, autonomy matrix, 4 vs-competitor pages |
+| Glossary (2) | `glossary_list_terms`, `glossary_get_term` — 44 terms |
+| Templates (2) | `templates_list`, `templates_get` — 42 templates in 7 categories |
+| Feature guides (2) | `guides_list`, `guides_get` — 32 guides |
+| Alternatives & migration (4) | `alternatives_list`, `alternatives_get`, `switch_list_competitors`, `switch_get_guide` — 42 alternatives pages, 26 switch-from guides |
+| Changelog (2) | `changelog_list_releases`, `changelog_get_release` — 6 releases |
+| Site FAQs (1) | `faqs_get_site` |
+| Media (2) | `media_list_videos`, `media_list_testimonials` |
+| Partner program (2) | `partners_get_program`, `partners_get_application_schema` |
+| Solutions (2) | `solutions_list_whatsapp_use_cases`, `solutions_get_managed_revops` — incl. 9 market variants + 25 US city pages |
+
+All mirror tools carry `synced_at` provenance (last sync: 2026-06-11) and validate
+inputs with zod; unknown slugs return a clear error listing valid values.
+Run `npm run build && node test-tools.mjs` for 62 smoke assertions across the catalog.
+
 ## How detection works
 
 1. **User-Agent matching.** The signature database in `src/data/known-bots.ts` defines each known bot with one or more case-insensitive UA patterns. The first match wins, so more specific signatures come first (e.g. `Googlebot-Image` before generic `Googlebot`).
