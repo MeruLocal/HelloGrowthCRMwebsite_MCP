@@ -27,6 +27,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { toolsByName } from "./tools/index.js";
+import { openApiSpecJson } from "./openapi.js";
 import { logger } from "./utils/logger.js";
 import { getSupabase } from "./lib/supabase.js";
 import {
@@ -440,6 +441,31 @@ export async function runServer(): Promise<void> {
       || (req.method === "POST" && url.pathname === "/message")) {
       if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
       await handleLegacySse(req, res, url);
+      return;
+    }
+
+    // OpenAPI spec for the HelloGrowthCRM CRM tools — importable as ChatGPT GPT
+    // Actions. Served as a static document (not rate-limited) with permissive
+    // CORS so browser-based importers can fetch it.
+    if (url.pathname === "/openapi.json") {
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Access-Control-Max-Age": "86400",
+        }).end();
+        return;
+      }
+      if (req.method === "GET") {
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=300",
+        }).end(openApiSpecJson);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, OPTIONS" }).end("Method not allowed");
       return;
     }
 

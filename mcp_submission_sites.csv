@@ -1,0 +1,59 @@
+Rank,Site,Homepage,Domain_Rating,Tier,Category,Submission_Method,Submission_URL,Effort,Backlink_Type,Prerequisite,Status
+1,YouTube,https://youtube.com,99,Tier 1 (90+),Video / Demo,Upload a demo video of the MCP server with link in description,https://youtube.com/upload,Medium,Nofollow,Screen recording,Pending
+2,LinkedIn,https://linkedin.com,99,Tier 1 (90+),Social / Article,Post launch + publish LinkedIn article,https://linkedin.com,Low,Nofollow,None,Pending
+3,GitHub,https://github.com,97,Tier 1 (90+),Source + awesome lists,Public repo + PR into modelcontextprotocol/servers and punkpeye/awesome-mcp-servers,https://github.com/modelcontextprotocol/servers,Low,Dofollow,Public repo,Pending
+4,X (Twitter),https://x.com,97,Tier 1 (90+),Social,Launch thread with repo + site link,https://x.com,Low,Nofollow,None,Pending
+5,Reddit,https://reddit.com,95,Tier 1 (90+),Community,Post in r/mcp, r/modelcontextprotocol, r/ClaudeAI,https://reddit.com/r/mcp,Low,Nofollow,None,Pending
+6,Medium,https://medium.com,94,Tier 1 (90+),Article,Publish launch article,https://medium.com/new-story,Medium,Nofollow,None,Pending
+7,Substack,https://substack.com,94,Tier 1 (90+),Newsletter / Article,Publish post on a Substack,https://substack.com,Low,Nofollow,None,Pending
+8,npm,https://npmjs.com,92,Tier 1 (90+),Package registry,npm publish,https://npmjs.com,Low,Dofollow,npm publish + homepage field,Pending
+9,GitLab,https://gitlab.com,92,Tier 1 (90+),Source mirror,Mirror repo public,https://gitlab.com,Low,Dofollow,Public mirror,Pending
+10,SourceForge,https://sourceforge.net,92,Tier 1 (90+),Software directory,Create project listing,https://sourceforge.net/create,Medium,Dofollow,None,Pending
+11,Product Hunt,https://producthunt.com,91,Tier 1 (90+),Launch,Submit launch with screenshots + tagline,https://producthunt.com/posts/new,Medium,Dofollow,Screenshot/logo,Pending
+12,Hacker News,https://news.ycombinator.com,91,Tier 1 (90+),Community,Show HN post,https://news.ycombinator.com/submit,Low,Nofollow,None,Pending
+13,MCP Official Registry,https://modelcontextprotocol.io,90,Tier 1 (90+),Official registry,Add server.json + submit to registry,https://registry.modelcontextprotocol.io,Medium,Dofollow,server.json manifest,Pending
+14,Dev.to,https://dev.to,90,Tier 1 (90+),Article,Cross-post launch article with canonical,https://dev.to/new,Low,Nofollow,None,Pending
+15,Gitee,https://gitee.com,90,Tier 1 (90+),Source mirror,Mirror repo public,https://gitee.com,Low,Dofollow,Public mirror,Pending
+16,HackerNoon,https://hackernoon.com,87,Tier 2 (70-89),Article,Submit a story,https://hackernoon.com,Medium,Nofollow,None,Pending
+17,Slashdot,https://slashdot.org,87,Tier 2 (70-89),Software directory,Submit via SourceForge/Slashdot listing,https://slashdot.org/software,Medium,Dofollow,None,Pending
+18,Pipedream,https://pipedream.com,83,Tier 2 (70-89),MCP / app registry,Submit MCP app,https://pipedream.com/apps,Medium,Dofollow,None,Pending
+19,Hashnode,https://hashnode.com,83,Tier 2 (70-89),Article,Cross-post launch article,https://hashnode.com,Low,Nofollow,None,Pending
+20,Indie Hackers,https://indiehackers.com,81,Tier 2 (70-89),Community,Post product + story,https://indiehackers.com,Low,Nofollow,None,Pending
+21,Dang.ai,https://dang.ai,81,Tier 2 (70-89),AI tool directory,Submit tool,https://dang.ai/submit,Low,Dofollow,None,Pending
+22,Apify,https://apify.com,80,Tier 2 (70-89),Actor / MCP store,Publish as Actor or list MCP server,https://apify.com/store,Medium,Dofollow,None,Pending
+23,StackShare,https://stackshare.io,79,Tier 2 (70-89),Tech stack directory,Add tool,https://stackshare.io,Medium,Dofollow,None,Pending
+24,AlternativeTo,https://alternativeto.net,79,Tier 2 (70-89),Software directory,Add application,https://alternativeto.net,Medium,Dofollow,None,Pending
+25,SaaSHub,https://saashub.com,79,Tier 2 (70-89),SaaS directory,Submit product,https://saashub.com/submit,Low,Dofollow,None,Pending
+26,Socket.dev,https://socket.dev,78,Tier 2 (70-89),npm package intelligence,Auto-indexes published npm package,https://socket.dev,Low,Dofollow,npm publish,Pending
+27,There's An AI For That,https://theresanaiforthat.com,77,Tier 2 (70-89),AI tool directory,Submit tool,https://theresanaiforthat.com/submit,Medium,Dofollow,None,Pending
+28,Continue.dev,https://continue.dev,76,Tier 2 (70-89),AI dev tool / MCP hub,Submit MCP to Continue hub,https://hub.continue.dev,Medium,Dofollow,None,Pending
+29,Smithery,https://smithery.ai,75,Tier 2 (70-89),MCP registry (major),Auto-indexes GitHub; add smithery.yaml to claim,https://smithery.ai/submit,Low,Dofollow,Public repo + smithery.yaml,Pending
+30,BetaList,https://betalist.com,75,Tier 2 (70-89),Startup launch,Submit startup,https://betalist.com/submit,Medium,Dofollow,None,Pending
+31,Composio,https://composio.dev,74,Tier 2 (70-89),MCP / tools registry,Submit server,https://mcp.composio.dev,Medium,Dofollow,None,Pending
+32,LobeHub,https://lobehub.com,74,Tier 2 (70-89),MCP marketplace,Submit via MCP marketplace form,https://lobehub.com/mcp,Medium,Dofollow,None,Pending
+33,Libraries.io,https://libraries.io,74,Tier 2 (70-89),Package index,Auto-indexes published npm package,https://libraries.io,Low,Dofollow,npm publish,Pending
+34,Uneed,https://uneed.best,74,Tier 2 (70-89),Launch / tool directory,Submit product,https://uneed.best/submit-a-tool,Low,Dofollow,None,Pending
+35,Toolify,https://toolify.ai,73,Tier 2 (70-89),AI tool directory,Submit tool,https://toolify.ai/submit,Low,Dofollow,None,Pending
+36,Glama,https://glama.ai,72,Tier 2 (70-89),MCP registry (major),Auto-indexes public GitHub MCP repos; claim listing,https://glama.ai/mcp/servers,Low,Dofollow,Public repo,Pending
+37,MCP.so,https://mcp.so,72,Tier 2 (70-89),MCP directory (largest),Submit server,https://mcp.so/submit,Low,Dofollow,None,Pending
+38,Portkey,https://portkey.ai,72,Tier 2 (70-89),MCP directory,Submit to MCP list via GitHub PR,https://portkey.ai/mcp-servers,Low,Dofollow,None,Pending
+39,Futurepedia,https://futurepedia.io,72,Tier 2 (70-89),AI tool directory,Submit tool,https://futurepedia.io/submit-tool,Medium,Dofollow,None,Pending
+40,Speakeasy,https://speakeasy.com,72,Tier 2 (70-89),MCP / API directory,Submit to MCP servers directory,https://speakeasy.com/mcp,Medium,Dofollow,None,Pending
+41,PulseMCP,https://pulsemcp.com,70,Tier 2 (70-89),MCP directory + newsletter,Auto-indexes; use submit/update form,https://pulsemcp.com/submit,Low,Dofollow,Public repo,Pending
+42,Cursor Directory,https://cursor.directory,69,Tier 3 (50-69),MCP + rules directory,Submit MCP,https://cursor.directory/mcp,Low,Dofollow,None,Pending
+43,Future Tools,https://futuretools.io,68,Tier 3 (50-69),AI tool directory,Submit tool,https://futuretools.io/submit-a-tool,Low,Nofollow,None,Pending
+44,MCP Servers (mcpservers.org),https://mcpservers.org,67,Tier 3 (50-69),Curated GitHub list,PR into the backing repo,https://github.com/wong2/awesome-mcp-servers,Low,Dofollow,Public repo,Pending
+45,TopAI.tools,https://topai.tools,61,Tier 3 (50-69),AI tool directory,Submit tool,https://topai.tools/submit,Low,Dofollow,None,Pending
+46,Aixploria,https://aixploria.com,55,Tier 3 (50-69),AI tool directory,Submit tool,https://aixploria.com/en/add-ai,Low,Dofollow,None,Pending
+47,AI Tool Hunt,https://aitoolhunt.com,55,Tier 3 (50-69),AI tool directory,Submit tool,https://aitoolhunt.com/submit,Low,Dofollow,None,Pending
+48,MCP Market,https://mcpmarket.com,54,Tier 3 (50-69),MCP marketplace,Submit form,https://mcpmarket.com/submit,Low,Dofollow,None,Pending
+49,OpenTools,https://opentools.com,54,Tier 3 (50-69),MCP / tools registry,Submit server,https://opentools.com,Low,Dofollow,None,Pending
+50,MCP.run,https://mcp.run,52,Tier 3 (50-69),MCP servlet registry,Package as servlet and submit,https://mcp.run,Medium,Dofollow,Servlet packaging,Pending
+51,LaunchingNext,https://launchingnext.com,50,Tier 3 (50-69),Startup directory,Submit startup,https://launchingnext.com/submit,Low,Dofollow,None,Pending
+52,Claude MCP,https://claudemcp.com,38,Tier 4 (<50),MCP directory,Submit server,https://claudemcp.com/submit,Low,Dofollow,None,Pending
+53,mcp-get,https://mcp-get.com,32,Tier 4 (<50),CLI installer registry,Add via registry PR,https://github.com/michaellatman/mcp-get,Low,Dofollow,Public repo,Pending
+54,AIMCP,https://aimcp.info,31,Tier 4 (<50),MCP directory,Submit server,https://aimcp.info,Low,Dofollow,None,Pending
+55,MCP Hub,https://mcphub.io,18,Tier 4 (<50),MCP directory,Submit server,https://mcphub.io,Low,Dofollow,None,Pending
+56,MCP Server Finder,https://mcpserverfinder.com,15,Tier 4 (<50),MCP directory,Submit server,https://mcpserverfinder.com,Low,Dofollow,None,Pending
+57,Fleur,https://fleurmcp.com,12,Tier 4 (<50),MCP app store,Submit app,https://fleurmcp.com,Medium,Dofollow,None,Pending
+58,MCP Index,https://mcpindex.net,6,Tier 4 (<50),MCP directory,Submit server,https://mcpindex.net,Low,Dofollow,None,Pending
