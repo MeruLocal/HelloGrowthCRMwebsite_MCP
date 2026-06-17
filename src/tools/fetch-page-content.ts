@@ -35,6 +35,8 @@ export interface ExtractedPage {
 /** Strip an HTML document down to title, meta, headings, links, and readable text. */
 export function extract(html: string, baseUrl: string): ExtractedPage {
   const pick = (re: RegExp): string => (html.match(re)?.[1] ?? "").trim();
+  const cleanInlineText = (value: string): string =>
+    value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const meta = (name: string): string =>
     pick(
       new RegExp(
@@ -55,25 +57,33 @@ export function extract(html: string, baseUrl: string): ExtractedPage {
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
 
   const headings = [...stripped.matchAll(/<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi)]
-    .map((m) => ({
-      level: Number(m[1]),
-      text: m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
-    }))
-    .filter((h) => h.text);
+    .flatMap((m) => {
+      const level = m[1];
+      const content = m[2];
+      if (!level || !content) return [];
+
+      const text = cleanInlineText(content);
+      return text ? [{ level: Number(level), text }] : [];
+    });
 
   const links = [
     ...stripped.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi),
   ]
-    .map((m) => {
-      let href = m[1];
+    .flatMap((m) => {
+      const rawHref = m[1];
+      const content = m[2];
+      if (!rawHref || !content) return [];
+
+      let href = rawHref;
       try {
-        href = new URL(href, baseUrl).toString();
+        href = new URL(rawHref, baseUrl).toString();
       } catch {
         /* keep raw href */
       }
-      return { href, text: m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() };
-    })
-    .filter((l) => l.text && /^https?:\/\//i.test(l.href));
+      const text = cleanInlineText(content);
+
+      return text && /^https?:\/\//i.test(href) ? [{ href, text }] : [];
+    });
 
   const text = stripped
     .replace(/<[^>]+>/g, " ")
