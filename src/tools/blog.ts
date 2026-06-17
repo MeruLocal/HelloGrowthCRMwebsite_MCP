@@ -12,7 +12,7 @@ export const blogList = defineTool({
   }),
   definition: {
     name: "blog_list",
-    description: "List blog posts with pagination and optional category filter. Returns slug, title, author, category, published_at, meta_description.",
+    description: "List blog posts with pagination and optional category filter. Returns slug, title, author, category, published_at, excerpt.",
     inputSchema: {
       type: "object",
       properties: {
@@ -28,7 +28,7 @@ export const blogList = defineTool({
       const db = getSupabase();
       let query = db
         .from("blog_posts")
-        .select("slug, title, author, category, published_at, meta_description, cover_image")
+        .select("slug, title, author, category, published_at, excerpt, cover_image")
         .order("published_at", { ascending: false })
         .range(args.offset, args.offset + args.limit - 1);
 
@@ -87,7 +87,7 @@ export const blogSearch = defineTool({
   }),
   definition: {
     name: "blog_search",
-    description: "Full-text search across blog post titles, content, and meta descriptions.",
+    description: "Full-text search across blog post titles, content, and excerpts.",
     inputSchema: {
       type: "object",
       properties: {
@@ -102,8 +102,8 @@ export const blogSearch = defineTool({
     try {
       const { data, error } = await getSupabase()
         .from("blog_posts")
-        .select("slug, title, author, category, published_at, meta_description")
-        .or(`title.ilike.%${args.query}%,meta_description.ilike.%${args.query}%,content.ilike.%${args.query}%`)
+        .select("slug, title, author, category, published_at, excerpt")
+        .or(`title.ilike.%${args.query}%,excerpt.ilike.%${args.query}%,content.ilike.%${args.query}%`)
         .order("published_at", { ascending: false })
         .limit(args.limit);
       if (error) return fail(`Search error: ${error.message}`);
@@ -123,7 +123,7 @@ export const blogCreate = defineTool({
     content: z.string().min(100),
     author: z.string().default("Rushabh Shah"),
     category: z.string().optional(),
-    meta_description: z.string().max(160).optional(),
+    excerpt: z.string().max(320).optional().describe("Short summary shown in listings and meta description."),
     cover_image: z.string().url().optional(),
     published_at: z.string().optional().describe("ISO 8601 datetime. Defaults to now."),
   }),
@@ -138,7 +138,7 @@ export const blogCreate = defineTool({
         content: { type: "string", minLength: 100 },
         author: { type: "string", default: "Rushabh Shah" },
         category: { type: "string" },
-        meta_description: { type: "string", maxLength: 160 },
+        excerpt: { type: "string", maxLength: 320 },
         cover_image: { type: "string", format: "uri" },
         published_at: { type: "string", description: "ISO 8601 datetime." },
       },
@@ -170,7 +170,7 @@ export const blogUpdate = defineTool({
     content: z.string().optional(),
     author: z.string().optional(),
     category: z.string().optional(),
-    meta_description: z.string().max(160).optional(),
+    excerpt: z.string().max(320).optional().describe("Short summary shown in listings and meta description."),
     cover_image: z.string().url().optional(),
   }),
   definition: {
@@ -184,7 +184,7 @@ export const blogUpdate = defineTool({
         content: { type: "string" },
         author: { type: "string" },
         category: { type: "string" },
-        meta_description: { type: "string", maxLength: 160 },
+        excerpt: { type: "string", maxLength: 320 },
         cover_image: { type: "string", format: "uri" },
       },
       required: ["slug"],

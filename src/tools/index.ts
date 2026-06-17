@@ -15,6 +15,9 @@ import { scanWebsiteBots } from "./scan-website-bots.js";
 import { suggestBotPolicy } from "./suggest-bot-policy.js";
 import { verifyBotIdentityTool } from "./verify-bot-identity.js";
 
+// ── Page content (live crawl → readable content) ──────────────────────────────
+import { fetchPageContent, crawlPages } from "./fetch-page-content.js";
+
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
   blogList,
@@ -166,6 +169,10 @@ export const tools: RegisteredTool[] = [
   generateRobotsTxt,
   suggestBotPolicy,
   exportBotReport,
+
+  // Page content (live crawl → readable content)
+  fetchPageContent,
+  crawlPages,
 
   // Blog
   blogList,
