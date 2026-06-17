@@ -4,28 +4,30 @@ import { defineTool, ok, fail } from "./tool-types.js";
 // ─────────────────────────────────────────────────────────────────────────────
 // Static read-mirror data — integrations catalog.
 //
-// Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts — SYNCED_AT 2026-06-17
 //   Mirrors the merged INTEGRATIONS_CATALOG exactly as the website serves it:
 //   the curated catalog merged with the parser-filtered entries from
-//   hellocrmwebsite/src/lib/generated-integrations-report-catalog.ts
+//   hellocrmwebsite/src/lib/generated-integrations-report-catalog.ts AND
+//   hellocrmwebsite/src/lib/generated-integrations-app-catalog.ts
 //   (isValidIntegrationEntry + mergeCatalogs, first-slug-wins dedupe).
 //   Descriptions mirror each entry's `whatItDoes` copy, shortened to one sentence.
-// Source: hellocrmwebsite/src/lib/integration-routes.ts — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/integration-routes.ts — SYNCED_AT 2026-06-17
 //   Routes apply getIntegrationPath(), including the slug aliases that 301 to a
 //   canonical app page (whatsapp-meta→whatsapp, gmail-google-workspace→gmail,
 //   meta-lead-ads→meta-ads, zoom-google-meet→google-meet, accounting→quickbooks,
 //   ecommerce→shopify, email-marketing→mailchimp, calendar→google-calendar).
-// Public-facing count: INTEGRATIONS_CATALOG_SUMMARY.publicCount = 427 (native +
-//   Zapier + API-reachable apps) — single source of truth for the "427+" claim.
+// Public-facing count: INTEGRATIONS_CATALOG_SUMMARY.publicCount = 630
+//   (derived from the real catalog total) — single source of truth for the
+//   "630+" integrations claim.
 //
 // This is a READ-MIRROR: data is copied verbatim from website files, never invented.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+const SYNCED_AT = "2026-06-17";
 const SITE = "https://hellogrowthcrm.com";
 
-/** Canonical public-facing integration count (native + Zapier + API-reachable apps). */
-const PUBLIC_INTEGRATION_COUNT = 427;
+/** Canonical public-facing integration count (derived from the merged catalog total). */
+const PUBLIC_INTEGRATION_COUNT = 630;
 
 interface IntegrationCategory {
   slug: string;
@@ -47,7 +49,7 @@ interface IntegrationRecord {
 }
 
 // Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts (category list of the
-// merged INTEGRATIONS_CATALOG) — SYNCED_AT 2026-06-11
+// merged INTEGRATIONS_CATALOG) — SYNCED_AT 2026-06-17
 const INTEGRATION_CATEGORIES: IntegrationCategory[] = [
   { slug: "email-marketing", title: "Email marketing & CRM sync", shortLabel: "Email marketing" },
   { slug: "communication", title: "Communication & messaging", shortLabel: "Communication" },
@@ -104,10 +106,71 @@ const INTEGRATION_CATEGORIES: IntegrationCategory[] = [
   { slug: "other-vertical-misc", title: "Other Vertical / Misc", shortLabel: "Other Vertical / Misc" },
   { slug: "steps-for-engineering", title: "Steps for engineering", shortLabel: "Steps for engineering" },
   { slug: "what-customers-see", title: "What customers see", shortLabel: "What customers see" },
+  { slug: "lead-sources", title: "Lead Sources", shortLabel: "Lead Sources" },
+  { slug: "telephony", title: "Telephony", shortLabel: "Telephony" },
+  { slug: "scheduling-and-video", title: "Scheduling & Video", shortLabel: "Scheduling & Video" },
+  { slug: "email-and-inbox", title: "Email & Inbox", shortLabel: "Email & Inbox" },
+  { slug: "messaging", title: "Messaging", shortLabel: "Messaging" },
+  { slug: "crm-sync", title: "CRM Sync", shortLabel: "CRM Sync" },
+  { slug: "automation-and-webhooks", title: "Automation & Webhooks", shortLabel: "Automation & Webhooks" },
+  { slug: "commerce-and-payments", title: "Commerce & Payments", shortLabel: "Commerce & Payments" },
+  { slug: "marketing-and-email", title: "Marketing & Email", shortLabel: "Marketing & Email" },
+  { slug: "analytics-and-attribution", title: "Analytics & Attribution", shortLabel: "Analytics & Attribution" },
+  { slug: "productivity-and-documents", title: "Productivity & Documents", shortLabel: "Productivity & Documents" },
+  { slug: "kyc-and-compliance", title: "KYC & Compliance", shortLabel: "KYC & Compliance" },
+  { slug: "support", title: "Support", shortLabel: "Support" },
+  { slug: "ai-and-transcription", title: "AI & Transcription", shortLabel: "AI & Transcription" },
+  { slug: "live-chat", title: "Live Chat", shortLabel: "Live Chat" },
+  { slug: "other", title: "Other", shortLabel: "Other" },
+  { slug: "voice-call-and-sms", title: "Voice, Call & SMS", shortLabel: "Voice, Call & SMS" },
+  { slug: "live-chat-and-team-messaging", title: "Live Chat & Team Messaging", shortLabel: "Live Chat & Team Messaging" },
+  { slug: "hospitality-and-travel", title: "Hospitality & Travel", shortLabel: "Hospitality & Travel" },
+  { slug: "food-and-beverage-restaurant", title: "Food & Beverage / Restaurant", shortLabel: "Food & Beverage / Restaurant" },
+  { slug: "erp-and-manufacturing", title: "ERP & Manufacturing", shortLabel: "ERP & Manufacturing" },
+  { slug: "india-payments-and-fintech", title: "India Payments & Fintech", shortLabel: "India Payments & Fintech" },
+  { slug: "india-kyc-and-government", title: "India KYC & Government", shortLabel: "India KYC & Government" },
+  { slug: "south-and-east-asia", title: "South & East Asia", shortLabel: "South & East Asia" },
+  { slug: "ai-llm", title: "AI / LLM", shortLabel: "AI / LLM" },
+  { slug: "ipaas-and-automation", title: "iPaaS & Automation", shortLabel: "iPaaS & Automation" },
+  { slug: "lead-enrichment-pro", title: "Lead Enrichment Pro", shortLabel: "Lead Enrichment Pro" },
+  { slug: "maps-and-location", title: "Maps & Location", shortLabel: "Maps & Location" },
+  { slug: "nps-and-surveys", title: "NPS & Surveys", shortLabel: "NPS & Surveys" },
+  { slug: "files-and-storage", title: "Files & Storage", shortLabel: "Files & Storage" },
+  { slug: "browser-and-desktop-extensions", title: "Browser & Desktop Extensions", shortLabel: "Browser & Desktop Extensions" },
+  { slug: "developer-and-auth", title: "Developer & Auth", shortLabel: "Developer & Auth" },
+  { slug: "coming-soon-ecommerce", title: "Coming Soon · eCommerce", shortLabel: "Coming Soon · eCommerce" },
+  { slug: "coming-soon-accounting", title: "Coming Soon · Accounting", shortLabel: "Coming Soon · Accounting" },
+  { slug: "coming-soon-hr-and-payroll", title: "Coming Soon · HR & Payroll", shortLabel: "Coming Soon · HR & Payroll" },
+  { slug: "coming-soon-real-estate", title: "Coming Soon · Real Estate (Extras)", shortLabel: "Coming Soon · Real Estate (Extras)" },
+  { slug: "coming-soon-customer-data-platforms", title: "Coming Soon · Customer Data Platforms", shortLabel: "Coming Soon · Customer Data Platforms" },
+  { slug: "coming-soon-gifting-and-direct-mail", title: "Coming Soon · Gifting & Direct Mail", shortLabel: "Coming Soon · Gifting & Direct Mail" },
+  { slug: "coming-soon-document-and-signing", title: "Coming Soon · Document & Signing", shortLabel: "Coming Soon · Document & Signing" },
+  { slug: "coming-soon-helpdesk-extras", title: "Coming Soon · Helpdesk Extras", shortLabel: "Coming Soon · Helpdesk Extras" },
+  { slug: "coming-soon-identity-and-auth", title: "Coming Soon · Identity & Auth", shortLabel: "Coming Soon · Identity & Auth" },
+  { slug: "coming-soon-social-media-extras", title: "Coming Soon · Social Media Extras", shortLabel: "Coming Soon · Social Media Extras" },
+  { slug: "coming-soon-more-crms", title: "Coming Soon · More CRMs", shortLabel: "Coming Soon · More CRMs" },
+  { slug: "coming-soon-more-email-marketing", title: "Coming Soon · More Email Marketing", shortLabel: "Coming Soon · More Email Marketing" },
+  { slug: "coming-soon-product-ux-analytics", title: "Coming Soon · Product / UX Analytics", shortLabel: "Coming Soon · Product / UX Analytics" },
+  { slug: "coming-soon-finance-and-spend", title: "Coming Soon · Finance & Spend", shortLabel: "Coming Soon · Finance & Spend" },
+  { slug: "coming-soon-design-and-creative", title: "Coming Soon · Design & Creative", shortLabel: "Coming Soon · Design & Creative" },
+  { slug: "coming-soon-dev-tools-and-code", title: "Coming Soon · Dev Tools & Code", shortLabel: "Coming Soon · Dev Tools & Code" },
+  { slug: "coming-soon-hr-and-recruiting-extras", title: "Coming Soon · HR & Recruiting Extras", shortLabel: "Coming Soon · HR & Recruiting Extras" },
+  { slug: "coming-soon-events-and-webinars", title: "Coming Soon · Events & Webinars", shortLabel: "Coming Soon · Events & Webinars" },
+  { slug: "coming-soon-security-and-compliance", title: "Coming Soon · Security & Compliance", shortLabel: "Coming Soon · Security & Compliance" },
+  { slug: "coming-soon-ai-coding-and-productivity", title: "Coming Soon · AI Coding & Productivity", shortLabel: "Coming Soon · AI Coding & Productivity" },
+  { slug: "coming-soon-payment-gateways", title: "Coming Soon · Payment Gateways", shortLabel: "Coming Soon · Payment Gateways" },
+  { slug: "coming-soon-whatsapp-and-sms-providers", title: "Coming Soon · WhatsApp & SMS Providers", shortLabel: "Coming Soon · WhatsApp & SMS Providers" },
+  { slug: "coming-soon-scheduling-extras", title: "Coming Soon · Scheduling Extras", shortLabel: "Coming Soon · Scheduling Extras" },
+  { slug: "coming-soon-pm-and-task-extras", title: "Coming Soon · PM & Task Extras", shortLabel: "Coming Soon · PM & Task Extras" },
+  { slug: "coming-soon-retail-restaurant-pos", title: "Coming Soon · Retail / Restaurant POS", shortLabel: "Coming Soon · Retail / Restaurant POS" },
+  { slug: "coming-soon-marketing-attribution", title: "Coming Soon · Marketing Attribution", shortLabel: "Coming Soon · Marketing Attribution" },
+  { slug: "coming-soon-dam-and-brand-assets", title: "Coming Soon · DAM & Brand Assets", shortLabel: "Coming Soon · DAM & Brand Assets" },
+  { slug: "coming-soon-conversation-intelligence", title: "Coming Soon · Conversation Intelligence", shortLabel: "Coming Soon · Conversation Intelligence" },
+  { slug: "coming-soon-people-mgmt-and-engagement", title: "Coming Soon · People Mgmt & Engagement", shortLabel: "Coming Soon · People Mgmt & Engagement" },
 ];
 
 // Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts (merged
-// INTEGRATIONS_CATALOG, 397 entries) — SYNCED_AT 2026-06-11
+// INTEGRATIONS_CATALOG, 630 entries) — SYNCED_AT 2026-06-17
 const INTEGRATIONS: IntegrationRecord[] = [
   // ── Email marketing & CRM sync (7) ──
   { slug: "mailchimp", name: "Mailchimp", category: "email-marketing", description: "Syncs CRM leads and contacts to Mailchimp audiences with a one-way push.", route: "/integrations/mailchimp" },
@@ -161,7 +224,7 @@ const INTEGRATIONS: IntegrationRecord[] = [
 
   // ── Automation & webhooks (5) ──
   { slug: "zapier", name: "Zapier", category: "automation", description: "Connects the CRM to thousands of apps via outbound webhooks and triggers.", route: "/integrations/zapier" },
-  { slug: "make-com", name: "Make.com", category: "automation", description: "Make.com (formerly Integromat) lets you build visual scenarios that connect HelloGrowthCRM to thousands of apps using modules, webhooks, and routers—with branching and error handling beyond simple...", route: "/integrations/make-com" },
+  { slug: "make-com", name: "Make.com", category: "automation", description: "Make.com (formerly Integromat) lets you build visual scenarios that connect HelloGrowthCRM to thousands of apps using modules, webhooks, and routers—with branching and error handling beyond simple one-step automations.", route: "/integrations/make-com" },
   { slug: "integrately", name: "Integrately", category: "automation", description: "One-click automation recipes connecting HelloGrowthCRM webhooks and REST API to popular SaaS tools with minimal setup.", route: "/integrations/integrately" },
   { slug: "google-sheets-sync", name: "Google Sheets Sync", category: "automation", description: "Pushes CRM reports or record lists to Google Sheets on a schedule, or ingests rows as leads via a mapped sheet and webhook.", route: "/integrations/google-sheets-sync" },
   { slug: "hubspot-migration", name: "HubSpot Migration Tool", category: "automation", description: "Guided migration from HubSpot: contacts, companies, deals, owners, and pipelines are mapped into HelloGrowthCRM with deduplication and stage mapping.", route: "/integrations/hubspot-migration" },
@@ -198,7 +261,7 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "bigcommerce", name: "BigCommerce", category: "ecommerce", description: "Connects HelloGrowthCRM with BigCommerce for ecommerce workflows.", status: "live", route: "/integrations/bigcommerce" },
   { slug: "wix", name: "Wix", category: "ecommerce", description: "Connects HelloGrowthCRM with Wix for ecommerce workflows.", status: "live", route: "/integrations/wix" },
 
-  // ── Accounting & finance (7) ──
+  // ── Accounting & finance (9) ──
   { slug: "quickbooks", name: "QuickBooks Online", category: "accounting", description: "Syncs customers, invoices, payments, and items between HelloGrowthCRM and QuickBooks Online for aligned AR and revenue recognition.", route: "/integrations/quickbooks" },
   { slug: "xero", name: "Xero", category: "accounting", description: "Connects contacts and invoices to Xero (UK, AU, NZ, global) so finance and sales share one customer record and payment status.", route: "/integrations/xero" },
   { slug: "freshbooks", name: "FreshBooks", category: "accounting", description: "Creates and updates FreshBooks clients and invoices from CRM accounts and won deals, with payment status sync.", route: "/integrations/freshbooks" },
@@ -206,6 +269,8 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "tally", name: "Tally (India)", category: "accounting", description: "Imports or exports ledger-aligned customer and invoice data with TallyPrime / Tally ERP via bridge or file connector for Indian GST compliance.", route: "/integrations/tally" },
   { slug: "zoho-books", name: "Zoho Books", category: "accounting", description: "Accounting software sync for contacts, estimates, invoices, and payments alongside Zoho ecosystem tools.", route: "/integrations/zoho-books" },
   { slug: "gstin-pan-verification", name: "GSTIN & PAN Verification", category: "accounting", description: "KYC compliance for Indian businesses: validate GSTIN and PAN before high-value deals or invoicing.", route: "/integrations/gstin-pan-verification" },
+  { slug: "quickbooks-online", name: "QuickBooks Online", category: "accounting", description: "Two-way customer & invoice sync with QuickBooks Online.", status: "live", route: "/integrations/quickbooks-online" },
+  { slug: "myob", name: "MYOB", category: "accounting", description: "Two-way customer & invoice sync with MYOB accounting.", status: "live", route: "/integrations/myob" },
 
   // ── Indic AI & India identity (4) ──
   { slug: "sarvam-ai", name: "Sarvam AI", category: "indic-ai-identity", description: "Indic-language voice notes, speech-to-text transcription, and regional-language AI across Hindi, Tamil, Telugu, and 9 more languages.", status: "live", route: "/integrations/sarvam-ai" },
@@ -220,7 +285,7 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "copper-crm-migration", name: "Copper CRM", category: "crm-migration-competitors", description: "Migrate Copper CRM contacts, opportunities, activities, and Google Workspace-linked data to HelloGrowthCRM.", status: "live", route: "/integrations/copper-crm-migration" },
   { slug: "insightly-migration", name: "Insightly", category: "crm-migration-competitors", description: "Migrate Insightly contacts, leads, opportunities, projects, and custom fields to HelloGrowthCRM with relationship mapping preserved.", status: "live", route: "/integrations/insightly-migration" },
 
-  // ── Real estate (58) ──
+  // ── Real estate (65) ──
   { slug: "99acres", name: "99acres", category: "real-estate", description: "Ingests property inquiry leads from the 99acres portal.", route: "/integrations/99acres" },
   { slug: "magicbricks", name: "MagicBricks", category: "real-estate", description: "Syncs leads from MagicBricks listings.", route: "/integrations/magicbricks" },
   { slug: "housing-com", name: "Housing.com", category: "real-estate", description: "Captures leads from Housing.com listings with webhook ingestion.", route: "/integrations/housing-com" },
@@ -279,6 +344,13 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "dotloop", name: "Dotloop", category: "real-estate", description: "Creates a planned Dotloop integration page for HelloGrowthCRM so teams can discover Transaction management workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/dotloop" },
   { slug: "revaluate", name: "Revaluate", category: "real-estate", description: "Creates a planned Revaluate integration page for HelloGrowthCRM so teams can discover Lead intelligence workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/revaluate" },
   { slug: "avail", name: "Avail", category: "real-estate", description: "Creates a planned Avail integration page for HelloGrowthCRM so teams can discover Rental property mgmt workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/avail" },
+  { slug: "home-co-in", name: "Home.co.in", category: "real-estate", description: "India property search portal", status: "live", route: "/integrations/home-co-in" },
+  { slug: "follow-up-boss", name: "Follow Up Boss", category: "real-estate", description: "US real estate CRM & lead management", status: "live", route: "/integrations/follow-up-boss" },
+  { slug: "market-leader", name: "Market Leader", category: "real-estate", description: "US real estate lead generation", status: "live", route: "/integrations/market-leader" },
+  { slug: "rechat", name: "Rechat", category: "real-estate", description: "US real estate marketing platform", status: "live", route: "/integrations/rechat" },
+  { slug: "redx", name: "REDX", category: "real-estate", description: "US real estate lead generation", status: "live", route: "/integrations/redx" },
+  { slug: "smartzip", name: "SmartZip", category: "real-estate", description: "US real estate predictive analytics", status: "live", route: "/integrations/smartzip" },
+  { slug: "offrs", name: "Offrs", category: "real-estate", description: "US real estate seller leads", status: "live", route: "/integrations/offrs" },
 
   // ── Manufacturing & distribution (6) ──
   { slug: "erpnext", name: "ERPNext", category: "manufacturing", description: "Syncs customers, quotations, orders, invoices, items, stock, warehouses, and payment status.", route: "/integrations/erpnext" },
@@ -347,12 +419,14 @@ const INTEGRATIONS: IntegrationRecord[] = [
   // ── Accounting / ERP (1) ──
   { slug: "netsuite", name: "NetSuite", category: "accounting-erp", description: "Connects HelloGrowthCRM with NetSuite for accounting / erp workflows.", status: "live", route: "/integrations/netsuite" },
 
-  // ── Lead Enrichment (5) ──
+  // ── Lead Enrichment (7) ──
   { slug: "apollo", name: "Apollo.io", category: "lead-enrichment", description: "B2B contact enrichment (job title, company, email, LinkedIn)", status: "live", route: "/integrations/apollo" },
   { slug: "clearbit", name: "Clearbit", category: "lead-enrichment", description: "Connects HelloGrowthCRM with Clearbit for lead enrichment workflows.", status: "live", route: "/integrations/clearbit" },
   { slug: "hunter", name: "Hunter.io", category: "lead-enrichment", description: "Email finder by domain + verification", status: "live", route: "/integrations/hunter" },
   { slug: "lusha", name: "Lusha", category: "lead-enrichment", description: "Direct dial + contact enrichment", status: "live", route: "/integrations/lusha" },
   { slug: "zoominfo", name: "ZoomInfo", category: "lead-enrichment", description: "Enterprise B2B intelligence", status: "live", route: "/integrations/zoominfo" },
+  { slug: "hunter-io", name: "Hunter.io", category: "lead-enrichment", description: "Email finder & verification for lead enrichment.", status: "live", route: "/integrations/hunter-io" },
+  { slug: "apollo-io", name: "Apollo.io", category: "lead-enrichment", description: "B2B prospecting & contact enrichment via Apollo.io.", status: "live", route: "/integrations/apollo-io" },
 
   // ── Utility (3) ──
   { slug: "captcha", name: "reCAPTCHA / hCaptcha", category: "utility", description: "Bot protection on public booking / form pages", status: "live", route: "/integrations/captcha" },
@@ -420,13 +494,14 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "finbox", name: "Finbox", category: "indian-banking-and-payment", description: "Creates a planned Finbox integration page for HelloGrowthCRM so teams can discover Lending APIs workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/finbox" },
   { slug: "setu", name: "Setu", category: "indian-banking-and-payment", description: "Creates a planned Setu integration page for HelloGrowthCRM so teams can discover Open banking workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/setu" },
 
-  // ── LATAM (6) ──
+  // ── LATAM (7) ──
   { slug: "mercadolibre", name: "MercadoLibre", category: "latam", description: "Creates a planned MercadoLibre integration page for HelloGrowthCRM so teams can discover latam workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/mercadolibre" },
   { slug: "mercadopago", name: "MercadoPago", category: "latam", description: "Creates a planned MercadoPago integration page for HelloGrowthCRM so teams can discover latam workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/mercadopago" },
   { slug: "picpay", name: "PicPay (Brazil payment)", category: "latam", description: "Creates a planned PicPay (Brazil payment) integration page for HelloGrowthCRM so teams can discover latam workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/picpay" },
   { slug: "pagseguro", name: "PagSeguro", category: "latam", description: "Creates a planned PagSeguro integration page for HelloGrowthCRM so teams can discover latam workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/pagseguro" },
   { slug: "tiendanube", name: "Tiendanube (Argentina ecom)", category: "latam", description: "Creates a planned Tiendanube (Argentina ecom) integration page for HelloGrowthCRM so teams can discover latam workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/tiendanube" },
   { slug: "linio", name: "Linio", category: "latam", description: "Creates a planned Linio integration page for HelloGrowthCRM so teams can discover latam workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/linio" },
+  { slug: "tienda-nube", name: "Tienda Nube", category: "latam", description: "LATAM e-commerce platform", status: "live", route: "/integrations/tienda-nube" },
 
   // ── Middle East (7) ──
   { slug: "hyperpay", name: "HyperPay", category: "middle-east", description: "Creates a planned HyperPay integration page for HelloGrowthCRM so teams can discover middle east workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/hyperpay" },
@@ -615,6 +690,349 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "removes-expired-context", name: "removes expired context", category: "what-customers-see", description: "Creates a planned removes expired context integration page for HelloGrowthCRM so teams can discover what customers see workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/removes-expired-context" },
   { slug: "retries-failed-outbound-webhooks", name: "retries failed outbound webhooks", category: "what-customers-see", description: "Creates a planned retries failed outbound webhooks integration page for HelloGrowthCRM so teams can discover what customers see workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/retries-failed-outbound-webhooks" },
   { slug: "system", name: "system", category: "what-customers-see", description: "Creates a planned system integration page for HelloGrowthCRM so teams can discover what customers see workflows in the public integrations directory.", status: "scaffolded", route: "/integrations/system" },
+
+  // ── Lead Sources (6) ──
+  { slug: "sulekha", name: "Sulekha", category: "lead-sources", description: "Sync leads from Sulekha service marketplace.", status: "live", route: "/integrations/sulekha" },
+  { slug: "naukri", name: "Naukri", category: "lead-sources", description: "Sync candidate enquiries from Naukri.com.", status: "live", route: "/integrations/naukri" },
+  { slug: "classplus", name: "Classplus", category: "lead-sources", description: "Sync coaching/edtech leads from Classplus.", status: "live", route: "/integrations/classplus" },
+  { slug: "tally-so", name: "Tally.so", category: "lead-sources", description: "Receive Tally.so form submissions as CRM leads.", status: "live", route: "/integrations/tally-so" },
+  { slug: "jotform", name: "JotForm", category: "lead-sources", description: "Receive JotForm submissions as leads", status: "live", route: "/integrations/jotform" },
+  { slug: "eventbrite", name: "Eventbrite", category: "lead-sources", description: "Capture event registrations & ticket buyers as leads", status: "live", route: "/integrations/eventbrite" },
+
+  // ── Telephony (1) ──
+  { slug: "airtel", name: "Airtel (SMS & WhatsApp)", category: "telephony", description: "Send SMS and WhatsApp messages via Airtel Business APIs.", status: "live", route: "/integrations/airtel" },
+
+  // ── Scheduling & Video (4) ──
+  { slug: "zoom-meetings", name: "Zoom Meetings", category: "scheduling-and-video", description: "Schedule Zoom meetings from the CRM and store join links on leads/bookings.", status: "live", route: "/integrations/zoom-meetings" },
+  { slug: "google-meet", name: "Google Meet", category: "scheduling-and-video", description: "Auto-generate Google Meet links on bookings and meetings.", status: "live", route: "/integrations/google-meet" },
+  { slug: "acuity-scheduling", name: "Acuity Scheduling", category: "scheduling-and-video", description: "Sync appointments from Squarespace Acuity", status: "live", route: "/integrations/acuity-scheduling" },
+  { slug: "chili-piper", name: "Chili Piper", category: "scheduling-and-video", description: "Inbound lead routing & scheduling", status: "live", route: "/integrations/chili-piper" },
+
+  // ── Email & Inbox (1) ──
+  { slug: "outlook-email", name: "Outlook Email", category: "email-and-inbox", description: "Send and log Outlook/Microsoft 365 email from inside the CRM.", status: "live", route: "/integrations/outlook-email" },
+
+  // ── Messaging (5) ──
+  { slug: "whatsapp-business", name: "WhatsApp Business", category: "messaging", description: "Send templated & session messages via Meta WhatsApp Business Cloud API.", status: "live", route: "/integrations/whatsapp-business" },
+  { slug: "gupshup", name: "Gupshup", category: "messaging", description: "Send WhatsApp messages via Gupshup BSP.", status: "live", route: "/integrations/gupshup" },
+  { slug: "doubletick", name: "DoubleTick", category: "messaging", description: "Send WhatsApp messages, media & interactive replies via DoubleTick BSP.", status: "live", route: "/integrations/doubletick" },
+  { slug: "instagram-dm", name: "Instagram DM", category: "messaging", description: "Receive and reply to Instagram direct messages inside CRM inbox.", status: "live", route: "/integrations/instagram-dm" },
+  { slug: "facebook-messenger", name: "Facebook Messenger", category: "messaging", description: "Receive and reply to Facebook Messenger conversations inside CRM inbox.", status: "live", route: "/integrations/facebook-messenger" },
+
+  // ── CRM Sync (1) ──
+  { slug: "zoho-crm", name: "Zoho CRM", category: "crm-sync", description: "Two-way contact & deal sync with Zoho CRM.", status: "live", route: "/integrations/zoho-crm" },
+
+  // ── Automation & Webhooks (2) ──
+  { slug: "inbound-webhooks", name: "Inbound Webhooks", category: "automation-and-webhooks", description: "Expose a CRM endpoint to receive arbitrary inbound webhook payloads.", status: "live", route: "/integrations/inbound-webhooks" },
+  { slug: "outbound-webhooks", name: "Outbound Webhooks", category: "automation-and-webhooks", description: "Push CRM events (lead/booking/deal updates) to any external URL.", status: "live", route: "/integrations/outbound-webhooks" },
+
+  // ── Commerce & Payments (4) ──
+  { slug: "phonepe-business", name: "PhonePe Business", category: "commerce-and-payments", description: "Capture PhonePe Business payments and link them to leads/customers.", status: "live", route: "/integrations/phonepe-business" },
+  { slug: "square-payments", name: "Square Payments", category: "commerce-and-payments", description: "Capture new Square customers & payments as leads", status: "live", route: "/integrations/square-payments" },
+  { slug: "square-pos", name: "Square POS", category: "commerce-and-payments", description: "Capture in-person Square POS customers & sales as leads", status: "live", route: "/integrations/square-pos" },
+  { slug: "clover", name: "Clover", category: "commerce-and-payments", description: "Sync Clover POS customers & sales as CRM leads.", status: "live", route: "/integrations/clover" },
+
+  // ── Marketing & Email (12) ──
+  { slug: "mailerlite", name: "MailerLite", category: "marketing-and-email", description: "Sync CRM contacts to MailerLite for email campaigns.", status: "live", route: "/integrations/mailerlite" },
+  { slug: "act-on", name: "Act-On", category: "marketing-and-email", description: "B2B marketing automation platform", status: "live", route: "/integrations/act-on" },
+  { slug: "drip", name: "Drip", category: "marketing-and-email", description: "eCommerce CRM & email marketing", status: "live", route: "/integrations/drip" },
+  { slug: "customer-io", name: "Customer.io", category: "marketing-and-email", description: "Behavioral messaging & automation", status: "live", route: "/integrations/customer-io" },
+  { slug: "getresponse", name: "GetResponse", category: "marketing-and-email", description: "Email marketing & automation", status: "live", route: "/integrations/getresponse" },
+  { slug: "kit", name: "Kit (ConvertKit)", category: "marketing-and-email", description: "Creator email marketing platform", status: "live", route: "/integrations/kit" },
+  { slug: "emma", name: "Emma", category: "marketing-and-email", description: "Email marketing platform", status: "live", route: "/integrations/emma" },
+  { slug: "campaign-monitor", name: "Campaign Monitor", category: "marketing-and-email", description: "Email marketing for designers & marketers", status: "live", route: "/integrations/campaign-monitor" },
+  { slug: "omnisend", name: "Omnisend", category: "marketing-and-email", description: "eCommerce email & SMS automation", status: "live", route: "/integrations/omnisend" },
+  { slug: "moosend", name: "Moosend", category: "marketing-and-email", description: "Email marketing & automation", status: "live", route: "/integrations/moosend" },
+  { slug: "sharpspring", name: "SharpSpring", category: "marketing-and-email", description: "Marketing automation & CRM", status: "live", route: "/integrations/sharpspring" },
+  { slug: "mixmax", name: "Mixmax", category: "marketing-and-email", description: "Email productivity for sales teams", status: "live", route: "/integrations/mixmax" },
+
+  // ── Analytics & Attribution (3) ──
+  { slug: "google-ads", name: "Google Ads", category: "analytics-and-attribution", description: "Push Google Ads offline conversions tied to CRM deals.", status: "live", route: "/integrations/google-ads" },
+  { slug: "looker", name: "Looker", category: "analytics-and-attribution", description: "Google Cloud BI & data platform", status: "live", route: "/integrations/looker" },
+  { slug: "power-bi", name: "Power BI", category: "analytics-and-attribution", description: "Microsoft business intelligence platform", status: "live", route: "/integrations/power-bi" },
+
+  // ── Productivity & Documents (6) ──
+  { slug: "google-sheets", name: "Google Sheets", category: "productivity-and-documents", description: "Two-way sync between CRM tables and Google Sheets.", status: "live", route: "/integrations/google-sheets" },
+  { slug: "trello", name: "Trello", category: "productivity-and-documents", description: "Create Trello cards from CRM leads and sync status.", status: "live", route: "/integrations/trello" },
+  { slug: "miro", name: "Miro", category: "productivity-and-documents", description: "Online collaborative whiteboard", status: "live", route: "/integrations/miro" },
+  { slug: "figma", name: "Figma", category: "productivity-and-documents", description: "Collaborative design platform", status: "live", route: "/integrations/figma" },
+  { slug: "pandadoc-cpq", name: "PandaDoc CPQ", category: "productivity-and-documents", description: "Configure, price & quote workflows", status: "live", route: "/integrations/pandadoc-cpq" },
+  { slug: "dropbox-sign", name: "Dropbox Sign", category: "productivity-and-documents", description: "E-signature (formerly HelloSign)", status: "live", route: "/integrations/dropbox-sign" },
+
+  // ── KYC & Compliance (2) ──
+  { slug: "gstin-verification", name: "GSTIN Verification", category: "kyc-and-compliance", description: "Verify Indian GSTIN numbers for KYC.", status: "live", route: "/integrations/gstin-verification" },
+  { slug: "pan-verification", name: "PAN Verification", category: "kyc-and-compliance", description: "Verify Indian PAN numbers for KYC.", status: "live", route: "/integrations/pan-verification" },
+
+  // ── Support (4) ──
+  { slug: "help-scout", name: "Help Scout", category: "support", description: "Two-way ticket & contact sync with Help Scout.", status: "live", route: "/integrations/help-scout" },
+  { slug: "intercom-chat", name: "Intercom Chat", category: "support", description: "Embed Intercom live chat & sync conversations to CRM.", status: "live", route: "/integrations/intercom-chat" },
+  { slug: "groove", name: "Groove", category: "support", description: "Help desk & email management", status: "live", route: "/integrations/groove" },
+  { slug: "freshdesk-support", name: "Freshdesk Support", category: "support", description: "Extended Freshdesk ticket webhook receiver", status: "live", route: "/integrations/freshdesk-support" },
+
+  // ── AI & Transcription (1) ──
+  { slug: "openai-gpt-4o", name: "OpenAI GPT-4o", category: "ai-and-transcription", description: "Use your own OpenAI key for CRM AI features (chat, summarization).", status: "live", route: "/integrations/openai-gpt-4o" },
+
+  // ── Live Chat (1) ──
+  { slug: "crisp-chat", name: "Crisp.chat", category: "live-chat", description: "Embed Crisp live chat & sync conversations to CRM.", status: "live", route: "/integrations/crisp-chat" },
+
+  // ── Other (2) ──
+  { slug: "inoreader", name: "Inoreader", category: "other", description: "Monitor RSS feeds via Inoreader and create CRM leads from new items.", status: "live", route: "/integrations/inoreader" },
+  { slug: "google-maps", name: "Google Maps", category: "other", description: "Configure Google Maps API key for location pickers & map views.", status: "live", route: "/integrations/google-maps" },
+
+  // ── Voice, Call & SMS (4) ──
+  { slug: "tata-tele-business", name: "Tata Tele Business", category: "voice-call-and-sms", description: "India enterprise IVR & cloud telephony", status: "live", route: "/integrations/tata-tele-business" },
+  { slug: "grasshopper", name: "Grasshopper", category: "voice-call-and-sms", description: "Virtual phone system for small business", status: "live", route: "/integrations/grasshopper" },
+  { slug: "mojo-dialer", name: "Mojo Dialer", category: "voice-call-and-sms", description: "Real estate sales prospecting dialer", status: "live", route: "/integrations/mojo-dialer" },
+  { slug: "msg91", name: "MSG91", category: "voice-call-and-sms", description: "India SMS, OTP & messaging API", status: "live", route: "/integrations/msg91" },
+
+  // ── Live Chat & Team Messaging (3) ──
+  { slug: "livechat", name: "LiveChat", category: "live-chat-and-team-messaging", description: "Live chat & help desk platform", status: "live", route: "/integrations/livechat" },
+  { slug: "kommo", name: "Kommo (amoCRM)", category: "live-chat-and-team-messaging", description: "Messenger-based CRM", status: "live", route: "/integrations/kommo" },
+  { slug: "zoho-cliq", name: "Zoho Cliq", category: "live-chat-and-team-messaging", description: "Zoho team messaging & channels", status: "live", route: "/integrations/zoho-cliq" },
+
+  // ── Hospitality & Travel (1) ──
+  { slug: "makemytrip-b2b", name: "MakeMyTrip B2B", category: "hospitality-and-travel", description: "India B2B travel & hotel bookings", status: "live", route: "/integrations/makemytrip-b2b" },
+
+  // ── Food & Beverage / Restaurant (1) ──
+  { slug: "lightspeed", name: "Lightspeed", category: "food-and-beverage-restaurant", description: "Global retail & restaurant POS", status: "live", route: "/integrations/lightspeed" },
+
+  // ── ERP & Manufacturing (3) ──
+  { slug: "sap-business-one", name: "SAP Business One", category: "erp-and-manufacturing", description: "SAP ERP for SMEs", status: "live", route: "/integrations/sap-business-one" },
+  { slug: "odoo", name: "Odoo", category: "erp-and-manufacturing", description: "Open-source ERP & CRM platform", status: "live", route: "/integrations/odoo" },
+  { slug: "dynamics-365", name: "Dynamics 365", category: "erp-and-manufacturing", description: "Microsoft CRM & ERP platform", status: "live", route: "/integrations/dynamics-365" },
+
+  // ── India Payments & Fintech (4) ──
+  { slug: "yodlee", name: "Yodlee", category: "india-payments-and-fintech", description: "Account aggregator & open banking", status: "live", route: "/integrations/yodlee" },
+  { slug: "paytm", name: "Paytm", category: "india-payments-and-fintech", description: "India payment gateway & wallet", status: "live", route: "/integrations/paytm" },
+  { slug: "payu", name: "PayU", category: "india-payments-and-fintech", description: "India payment gateway", status: "live", route: "/integrations/payu" },
+  { slug: "razorpay-apps", name: "Razorpay Apps", category: "india-payments-and-fintech", description: "Razorpay app marketplace integration", status: "live", route: "/integrations/razorpay-apps" },
+
+  // ── India KYC & Government (4) ──
+  { slug: "quikr-leads", name: "Quikr Leads", category: "india-kyc-and-government", description: "India classifieds lead generation", status: "live", route: "/integrations/quikr-leads" },
+  { slug: "olx-leads", name: "OLX Leads", category: "india-kyc-and-government", description: "India classifieds lead generation", status: "live", route: "/integrations/olx-leads" },
+  { slug: "justdial-premium", name: "JustDial Premium", category: "india-kyc-and-government", description: "India local business premium leads", status: "live", route: "/integrations/justdial-premium" },
+  { slug: "rera-compliance", name: "RERA Compliance", category: "india-kyc-and-government", description: "India real estate regulatory compliance", status: "live", route: "/integrations/rera-compliance" },
+
+  // ── South & East Asia (1) ──
+  { slug: "tiktok-shop", name: "TikTok Shop", category: "south-and-east-asia", description: "SEA social commerce platform", status: "live", route: "/integrations/tiktok-shop" },
+
+  // ── AI / LLM (3) ──
+  { slug: "gemini-extensions", name: "Gemini Extensions", category: "ai-llm", description: "Google Gemini AI Extensions", status: "live", route: "/integrations/gemini-extensions" },
+  { slug: "huggingface", name: "HuggingFace", category: "ai-llm", description: "Open-source AI model hub", status: "live", route: "/integrations/huggingface" },
+  { slug: "mistral-ai", name: "Mistral AI", category: "ai-llm", description: "Open & efficient LLM platform", status: "live", route: "/integrations/mistral-ai" },
+
+  // ── iPaaS & Automation (9) ──
+  { slug: "cloudflare-workers", name: "Cloudflare Workers", category: "ipaas-and-automation", description: "Edge compute & serverless platform", status: "live", route: "/integrations/cloudflare-workers" },
+  { slug: "hasura", name: "Hasura", category: "ipaas-and-automation", description: "GraphQL engine with event triggers", status: "live", route: "/integrations/hasura" },
+  { slug: "raycast", name: "Raycast", category: "ipaas-and-automation", description: "macOS productivity launcher", status: "live", route: "/integrations/raycast" },
+  { slug: "alfred", name: "Alfred", category: "ipaas-and-automation", description: "macOS Alfred workflow automation", status: "live", route: "/integrations/alfred" },
+  { slug: "stream-deck", name: "Stream Deck", category: "ipaas-and-automation", description: "Elgato Stream Deck plugin actions", status: "live", route: "/integrations/stream-deck" },
+  { slug: "ifttt", name: "IFTTT", category: "ipaas-and-automation", description: "If-This-Then-That automation", status: "live", route: "/integrations/ifttt" },
+  { slug: "pipedream", name: "Pipedream", category: "ipaas-and-automation", description: "Serverless workflow automation", status: "live", route: "/integrations/pipedream" },
+  { slug: "retool", name: "Retool", category: "ipaas-and-automation", description: "Internal tools & dashboards platform", status: "live", route: "/integrations/retool" },
+  { slug: "bubble", name: "Bubble", category: "ipaas-and-automation", description: "No-code app builder webhooks", status: "live", route: "/integrations/bubble" },
+
+  // ── Lead Enrichment Pro (4) ──
+  { slug: "linkedin-sales-navigator", name: "LinkedIn Sales Navigator", category: "lead-enrichment-pro", description: "LinkedIn B2B prospecting & insights", status: "live", route: "/integrations/linkedin-sales-navigator" },
+  { slug: "zoominfo-engage", name: "ZoomInfo Engage", category: "lead-enrichment-pro", description: "ZoomInfo sales engagement platform", status: "live", route: "/integrations/zoominfo-engage" },
+  { slug: "hunter-io-enrich", name: "Hunter.io Enrich", category: "lead-enrichment-pro", description: "Email finder & enrichment", status: "live", route: "/integrations/hunter-io-enrich" },
+  { slug: "dealhub", name: "DealHub", category: "lead-enrichment-pro", description: "CPQ & sales engagement platform", status: "live", route: "/integrations/dealhub" },
+
+  // ── Maps & Location (5) ──
+  { slug: "mapbox", name: "Mapbox", category: "maps-and-location", description: "Maps & geocoding platform", status: "live", route: "/integrations/mapbox" },
+  { slug: "here-maps", name: "HERE Maps", category: "maps-and-location", description: "HERE geocoding & mapping APIs", status: "live", route: "/integrations/here-maps" },
+  { slug: "tomtom", name: "TomTom", category: "maps-and-location", description: "TomTom maps & geocoding", status: "live", route: "/integrations/tomtom" },
+  { slug: "openstreetmap", name: "OpenStreetMap", category: "maps-and-location", description: "Free Nominatim geocoding (no API key)", status: "live", route: "/integrations/openstreetmap" },
+  { slug: "radar-io", name: "Radar.io", category: "maps-and-location", description: "Geofencing & location platform", status: "live", route: "/integrations/radar-io" },
+
+  // ── NPS & Surveys (1) ──
+  { slug: "usertesting", name: "UserTesting", category: "nps-and-surveys", description: "Human insights & UX research", status: "live", route: "/integrations/usertesting" },
+
+  // ── Files & Storage (1) ──
+  { slug: "google-workspace", name: "Google Workspace", category: "files-and-storage", description: "Google Workspace admin & directory", status: "live", route: "/integrations/google-workspace" },
+
+  // ── Browser & Desktop Extensions (3) ──
+  { slug: "chrome-extension", name: "Chrome Extension", category: "browser-and-desktop-extensions", description: "HelloCRM Chrome browser extension", status: "live", route: "/integrations/chrome-extension" },
+  { slug: "firefox-add-on", name: "Firefox Add-on", category: "browser-and-desktop-extensions", description: "HelloCRM Firefox browser add-on", status: "live", route: "/integrations/firefox-add-on" },
+  { slug: "edge-extension", name: "Edge Extension", category: "browser-and-desktop-extensions", description: "HelloCRM Microsoft Edge extension", status: "live", route: "/integrations/edge-extension" },
+
+  // ── Developer & Auth (6) ──
+  { slug: "auth0", name: "Auth0", category: "developer-and-auth", description: "Single sign-on via Auth0 for tenant users.", status: "live", route: "/integrations/auth0" },
+  { slug: "salesforce-appexchange", name: "Salesforce AppExchange", category: "developer-and-auth", description: "Salesforce AppExchange marketplace listings", status: "live", route: "/integrations/salesforce-appexchange" },
+  { slug: "docusign-marketplace", name: "DocuSign Marketplace", category: "developer-and-auth", description: "DocuSign App Marketplace OAuth & webhook", status: "live", route: "/integrations/docusign-marketplace" },
+  { slug: "notion-template", name: "Notion Template", category: "developer-and-auth", description: "Notion template gallery sync", status: "live", route: "/integrations/notion-template" },
+  { slug: "crisp-marketplace", name: "Crisp Marketplace", category: "developer-and-auth", description: "Crisp app marketplace integration", status: "live", route: "/integrations/crisp-marketplace" },
+  { slug: "justdial-marketplace", name: "JustDial Marketplace", category: "developer-and-auth", description: "JustDial app marketplace receiver", status: "live", route: "/integrations/justdial-marketplace" },
+
+  // ── Coming Soon · eCommerce (1) ──
+  { slug: "ebay", name: "eBay", category: "coming-soon-ecommerce", description: "Sync eBay buyer enquiries & sales as CRM leads.", status: "scaffolded", route: "/integrations/ebay" },
+
+  // ── Coming Soon · Accounting (2) ──
+  { slug: "sage-intacct", name: "Sage Intacct", category: "coming-soon-accounting", description: "Cloud financial management sync", status: "scaffolded", route: "/integrations/sage-intacct" },
+  { slug: "wave", name: "Wave", category: "coming-soon-accounting", description: "Free accounting for small businesses", status: "scaffolded", route: "/integrations/wave" },
+
+  // ── Coming Soon · HR & Payroll (3) ──
+  { slug: "gusto", name: "Gusto", category: "coming-soon-hr-and-payroll", description: "Payroll, benefits & HR for small business", status: "scaffolded", route: "/integrations/gusto" },
+  { slug: "bamboohr", name: "BambooHR", category: "coming-soon-hr-and-payroll", description: "HRIS for small & medium business", status: "scaffolded", route: "/integrations/bamboohr" },
+  { slug: "rippling", name: "Rippling", category: "coming-soon-hr-and-payroll", description: "Unified HR, IT & finance platform", status: "scaffolded", route: "/integrations/rippling" },
+
+  // ── Coming Soon · Real Estate (Extras) (2) ──
+  { slug: "houzz", name: "Houzz", category: "coming-soon-real-estate", description: "Home design & remodeling platform", status: "scaffolded", route: "/integrations/houzz" },
+  { slug: "bridge-interactive", name: "Bridge Interactive", category: "coming-soon-real-estate", description: "Real estate listing API platform", status: "scaffolded", route: "/integrations/bridge-interactive" },
+
+  // ── Coming Soon · Customer Data Platforms (1) ──
+  { slug: "heap", name: "Heap", category: "coming-soon-customer-data-platforms", description: "Digital insights platform", status: "scaffolded", route: "/integrations/heap" },
+
+  // ── Coming Soon · Gifting & Direct Mail (1) ──
+  { slug: "postal-io", name: "Postal.io", category: "coming-soon-gifting-and-direct-mail", description: "Global offline marketing engagement", status: "scaffolded", route: "/integrations/postal-io" },
+
+  // ── Coming Soon · Document & Signing (1) ──
+  { slug: "better-proposals", name: "Better Proposals", category: "coming-soon-document-and-signing", description: "Proposal software for closing deals", status: "scaffolded", route: "/integrations/better-proposals" },
+
+  // ── Coming Soon · Helpdesk Extras (2) ──
+  { slug: "tawk-to", name: "Tawk.to", category: "coming-soon-helpdesk-extras", description: "Free live chat for websites", status: "scaffolded", route: "/integrations/tawk-to" },
+  { slug: "salesforce-service-cloud", name: "Salesforce Service Cloud", category: "coming-soon-helpdesk-extras", description: "Enterprise customer service platform", status: "scaffolded", route: "/integrations/salesforce-service-cloud" },
+
+  // ── Coming Soon · Identity & Auth (1) ──
+  { slug: "okta", name: "Okta", category: "coming-soon-identity-and-auth", description: "Workforce & customer identity platform", status: "scaffolded", route: "/integrations/okta" },
+
+  // ── Coming Soon · Social Media Extras (2) ──
+  { slug: "sprout-social", name: "Sprout Social", category: "coming-soon-social-media-extras", description: "Social media management platform", status: "scaffolded", route: "/integrations/sprout-social" },
+  { slug: "later", name: "Later", category: "coming-soon-social-media-extras", description: "Visual social media planner", status: "scaffolded", route: "/integrations/later" },
+
+  // ── Coming Soon · More CRMs (12) ──
+  { slug: "capsule-crm", name: "Capsule CRM", category: "coming-soon-more-crms", description: "Simple CRM for small business", status: "scaffolded", route: "/integrations/capsule-crm" },
+  { slug: "less-annoying-crm", name: "Less Annoying CRM", category: "coming-soon-more-crms", description: "Simple CRM for small businesses", status: "scaffolded", route: "/integrations/less-annoying-crm" },
+  { slug: "streak", name: "Streak", category: "coming-soon-more-crms", description: "CRM that lives in Gmail", status: "scaffolded", route: "/integrations/streak" },
+  { slug: "bitrix24", name: "Bitrix24", category: "coming-soon-more-crms", description: "Free CRM & collaboration platform", status: "scaffolded", route: "/integrations/bitrix24" },
+  { slug: "nutshell", name: "Nutshell", category: "coming-soon-more-crms", description: "Sales automation CRM", status: "scaffolded", route: "/integrations/nutshell" },
+  { slug: "nimble", name: "Nimble", category: "coming-soon-more-crms", description: "Social CRM for relationship building", status: "scaffolded", route: "/integrations/nimble" },
+  { slug: "sugarcrm", name: "SugarCRM", category: "coming-soon-more-crms", description: "Customer experience platform", status: "scaffolded", route: "/integrations/sugarcrm" },
+  { slug: "vtiger", name: "Vtiger", category: "coming-soon-more-crms", description: "All-in-one CRM platform", status: "scaffolded", route: "/integrations/vtiger" },
+  { slug: "salesflare", name: "Salesflare", category: "coming-soon-more-crms", description: "Intelligent CRM for SMBs", status: "scaffolded", route: "/integrations/salesflare" },
+  { slug: "close", name: "Close", category: "coming-soon-more-crms", description: "Inside sales CRM with built-in calling", status: "scaffolded", route: "/integrations/close" },
+  { slug: "engagebay", name: "EngageBay", category: "coming-soon-more-crms", description: "All-in-one marketing, sales & support", status: "scaffolded", route: "/integrations/engagebay" },
+  { slug: "salesmate", name: "Salesmate", category: "coming-soon-more-crms", description: "Sales CRM & automation platform", status: "scaffolded", route: "/integrations/salesmate" },
+
+  // ── Coming Soon · More Email Marketing (9) ──
+  { slug: "aweber", name: "AWeber", category: "coming-soon-more-email-marketing", description: "Email marketing & autoresponders", status: "scaffolded", route: "/integrations/aweber" },
+  { slug: "sendlane", name: "Sendlane", category: "coming-soon-more-email-marketing", description: "Unified email & SMS automation", status: "scaffolded", route: "/integrations/sendlane" },
+  { slug: "beehiiv", name: "Beehiiv", category: "coming-soon-more-email-marketing", description: "Modern newsletter publishing platform", status: "scaffolded", route: "/integrations/beehiiv" },
+  { slug: "activetrail", name: "ActiveTrail", category: "coming-soon-more-email-marketing", description: "Email & marketing automation", status: "scaffolded", route: "/integrations/activetrail" },
+  { slug: "mailersend", name: "MailerSend", category: "coming-soon-more-email-marketing", description: "Transactional email API", status: "scaffolded", route: "/integrations/mailersend" },
+  { slug: "litmus", name: "Litmus", category: "coming-soon-more-email-marketing", description: "Email design & testing platform", status: "scaffolded", route: "/integrations/litmus" },
+  { slug: "mailjet", name: "Mailjet", category: "coming-soon-more-email-marketing", description: "Email service for marketers & developers", status: "scaffolded", route: "/integrations/mailjet" },
+  { slug: "convertflow", name: "ConvertFlow", category: "coming-soon-more-email-marketing", description: "On-site conversion campaigns", status: "scaffolded", route: "/integrations/convertflow" },
+  { slug: "manychat", name: "ManyChat", category: "coming-soon-more-email-marketing", description: "Chat marketing for FB, IG & SMS", status: "scaffolded", route: "/integrations/manychat" },
+
+  // ── Coming Soon · Product / UX Analytics (8) ──
+  { slug: "hotjar", name: "Hotjar", category: "coming-soon-product-ux-analytics", description: "Heatmaps, recordings & feedback", status: "scaffolded", route: "/integrations/hotjar" },
+  { slug: "logrocket", name: "LogRocket", category: "coming-soon-product-ux-analytics", description: "Frontend monitoring & session replay", status: "scaffolded", route: "/integrations/logrocket" },
+  { slug: "pendo", name: "Pendo", category: "coming-soon-product-ux-analytics", description: "Product analytics & user guidance", status: "scaffolded", route: "/integrations/pendo" },
+  { slug: "userpilot", name: "Userpilot", category: "coming-soon-product-ux-analytics", description: "Product growth & onboarding", status: "scaffolded", route: "/integrations/userpilot" },
+  { slug: "plausible", name: "Plausible", category: "coming-soon-product-ux-analytics", description: "Privacy-friendly web analytics", status: "scaffolded", route: "/integrations/plausible" },
+  { slug: "simple-analytics", name: "Simple Analytics", category: "coming-soon-product-ux-analytics", description: "Privacy-first web analytics", status: "scaffolded", route: "/integrations/simple-analytics" },
+  { slug: "smartlook", name: "Smartlook", category: "coming-soon-product-ux-analytics", description: "Qualitative analytics & recordings", status: "scaffolded", route: "/integrations/smartlook" },
+  { slug: "crazy-egg", name: "Crazy Egg", category: "coming-soon-product-ux-analytics", description: "Heatmaps & A/B testing", status: "scaffolded", route: "/integrations/crazy-egg" },
+
+  // ── Coming Soon · Finance & Spend (7) ──
+  { slug: "brex", name: "Brex", category: "coming-soon-finance-and-spend", description: "Corporate cards & financial software", status: "scaffolded", route: "/integrations/brex" },
+  { slug: "mercury", name: "Mercury", category: "coming-soon-finance-and-spend", description: "Banking built for startups", status: "scaffolded", route: "/integrations/mercury" },
+  { slug: "ramp", name: "Ramp", category: "coming-soon-finance-and-spend", description: "Corporate cards & spend management", status: "scaffolded", route: "/integrations/ramp" },
+  { slug: "bill-com", name: "Bill.com", category: "coming-soon-finance-and-spend", description: "AP & AR automation platform", status: "scaffolded", route: "/integrations/bill-com" },
+  { slug: "expensify", name: "Expensify", category: "coming-soon-finance-and-spend", description: "Expense reports & receipt scanning", status: "scaffolded", route: "/integrations/expensify" },
+  { slug: "stax-payments", name: "Stax Payments", category: "coming-soon-finance-and-spend", description: "Subscription-style payment processing", status: "scaffolded", route: "/integrations/stax-payments" },
+  { slug: "divvy", name: "Divvy", category: "coming-soon-finance-and-spend", description: "Business expense & budget software", status: "scaffolded", route: "/integrations/divvy" },
+
+  // ── Coming Soon · Design & Creative (4) ──
+  { slug: "canva", name: "Canva", category: "coming-soon-design-and-creative", description: "Online graphic design platform", status: "scaffolded", route: "/integrations/canva" },
+  { slug: "sketch", name: "Sketch", category: "coming-soon-design-and-creative", description: "Digital design platform for Mac", status: "scaffolded", route: "/integrations/sketch" },
+  { slug: "invision", name: "InVision", category: "coming-soon-design-and-creative", description: "Digital product design platform", status: "scaffolded", route: "/integrations/invision" },
+  { slug: "adobe-creative-cloud", name: "Adobe Creative Cloud", category: "coming-soon-design-and-creative", description: "Adobe creative suite integration", status: "scaffolded", route: "/integrations/adobe-creative-cloud" },
+
+  // ── Coming Soon · Dev Tools & Code (7) ──
+  { slug: "github", name: "GitHub", category: "coming-soon-dev-tools-and-code", description: "Code hosting & collaboration", status: "scaffolded", route: "/integrations/github" },
+  { slug: "gitlab", name: "GitLab", category: "coming-soon-dev-tools-and-code", description: "DevOps platform & code hosting", status: "scaffolded", route: "/integrations/gitlab" },
+  { slug: "bitbucket", name: "Bitbucket", category: "coming-soon-dev-tools-and-code", description: "Atlassian git code management", status: "scaffolded", route: "/integrations/bitbucket" },
+  { slug: "vercel", name: "Vercel", category: "coming-soon-dev-tools-and-code", description: "Frontend cloud platform", status: "scaffolded", route: "/integrations/vercel" },
+  { slug: "netlify", name: "Netlify", category: "coming-soon-dev-tools-and-code", description: "Web platform for modern apps", status: "scaffolded", route: "/integrations/netlify" },
+  { slug: "circleci", name: "CircleCI", category: "coming-soon-dev-tools-and-code", description: "Continuous integration & delivery", status: "scaffolded", route: "/integrations/circleci" },
+  { slug: "jenkins", name: "Jenkins", category: "coming-soon-dev-tools-and-code", description: "Open-source automation server", status: "scaffolded", route: "/integrations/jenkins" },
+
+  // ── Coming Soon · HR & Recruiting Extras (7) ──
+  { slug: "workday", name: "Workday", category: "coming-soon-hr-and-recruiting-extras", description: "Enterprise HCM & financial platform", status: "scaffolded", route: "/integrations/workday" },
+  { slug: "greenhouse", name: "Greenhouse", category: "coming-soon-hr-and-recruiting-extras", description: "Hiring & applicant tracking", status: "scaffolded", route: "/integrations/greenhouse" },
+  { slug: "lever", name: "Lever", category: "coming-soon-hr-and-recruiting-extras", description: "Talent acquisition platform", status: "scaffolded", route: "/integrations/lever" },
+  { slug: "jobadder", name: "JobAdder", category: "coming-soon-hr-and-recruiting-extras", description: "Recruitment platform & ATS", status: "scaffolded", route: "/integrations/jobadder" },
+  { slug: "bullhorn", name: "Bullhorn", category: "coming-soon-hr-and-recruiting-extras", description: "Staffing & recruiting CRM", status: "scaffolded", route: "/integrations/bullhorn" },
+  { slug: "workable", name: "Workable", category: "coming-soon-hr-and-recruiting-extras", description: "ATS & recruiting platform", status: "scaffolded", route: "/integrations/workable" },
+  { slug: "recruitee", name: "Recruitee", category: "coming-soon-hr-and-recruiting-extras", description: "Collaborative hiring platform", status: "scaffolded", route: "/integrations/recruitee" },
+
+  // ── Coming Soon · Events & Webinars (4) ──
+  { slug: "hopin", name: "Hopin", category: "coming-soon-events-and-webinars", description: "Virtual & hybrid event platform", status: "scaffolded", route: "/integrations/hopin" },
+  { slug: "bizzabo", name: "Bizzabo", category: "coming-soon-events-and-webinars", description: "Event experience platform", status: "scaffolded", route: "/integrations/bizzabo" },
+  { slug: "cvent", name: "Cvent", category: "coming-soon-events-and-webinars", description: "Event management software", status: "scaffolded", route: "/integrations/cvent" },
+  { slug: "zoom-webinars", name: "Zoom Webinars", category: "coming-soon-events-and-webinars", description: "Zoom webinar registration & sync", status: "scaffolded", route: "/integrations/zoom-webinars" },
+
+  // ── Coming Soon · Security & Compliance (4) ──
+  { slug: "vanta", name: "Vanta", category: "coming-soon-security-and-compliance", description: "Automated security compliance", status: "scaffolded", route: "/integrations/vanta" },
+  { slug: "drata", name: "Drata", category: "coming-soon-security-and-compliance", description: "Security & compliance automation", status: "scaffolded", route: "/integrations/drata" },
+  { slug: "securityscorecard", name: "SecurityScorecard", category: "coming-soon-security-and-compliance", description: "Cybersecurity ratings & analytics", status: "scaffolded", route: "/integrations/securityscorecard" },
+  { slug: "onetrust", name: "OneTrust", category: "coming-soon-security-and-compliance", description: "Privacy & data governance", status: "scaffolded", route: "/integrations/onetrust" },
+
+  // ── Coming Soon · AI Coding & Productivity (5) ──
+  { slug: "cursor", name: "Cursor", category: "coming-soon-ai-coding-and-productivity", description: "AI-powered code editor", status: "scaffolded", route: "/integrations/cursor" },
+  { slug: "github-copilot", name: "GitHub Copilot", category: "coming-soon-ai-coding-and-productivity", description: "AI pair programmer from GitHub", status: "scaffolded", route: "/integrations/github-copilot" },
+  { slug: "glean", name: "Glean", category: "coming-soon-ai-coding-and-productivity", description: "Work AI for enterprise search", status: "scaffolded", route: "/integrations/glean" },
+  { slug: "tabnine", name: "Tabnine", category: "coming-soon-ai-coding-and-productivity", description: "AI code assistant for teams", status: "scaffolded", route: "/integrations/tabnine" },
+  { slug: "codeium", name: "Codeium", category: "coming-soon-ai-coding-and-productivity", description: "Free AI coding autocomplete", status: "scaffolded", route: "/integrations/codeium" },
+
+  // ── Coming Soon · Payment Gateways (7) ──
+  { slug: "adyen", name: "Adyen", category: "coming-soon-payment-gateways", description: "Global payment platform", status: "scaffolded", route: "/integrations/adyen" },
+  { slug: "authorize-net", name: "Authorize.net", category: "coming-soon-payment-gateways", description: "Visa payment gateway", status: "scaffolded", route: "/integrations/authorize-net" },
+  { slug: "worldpay", name: "Worldpay", category: "coming-soon-payment-gateways", description: "Global merchant services", status: "scaffolded", route: "/integrations/worldpay" },
+  { slug: "klarna", name: "Klarna", category: "coming-soon-payment-gateways", description: "Buy now, pay later platform", status: "scaffolded", route: "/integrations/klarna" },
+  { slug: "affirm", name: "Affirm", category: "coming-soon-payment-gateways", description: "Buy now, pay later for shoppers", status: "scaffolded", route: "/integrations/affirm" },
+  { slug: "afterpay", name: "Afterpay", category: "coming-soon-payment-gateways", description: "Buy now, pay later platform", status: "scaffolded", route: "/integrations/afterpay" },
+  { slug: "braintree", name: "Braintree", category: "coming-soon-payment-gateways", description: "PayPal-owned payment processor", status: "scaffolded", route: "/integrations/braintree" },
+
+  // ── Coming Soon · WhatsApp & SMS Providers (5) ──
+  { slug: "messagebird", name: "MessageBird", category: "coming-soon-whatsapp-and-sms-providers", description: "Global SMS, voice & WhatsApp", status: "scaffolded", route: "/integrations/messagebird" },
+  { slug: "wati", name: "Wati", category: "coming-soon-whatsapp-and-sms-providers", description: "WhatsApp business messaging", status: "scaffolded", route: "/integrations/wati" },
+  { slug: "aisensy", name: "AiSensy", category: "coming-soon-whatsapp-and-sms-providers", description: "WhatsApp marketing & automation", status: "scaffolded", route: "/integrations/aisensy" },
+  { slug: "interakt", name: "Interakt", category: "coming-soon-whatsapp-and-sms-providers", description: "Send WhatsApp messages via Interakt BSP.", status: "scaffolded", route: "/integrations/interakt" },
+  { slug: "360dialog", name: "360dialog", category: "coming-soon-whatsapp-and-sms-providers", description: "WhatsApp Business Platform partner", status: "scaffolded", route: "/integrations/360dialog" },
+
+  // ── Coming Soon · Scheduling Extras (1) ──
+  { slug: "reclaim-ai", name: "Reclaim.ai", category: "coming-soon-scheduling-extras", description: "AI calendar for tasks & habits", status: "scaffolded", route: "/integrations/reclaim-ai" },
+
+  // ── Coming Soon · PM & Task Extras (2) ──
+  { slug: "todoist", name: "Todoist", category: "coming-soon-pm-and-task-extras", description: "Personal & team task management", status: "scaffolded", route: "/integrations/todoist" },
+  { slug: "things", name: "Things", category: "coming-soon-pm-and-task-extras", description: "Personal task manager for Apple", status: "scaffolded", route: "/integrations/things" },
+
+  // ── Coming Soon · Retail / Restaurant POS (1) ──
+  { slug: "lightspeed-retail", name: "Lightspeed Retail", category: "coming-soon-retail-restaurant-pos", description: "Retail POS & inventory", status: "scaffolded", route: "/integrations/lightspeed-retail" },
+
+  // ── Coming Soon · Marketing Attribution (4) ──
+  { slug: "appsflyer", name: "AppsFlyer", category: "coming-soon-marketing-attribution", description: "Mobile attribution & marketing analytics", status: "scaffolded", route: "/integrations/appsflyer" },
+  { slug: "adjust", name: "Adjust", category: "coming-soon-marketing-attribution", description: "Mobile measurement partner", status: "scaffolded", route: "/integrations/adjust" },
+  { slug: "branch", name: "Branch", category: "coming-soon-marketing-attribution", description: "Mobile linking & attribution", status: "scaffolded", route: "/integrations/branch" },
+  { slug: "singular", name: "Singular", category: "coming-soon-marketing-attribution", description: "Unified marketing analytics", status: "scaffolded", route: "/integrations/singular" },
+
+  // ── Coming Soon · DAM & Brand Assets (3) ──
+  { slug: "bynder", name: "Bynder", category: "coming-soon-dam-and-brand-assets", description: "Digital asset management", status: "scaffolded", route: "/integrations/bynder" },
+  { slug: "brandfolder", name: "Brandfolder", category: "coming-soon-dam-and-brand-assets", description: "Brand asset management platform", status: "scaffolded", route: "/integrations/brandfolder" },
+  { slug: "frontify", name: "Frontify", category: "coming-soon-dam-and-brand-assets", description: "Brand management platform", status: "scaffolded", route: "/integrations/frontify" },
+
+  // ── Coming Soon · Conversation Intelligence (4) ──
+  { slug: "otter-ai", name: "Otter.ai", category: "coming-soon-conversation-intelligence", description: "AI meeting transcription & notes", status: "scaffolded", route: "/integrations/otter-ai" },
+  { slug: "fireflies-ai", name: "Fireflies.ai", category: "coming-soon-conversation-intelligence", description: "AI notetaker for meetings", status: "scaffolded", route: "/integrations/fireflies-ai" },
+  { slug: "gong", name: "Gong", category: "coming-soon-conversation-intelligence", description: "Revenue intelligence platform", status: "scaffolded", route: "/integrations/gong" },
+  { slug: "chorus-ai", name: "Chorus.ai", category: "coming-soon-conversation-intelligence", description: "ZoomInfo conversation analytics", status: "scaffolded", route: "/integrations/chorus-ai" },
+
+  // ── Coming Soon · People Mgmt & Engagement (3) ──
+  { slug: "lattice", name: "Lattice", category: "coming-soon-people-mgmt-and-engagement", description: "Performance & engagement platform", status: "scaffolded", route: "/integrations/lattice" },
+  { slug: "officevibe", name: "Officevibe", category: "coming-soon-people-mgmt-and-engagement", description: "Employee engagement surveys", status: "scaffolded", route: "/integrations/officevibe" },
+  { slug: "range", name: "Range", category: "coming-soon-people-mgmt-and-engagement", description: "Async team check-ins", status: "scaffolded", route: "/integrations/range" },
 ];
 
 function categoryTitle(slug: string): string {
@@ -637,7 +1055,7 @@ export const integrationsList = defineTool({
   definition: {
     name: "integrations_list",
     description:
-      "List the HelloGrowthCRM integrations catalog mirrored from hellogrowthcrm.com/integrations (397 documented entries across 55 categories; 427+ total apps reachable incl. Zapier). Filterable by category and keyword.",
+      "List the HelloGrowthCRM integrations catalog mirrored from hellogrowthcrm.com/integrations (630 documented entries across 116 categories; 630+ total apps reachable incl. Zapier). Filterable by category and keyword.",
     inputSchema: {
       type: "object",
       properties: {
