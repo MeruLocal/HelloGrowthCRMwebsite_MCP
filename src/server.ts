@@ -225,6 +225,9 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
   return server;
 }
 
+const GOOGLE_SITE_VERIFICATION_PATH = "/google7c8140a495901343.html";
+const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a495901343.html";
+
 class IpRateLimiter {
   private readonly windowMs: number;
   private readonly maxRequests: number;
@@ -447,6 +450,18 @@ export async function runServer(): Promise<void> {
     // OpenAPI spec for the HelloGrowthCRM CRM tools — importable as ChatGPT GPT
     // Actions. Served as a static document (not rate-limited) with permissive
     // CORS so browser-based importers can fetch it.
+    if (url.pathname === GOOGLE_SITE_VERIFICATION_PATH) {
+      if (req.method === "GET") {
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "public, max-age=300",
+        }).end(`${GOOGLE_SITE_VERIFICATION_BODY}\n`);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET" }).end("Method not allowed");
+      return;
+    }
+
     if (url.pathname === "/openapi.json") {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
