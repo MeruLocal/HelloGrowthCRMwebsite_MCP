@@ -228,6 +228,7 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
 const GOOGLE_SITE_VERIFICATION_PATH = "/google7c8140a495901343.html";
 const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a495901343.html";
 const GOOGLE_TAG_ID = "G-TRJT49XKH5";
+const AHREFS_ANALYTICS_KEY = "typKHgOUagJygUMAlJyQKA";
 const HOME_PAGE_HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -241,6 +242,13 @@ const HOME_PAGE_HTML = `<!doctype html>
     gtag('js', new Date());
 
     gtag('config', '${GOOGLE_TAG_ID}');
+  </script>
+  <script>
+    var ahrefs_analytics_script = document.createElement('script');
+    ahrefs_analytics_script.async = true;
+    ahrefs_analytics_script.src = 'https://analytics.ahrefs.com/analytics.js';
+    ahrefs_analytics_script.setAttribute('data-key', '${AHREFS_ANALYTICS_KEY}');
+    document.getElementsByTagName('head')[0].appendChild(ahrefs_analytics_script);
   </script>
 </head>
 <body>
