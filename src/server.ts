@@ -227,6 +227,30 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
 
 const GOOGLE_SITE_VERIFICATION_PATH = "/google7c8140a495901343.html";
 const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a495901343.html";
+const GOOGLE_TAG_ID = "G-TRJT49XKH5";
+const HOME_PAGE_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HelloGrowthCRM MCP Server</title>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', '${GOOGLE_TAG_ID}');
+  </script>
+</head>
+<body>
+  <main>
+    <h1>HelloGrowthCRM MCP Server</h1>
+    <p>MCP Bot Crawler - connect via the Streamable HTTP endpoint at <code>/mcp</code>.</p>
+  </main>
+</body>
+</html>
+`;
 
 class IpRateLimiter {
   private readonly windowMs: number;
@@ -485,9 +509,10 @@ export async function runServer(): Promise<void> {
     }
 
     if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }).end(
-        "MCP Bot Crawler — connect via the Streamable HTTP endpoint at /mcp"
-      );
+      res.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=300",
+      }).end(HOME_PAGE_HTML);
       return;
     }
 
