@@ -6,7 +6,10 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // src/lib/india-tool-pages.ts, and src/lib/seo-content-tool-pages.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
-const COMPARISONS = [
+// Comparison pages. Most live under /compare/<slug>; entries with an explicit
+// `path` are standalone top-level comparison pages (e.g. /crm-vs-excel).
+// SYNCED_AT 2026-07-08 (verified against website master)
+const COMPARISONS: Array<{ slug: string; name: string; path?: string }> = [
   { slug: "hubspot", name: "HubSpot" },
   { slug: "salesforce", name: "Salesforce" },
   { slug: "pipedrive", name: "Pipedrive" },
@@ -21,6 +24,8 @@ const COMPARISONS = [
   { slug: "hellocrm-vs-pipedrive", name: "Pipedrive (alternate)" },
   { slug: "best-crm-for-small-business", name: "Best CRM for Small Business" },
   { slug: "leadsquared", name: "LeadSquared" },
+  { slug: "crm-vs-excel", name: "CRM vs Excel", path: "/crm-vs-excel" },
+  { slug: "crm-vs-google-sheets", name: "CRM vs Google Sheets", path: "/crm-vs-google-sheets" },
 ];
 
 const INDUSTRIES = [
@@ -30,10 +35,12 @@ const INDUSTRIES = [
   "Professional Services", "Non-Profit", "Technology", "Media", "Consulting",
 ];
 
-// All 118 free tools — exact titles from ToolsHub.tsx + india-tool-pages.ts + seo-content-tool-pages.ts
+// All 119 free tools — exact titles from ToolsHub.tsx + india-tool-pages.ts + seo-content-tool-pages.ts
+// SYNCED_AT 2026-07-08
 const TOOLS_PAGES: Array<{ slug: string; title: string; desc: string; category: string }> = [
   // ── Pipeline & Revenue Ops ─────────────────────────────────────────────────
   { slug: "pipeline-health-score", title: "Pipeline Health Score", desc: "Grade your pipeline health in 2 minutes. Get a score and fix checklist.", category: "ops" },
+  { slug: "lead-leakage-audit", title: "Lead-Leakage Audit", desc: "Score how much revenue leaks from uncontacted leads, slow response, and weak follow-up.", category: "ops" },
   { slug: "sales-roi-calculator", title: "Sales ROI Calculator", desc: "Calculate the revenue impact of improving your sales process.", category: "ops" },
   { slug: "crm-roi-calculator", title: "CRM ROI Calculator", desc: "Calculate the revenue impact of adopting a CRM for your sales team.", category: "ops" },
   { slug: "crm-value-calculator", title: "CRM Value Calculator", desc: "Estimate how much revenue poor follow-up, manual work, and low win rates are costing your team.", category: "ops" },
@@ -303,7 +310,7 @@ export const contentGetComparison = defineTool({
   async handle(args) {
     const comp = COMPARISONS.find((c) => c.slug === args.slug);
     if (!comp) return fail(`Comparison "${args.slug}" not found. Use content_list_comparisons to see all slugs.`);
-    return ok({ ...comp, url: `https://hellogrowthcrm.com/compare/${comp.slug}` });
+    return ok({ ...comp, url: `https://hellogrowthcrm.com${comp.path ?? `/compare/${comp.slug}`}` });
   },
 });
 
@@ -317,7 +324,7 @@ export const contentListComparisons = defineTool({
   async handle(_args) {
     return ok({
       count: COMPARISONS.length,
-      comparisons: COMPARISONS.map((c) => ({ ...c, url: `https://hellogrowthcrm.com/compare/${c.slug}` })),
+      comparisons: COMPARISONS.map((c) => ({ ...c, url: `https://hellogrowthcrm.com${c.path ?? `/compare/${c.slug}`}` })),
     });
   },
 });
@@ -348,7 +355,7 @@ export const contentListTools = defineTool({
   }),
   definition: {
     name: "content_list_tools",
-    description: `List all 118 free tools and calculators on hellogrowthcrm.com. Filterable by keyword and category (ai, communication, ops, free).`,
+    description: `List all 119 free tools and calculators on hellogrowthcrm.com. Filterable by keyword and category (ai, communication, ops, free).`,
     inputSchema: {
       type: "object",
       properties: {

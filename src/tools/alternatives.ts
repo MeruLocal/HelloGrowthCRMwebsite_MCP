@@ -3,17 +3,17 @@ import { defineTool, fail, ok } from "./tool-types.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static mirror data — READ-MIRROR of the live website. Never invent entries.
-// Source: hellocrmwebsite/src/lib/alternatives-shortlist.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/lib/switch-data.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/lib/wa-alternatives-data.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/alternatives-shortlist.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/switch-data.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/wa-alternatives-data.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-07-08
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+const SYNCED_AT = "2026-07-08"; // last verified against website master
 const SITE = "https://hellogrowthcrm.com";
 
 // ── Standalone *-alternative page routes under src/app/(public)/ ─────────────
-// Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-07-08
 const ALTERNATIVE_PAGES: Array<{ route: string; competitor: string; note?: string }> = [
   { route: "/agile-crm-alternative", competitor: "Agile CRM" },
   { route: "/aisensy-alternative", competitor: "AiSensy" },
@@ -41,7 +41,7 @@ const ALTERNATIVE_PAGES: Array<{ route: string; competitor: string; note?: strin
 ];
 
 // ── Curated "best alternatives" shortlists (SEO pages) ───────────────────────
-// Source: hellocrmwebsite/src/lib/alternatives-shortlist.ts (ALTERNATIVES_SHORTLIST) — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/alternatives-shortlist.ts (ALTERNATIVES_SHORTLIST) — SYNCED_AT 2026-07-08
 type AlternativePick = { name: string; blurb: string; isUs?: boolean };
 
 const ALTERNATIVES_SHORTLIST: Record<string, { competitor: string; route: string | null; picks: AlternativePick[] }> = {
@@ -335,7 +335,7 @@ const ALTERNATIVES_SHORTLIST: Record<string, { competitor: string; route: string
 };
 
 // ── WhatsApp-CRM alternatives detail (per-competitor pages) ──────────────────
-// Source: hellocrmwebsite/src/lib/wa-alternatives-data.ts (waAlternatives) — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/wa-alternatives-data.ts (waAlternatives) — SYNCED_AT 2026-07-08
 // faqQuestions mirrors faq questions only (answers summarised away; full answers on the live page).
 type WaAlternativeDetail = {
   slug: string;
@@ -509,7 +509,7 @@ const WA_ALTERNATIVES: WaAlternativeDetail[] = [
 ];
 
 // ── /switch-from-* migration guides ──────────────────────────────────────────
-// Source: hellocrmwebsite/src/lib/switch-data.ts (switchCRMs, all 22 entries) — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/switch-data.ts (switchCRMs, all 22 entries) — SYNCED_AT 2026-07-08
 // Mirrored fields: slug, name, h1, tagline, reasons (pain points), featureRows
 // (feature comparison), migrationSteps (key steps incl. data mapped), verdict.
 // faqQuestions mirrors faq questions only; longform body prose summarised away.
@@ -671,15 +671,15 @@ const SWITCH_GUIDES: SwitchGuide[] = [
     slug: "leadsquared",
     name: "LeadSquared",
     h1: "Switch from LeadSquared to HelloGrowthCRM",
-    tagline: "Cut your CRM bill by 96%. Get native WhatsApp, AI scoring, and zero implementation complexity.",
+    tagline: "Cut your CRM bill by 64%. Get native WhatsApp, AI scoring, and zero implementation complexity.",
     reasons: [
-      { title: "₹99 vs ₹2,500 per user", desc: "HelloGrowthCRM includes AI lead scoring, WhatsApp CRM, and a built-in dialer at ₹99/user/month — 25x cheaper than LeadSquared's entry plan." },
+      { title: "₹899 vs ₹2,500 per user", desc: "HelloGrowthCRM includes AI lead scoring, WhatsApp CRM, and a built-in dialer at ₹899/user/month — about 2.8x cheaper than LeadSquared's entry plan." },
       { title: "Live in 15 minutes — no implementation team", desc: "LeadSquared requires weeks of setup with an implementation partner. HelloGrowthCRM is self-serve and live in under 15 minutes." },
       { title: "Native WhatsApp — not a third-party add-on", desc: "LeadSquared's WhatsApp is a third-party integration that breaks. HelloGrowthCRM's WhatsApp is fully native — conversations link directly to leads and deals." },
-      { title: "AI lead scoring in every plan", desc: "LeadSquared gates its best AI features behind enterprise tiers. HelloGrowthCRM includes AI lead scoring from ₹99/user/month with no upgrade required." },
+      { title: "AI lead scoring in every plan", desc: "LeadSquared gates its best AI features behind enterprise tiers. HelloGrowthCRM includes AI lead scoring from ₹899/user/month with no upgrade required." },
     ],
     featureRows: [
-      ["Pricing", "From ₹99/user/month — all features included", "Basic ₹2,500/user/month; Enterprise ₹8,000+/user/month"],
+      ["Pricing", "From ₹899/user/month — all features included", "Basic ₹2,500/user/month; Enterprise ₹8,000+/user/month"],
       ["Free plan", "Yes — up to 200 leads, forever", "No free plan"],
       ["Setup time", "15 minutes — no implementation partner", "Weeks with paid implementation team"],
       ["WhatsApp CRM", "Native — zero setup, full pipeline integration", "Third-party integration — separate configuration"],
@@ -755,7 +755,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["WhatsApp CRM", "Native — no third-party setup", "Requires third-party integration"],
       ["AI lead scoring", "Included in all plans", "Dynamics 365 Copilot — additional cost"],
       ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
-      ["India pricing (INR)", "₹99/user/month — GST-inclusive", "USD only — no INR pricing"],
+      ["India pricing (INR)", "₹899/user/month — GST-inclusive", "USD only — no INR pricing"],
       ["Managed RevOps", "Growth Engine included — from $1,499/month", "Requires certified Microsoft partner"],
     ],
     migrationSteps: [
@@ -791,7 +791,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Email sequences", "Multi-step with AI drafting", "Basic email tracking only"],
       ["Pricing", "From ₹899/user/month — all features", "From $9/user/month — Google Workspace required"],
       ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
-      ["India/INR pricing", "₹99/user/month", "USD only"],
+      ["India/INR pricing", "₹899/user/month", "USD only"],
     ],
     migrationSteps: [
       "Export from Copper: Settings → Data → Export. Download People, Companies, and Opportunities as CSV files.",
@@ -826,7 +826,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Email sequences", "Multi-step with AI drafting", "Basic email automation"],
       ["Sales forecasting", "AI-powered", "Manual / basic"],
       ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
-      ["India/INR pricing", "₹99/user/month", "USD only"],
+      ["India/INR pricing", "₹899/user/month", "USD only"],
     ],
     migrationSteps: [
       "Export from Insightly: Reports → Data Exports. Download Contacts, Organizations, Opportunities, and Tasks as CSV files.",
@@ -848,7 +848,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
     h1: "Switch from vTiger to HelloGrowthCRM",
     tagline: "vTiger was built for 2004. Your sales team needs a 2026 CRM.",
     reasons: [
-      { title: "10x Cheaper, More Features Included", desc: "vTiger One charges ₹3,500/user/month. HelloGrowthCRM is ₹99/user/month with AI scoring, WhatsApp, and dialer included — not as paid add-ons." },
+      { title: "About 4x Cheaper, More Features Included", desc: "vTiger One charges ₹3,500/user/month. HelloGrowthCRM is ₹899/user/month with AI scoring, WhatsApp, and dialer included — not as paid add-ons." },
       { title: "Native WhatsApp — No Add-Ons", desc: "vTiger requires a third-party WhatsApp connector that breaks with every vTiger update. HelloGrowthCRM's WhatsApp integration is native, always on, and included." },
       { title: "15-Minute Setup vs Months of Customisation", desc: "vTiger is built for IT teams to configure over weeks. HelloGrowthCRM works out of the box — pipeline, automation, and WhatsApp configured in one onboarding session." },
       { title: "Tally Sync Built In", desc: "vTiger has no Tally integration. HelloGrowthCRM syncs customer records, invoice status, and outstanding balances with Tally — critical for Indian SMBs." },
@@ -861,7 +861,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Mobile App Quality", "Modern, fast", "Dated, slow"],
       ["Onboarding Time", "15 minutes", "Weeks of customisation"],
       ["India Support (IST)", "Yes, dedicated", "Limited"],
-      ["Base Price (India)", "₹99/user/month", "₹3,500/user/month"],
+      ["Base Price (India)", "₹899/user/month", "₹3,500/user/month"],
     ],
     migrationSteps: [
       "Export from vTiger: Go to vTiger Settings → Data Management → Export. Export Contacts, Organisations, Leads, and Deals as CSV files. This takes about 10 minutes.",
@@ -928,7 +928,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["WhatsApp Business API", "Native, included", "Not available"],
       ["Built-in Sales Dialer", "Yes", "Yes"],
       ["Tally Integration", "Yes", "Not available"],
-      ["INR / Local Pricing", "₹99/user/month", "USD only, $49+/user"],
+      ["INR / Local Pricing", "₹899/user/month", "USD only, $49+/user"],
       ["Multilingual (Hindi etc.)", "Yes", "English only"],
       ["Free Plan", "200 contacts forever", "No free plan"],
       ["India Data Hosting", "Available", "US-only"],
@@ -1025,7 +1025,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
     reasons: [
       { title: "Built for sales teams, not agencies", desc: "GoHighLevel's sub-account model and funnel builder are designed for agencies managing client campaigns. HelloGrowthCRM is built for sales reps — pipeline, leads, calling, and WhatsApp in one focused tool." },
       { title: "Indian integrations out of the box", desc: "GoHighLevel has no IndiaMART, JustDial, or Razorpay integrations. HelloGrowthCRM captures leads directly from IndiaMART and JustDial and syncs payments via Razorpay — essential for Indian SMBs." },
-      { title: "Transparent per-user pricing", desc: "GoHighLevel charges $97–$297/month flat regardless of team size — expensive for small teams and confusing to scale. HelloGrowthCRM is ₹99/user/month with no hidden per-location or per-sub-account fees." },
+      { title: "Transparent per-user pricing", desc: "GoHighLevel charges $97–$297/month flat regardless of team size — expensive for small teams and confusing to scale. HelloGrowthCRM is ₹899/user/month with no hidden per-location or per-sub-account fees." },
       { title: "15-minute setup without an onboarding consultant", desc: "GoHighLevel's learning curve takes weeks — funnels, workflows, triggers, sub-accounts. HelloGrowthCRM has a working sales pipeline in 15 minutes with guided onboarding." },
     ],
     featureRows: [
@@ -1035,7 +1035,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["AI lead scoring", "Included in all plans", "Not available natively"],
       ["Native WhatsApp CRM", "Yes — included", "Via WhatsApp integration (US-centric)"],
       ["Built-in dialer", "Yes — click-to-call with AI summaries", "Yes — US/Canada VoIP focused"],
-      ["Pricing", "From ₹99/user/month", "$97–$297/month flat (not per-user)"],
+      ["Pricing", "From ₹899/user/month", "$97–$297/month flat (not per-user)"],
       ["Setup time", "15 minutes", "Days to weeks with full configuration"],
     ],
     migrationSteps: [
@@ -1070,7 +1070,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["AI lead scoring", "Included in all plans", "Contact scoring — email engagement only"],
       ["Pricing model", "Per user — unlimited contacts", "Per contact tier — price jumps at thresholds"],
       ["Pipeline management depth", "Kanban + AI forecasting + deal health", "Basic deal CRM — limited pipeline views"],
-      ["India / INR pricing", "₹99/user/month", "USD only — no INR pricing"],
+      ["India / INR pricing", "₹899/user/month", "USD only — no INR pricing"],
       ["Free plan", "Yes — 200 leads forever", "14-day trial only"],
     ],
     migrationSteps: [
@@ -1091,22 +1091,22 @@ const SWITCH_GUIDES: SwitchGuide[] = [
     slug: "keap",
     name: "Keap",
     h1: "Switch from Keap to HelloGrowthCRM",
-    tagline: "Keap charges $299/month for 2 users. HelloGrowthCRM costs ₹99/user/month with more features.",
+    tagline: "Keap charges $299/month for 2 users. HelloGrowthCRM costs ₹899/user/month with more features.",
     reasons: [
-      { title: "97% cheaper with a better feature set", desc: "Keap Pro costs $299/month for 2 users — $149.50 per user. HelloGrowthCRM includes AI lead scoring, a built-in dialer, and WhatsApp from ₹99/user/month. A 5-person team saves over $8,000/year." },
+      { title: "93% cheaper with a better feature set", desc: "Keap Pro costs $299/month for 2 users — $149.50 per user. HelloGrowthCRM includes AI lead scoring, a built-in dialer, and WhatsApp from ₹899/user/month. A 5-person team saves over $8,000/year." },
       { title: "Built for Indian SMBs — not just US small businesses", desc: "Keap is designed exclusively for US small businesses — USD pricing, US phone integrations, no IndiaMART or JustDial, no Tally or GST compliance. HelloGrowthCRM is built for Indian markets with local integrations included." },
       { title: "Native WhatsApp — the channel Keap doesn't have", desc: "Keap has no WhatsApp support. HelloGrowthCRM includes native two-way WhatsApp with broadcast campaigns, automation sequences, and all conversations linked to the lead record." },
       { title: "Simple automation without a certification required", desc: "Keap's Campaign Builder is powerful but famously steep. Many teams hire Keap-certified consultants just to set up basic automations. HelloGrowthCRM's automation builder is visual, intuitive, and requires no external help." },
     ],
     featureRows: [
-      ["Pricing", "From ₹99/user/month — all features", "$299/month for 2 users ($149.50/user)"],
+      ["Pricing", "From ₹899/user/month — all features", "$299/month for 2 users ($149.50/user)"],
       ["WhatsApp CRM", "Native — two-way inbox, broadcasts", "Not available"],
       ["AI lead scoring", "Included in all plans", "Not available"],
       ["Built-in dialer", "Yes — click-to-call, AI summaries", "US/Canada calling — additional cost"],
       ["India integrations (IndiaMART, Tally)", "Yes — native", "Not available"],
       ["Setup complexity", "15 minutes — no consultant needed", "Complex — often requires certified partner"],
       ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
-      ["INR pricing", "₹99/user/month", "USD only"],
+      ["INR pricing", "₹899/user/month", "USD only"],
     ],
     migrationSteps: [
       "Export from Keap: go to Contacts → Export → All Contacts to CSV. Export Deals and Opportunities separately under Reports → Exports.",
@@ -1140,7 +1140,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Pipeline management", "Kanban + list + AI deal forecasting", "Kanban — basic pipeline"],
       ["Lead enrichment", "Yes — AI enrichment from multiple signals", "Not available"],
       ["Managed RevOps", "Growth Engine — dedicated specialist", "Not available"],
-      ["India pricing (INR)", "₹99/user/month", "USD only — $15+/user/month"],
+      ["India pricing (INR)", "₹899/user/month", "USD only — $15+/user/month"],
       ["IndiaMART / JustDial integration", "Yes — native lead capture", "Not available"],
     ],
     migrationSteps: [
@@ -1204,7 +1204,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       { title: "WhatsApp-first follow-up", desc: "Two-way WhatsApp conversations, templates, and follow-up sequences live directly on the lead and deal timeline." },
     ],
     featureRows: [
-      ["Pricing", "From Rs.99/user/month, free plan available", "Higher paid tiers for growing teams"],
+      ["Pricing", "From Rs.899/user/month, free plan available", "Higher paid tiers for growing teams"],
       ["WhatsApp CRM", "Native two-way WhatsApp plus sequences", "WhatsApp support available"],
       ["Built-in dialer", "Included with call logging and summaries", "Often requires separate telephony setup"],
       ["AI lead scoring", "Included", "Limited AI-led prioritisation"],
@@ -1302,7 +1302,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
 ];
 
 // Switch pages that exist as standalone routes but are NOT driven by switch-data.ts.
-// Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-07-08
 const SWITCH_PAGE_ONLY: Array<{ slug: string; competitor: string; route: string }> = [
   { slug: "excel", competitor: "Excel / Spreadsheets", route: "/switch-from-excel" },
   { slug: "hubspot", competitor: "HubSpot", route: "/switch-from-hubspot" },

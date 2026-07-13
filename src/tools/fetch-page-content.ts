@@ -32,6 +32,18 @@ export interface ExtractedPage {
   text: string;
 }
 
+/**
+ * Minimum readable characters a candidate region must contain before we trust
+ * it as "the content". Frameworks that stream HTML (e.g. Next.js App Router
+ * with Suspense/PPR) ship an *empty <main> shell* in the initial markup and
+ * deliver the real content later in the document inside hidden elements
+ * (`<div hidden id="S:0">…`). Preferring <main> unconditionally therefore
+ * extracts nothing — the exact bug observed live on hellogrowthcrm.com where
+ * every page returned text: "" while the full 19k chars of content sat in the
+ * <body> outside <main>.
+ */
+const MIN_REGION_TEXT_CHARS = 200;
+
 /** Strip an HTML document down to title, meta, headings, links, and readable text. */
 export function extract(html: string, baseUrl: string): ExtractedPage {
   const pick = (re: RegExp): string => (html.match(re)?.[1] ?? "").trim();
@@ -45,16 +57,44 @@ export function extract(html: string, baseUrl: string): ExtractedPage {
       ),
     );
 
-  // Prefer <main>; fall back to <body>; finally the whole doc.
-  const main =
-    pick(/<main[^>]*>([\s\S]*?)<\/main>/i) ||
-    pick(/<body[^>]*>([\s\S]*?)<\/body>/i) ||
-    html;
+  const stripRegion = (region: string): string =>
+    region
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
 
-  const stripped = main
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
+  const textOf = (region: string): string =>
+    stripRegion(region)
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // Prefer <main>; fall back to <body>; finally the whole doc — but only
+  // accept a region if it actually contains readable text. A streamed shell
+  // <main> (Suspense fallback) is skipped in favour of the full <body>,
+  // which includes the streamed hidden content divs.
+  const candidates = [
+    pick(/<main[^>]*>([\s\S]*?)<\/main>/i),
+    pick(/<body[^>]*>([\s\S]*?)<\/body>/i),
+    html,
+  ].filter(Boolean);
+
+  let main = candidates[candidates.length - 1] ?? html;
+  let bestLen = -1;
+  for (const candidate of candidates) {
+    const len = textOf(candidate).length;
+    if (len >= MIN_REGION_TEXT_CHARS) {
+      main = candidate;
+      break;
+    }
+    if (len > bestLen) {
+      bestLen = len;
+      main = candidate;
+    }
+  }
+
+  const stripped = stripRegion(main);
 
   const headings = [...stripped.matchAll(/<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi)]
     .flatMap((m) => {

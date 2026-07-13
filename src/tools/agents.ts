@@ -10,7 +10,7 @@ import { defineTool, ok, fail } from "./tool-types.js";
 //   PostCallAgentPage.tsx, DealRiskAgentPage.tsx (per-agent taglines,
 //   capabilities, how-it-works steps, FAQs) — SYNCED_AT 2026-06-11
 // Source: hellocrmwebsite/src/views/agentic/MCPPage.tsx (MCP Connector hero)
-//   — SYNCED_AT 2026-06-11
+//   — SYNCED_AT 2026-07-08
 // Source: hellocrmwebsite/src/app/(public)/agentic-ai/[slug]/page.tsx
 //   (AGENTIC_ALIAS_PAGES titles, descriptions, keywords, SEO section headings)
 //   — SYNCED_AT 2026-06-11
@@ -20,13 +20,13 @@ import { defineTool, ok, fail } from "./tool-types.js";
 //   — SYNCED_AT 2026-06-11
 // Source: hellocrmwebsite/src/views/agentic/VsAgentforcePage.tsx, VsBreezePage.tsx,
 //   VsCopilotPage.tsx, VsZiaPage.tsx (comparison headlines + hero positioning)
-//   — SYNCED_AT 2026-06-11
+//   — SYNCED_AT 2026-07-08
 //
 // This is a READ-MIRROR: data is copied verbatim from website files (long FAQ
 // answers truncated to their opening sentences), never invented.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+const SYNCED_AT = "2026-07-08";
 const SITE = "https://hellogrowthcrm.com";
 
 type AutonomyLevel = "autonomous" | "supervised" | "assistive";
@@ -307,9 +307,9 @@ const AGENTS: AgentRecord[] = [
     route: "/agentic-ai/mcp",
     autonomyLevel: "supervised",
     summary: "Connect ChatGPT, Claude, or Gemini directly to your CRM data via MCP protocol.",
-    tagline: "Connect ChatGPT or Claude to Your CRM Pipeline — via MCP",
+    tagline: "The Only CRM MCP Server with Native WhatsApp Tools",
     detail:
-      "HelloGrowthCRM ships a public Model Context Protocol (MCP) server. Point any MCP-compatible AI client at your CRM and query leads, update deals, trigger sequences, and pull analytics — in plain language. The biggest defensibility moat in CRM, now available at SMB pricing.",
+      "HelloGrowthCRM ships a public Model Context Protocol (MCP) server. HubSpot, Zoho, and Salesforce all have MCP now — but none can send a WhatsApp from Claude. For Indian SMBs where 90% of deals close on WhatsApp, that changes everything.",
   },
   {
     slug: "ai-email-composer",
@@ -409,9 +409,9 @@ const SAFETY_RAILS = [
   "Email/Slack alert when an agent hits an unexpected edge case",
 ];
 
-// ── Competitor comparisons — Source: Vs*Page.tsx hero copy — SYNCED_AT 2026-06-11
+// ── Competitor comparisons — Source: Vs*Page.tsx hero copy — SYNCED_AT 2026-07-08
 //    (pages render localized pricing; the US default "$10/user/month" /
-//    "₹99/user/month in India" is mirrored here) ───────────────────────────────
+//    "₹899/user/month in India" is mirrored here) ──────────────────────────────
 
 const COMPARISONS = [
   {
@@ -444,7 +444,7 @@ const COMPARISONS = [
     route: "/agentic-ai/vs-copilot",
     headline: "HelloGrowthCRM vs Microsoft Copilot for Sales — Agentic AI Without the License Stack",
     positioning:
-      "Microsoft Copilot for Sales requires M365 + Dynamics 365 + the $50/user Copilot add-on. That's $150+ per user before you write a single line of config. HelloGrowthCRM delivers full agentic AI — voice agents, MCP, WhatsApp, journey orchestration — in a standalone CRM from $10/user/month (₹99/user/month in India).",
+      "Microsoft Copilot for Sales requires M365 + Dynamics 365 + the $50/user Copilot add-on. That's $150+ per user before you write a single line of config. HelloGrowthCRM delivers full agentic AI — voice agents, MCP, WhatsApp, journey orchestration — in a standalone CRM from $10/user/month (₹899/user/month in India).",
   },
 ];
 

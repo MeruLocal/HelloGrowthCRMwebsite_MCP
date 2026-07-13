@@ -3,8 +3,8 @@ import { defineTool, ok } from "./tool-types.js";
 import { COUNTRY_PRICING, SYNCED_AT } from "../data/website-mirror.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pricing data — sourced from hellocrmwebsite/src/lib/pricing-india-data.ts
-// and src/hooks/usePricing.ts
+// Pricing data — sourced from hellocrmwebsite/src/lib/pricing-india-data.ts,
+// src/views/Pricing.tsx, and src/hooks/usePricing.ts (synced 2026-07-08)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const GLOBAL_PLANS = [
@@ -13,16 +13,18 @@ const GLOBAL_PLANS = [
     slug: "free",
     price_annual: "$0",
     price_monthly: "$0",
-    billing: "Free forever · No credit card required · Never expires",
-    best_for: "Individuals and tiny teams trying HelloGrowthCRM",
+    billing: "Free forever · No credit card · 1 user · 200 leads · Never expires",
+    best_for: "Our default starter — not a trial",
     ai_credits: "50 total",
-    limits: { leads: 200, accounts: 50, pipelines: 1, tasks: 500 },
+    limits: { users: 1, leads: 200, accounts: 50, pipelines: 1, tasks: 500 },
     features: [
-      "Pipeline management (Kanban)",
-      "Task board (500 tasks, Kanban only)",
+      "Lead & Contact Management (200 leads cap)",
+      "Accounts (50 cap) + 1 deal pipeline",
+      "Pipeline Management (Kanban)",
+      "Task Board (500 tasks, Kanban only)",
       "Basic activity logging",
-      "5 email templates",
-      "Appointment scheduling",
+      "5 Basic Email Templates",
+      "Appointment Scheduling",
       "Mobile dashboard (read-only)",
       "30-day analytics",
       "1 Growth Audit included",
@@ -35,28 +37,29 @@ const GLOBAL_PLANS = [
     slug: "professional",
     price_annual: "$10/user/month (billed annually — 2 months free)",
     price_monthly: "$12/user/month",
-    billing: "Annual or monthly · Unlimited users · 14-day free trial · No credit card",
-    best_for: "Tech-savvy self-serve sales teams",
+    billing: "Annual billing · $12/user/mo monthly · 14-day free trial · No credit card",
+    best_for: "Tech-savvy self-serve teams",
     ai_credits: "50,000 per user/month · Overage $0.005/K",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     features: [
-      "Everything in Free, PLUS:",
-      "Unlimited leads, contacts, accounts, deals & activities",
+      "Unlimited leads & contacts",
+      "Unlimited accounts, deals, activities, prospecting & exhibition capture",
+      "Pipeline management (Kanban + drag-and-drop)",
       "AI lead scoring & enrichment",
-      "Built-in dialer with call tracking & recording",
-      "HelloMail inbox + email sequences & templates",
-      "WhatsApp & SMS (bulk broadcast)",
+      "Built-in dialer with call tracking",
+      "HelloMail inbox, sequences, templates & shared communications",
+      "WhatsApp & SMS (incl. bulk broadcast)",
       "Real-time dashboards & analytics",
-      "Task boards (Kanban + table + calendar) + automation",
+      "Task boards (Kanban, table, calendar) + automation",
       "Products, quotes, invoices, payments & revenue tracking",
       "Campaigns, web chat assistant & visitor tracking",
-      "Customer portal, referrals, landing pages",
-      "Tickets + knowledge base + scheduling & booking",
-      "API access & 90+ integrations",
-      "Standard email + chat support",
+      "Customer portal, referrals, landing pages, tickets & knowledge base",
+      "Scheduling & booking pages",
+      "API access & 630+ integrations",
+      "Standard support (email + chat)",
       "Onboarding checklist",
     ],
-    guarantees: ["14-day free trial", "30-day money-back guarantee"],
+    guarantees: ["14-day free trial", "14-day money-back guarantee on annual plans (7-day on monthly renewals)"],
     cta_url: "https://app.hellogrowthcrm.com/signup",
   },
   {
@@ -79,7 +82,7 @@ const GLOBAL_PLANS = [
       "Client approval workflow for templates",
       "90-minute kickoff + pipeline architecture session",
     ],
-    cta_url: "https://calendly.com/hello-merufintech/30min",
+    cta_url: "https://calendly.com/hellogrowthcrm-sales/demo",
   },
   {
     name: "RevOps Partner",
@@ -101,7 +104,7 @@ const GLOBAL_PLANS = [
       "Custom automation builds (up to 3/month)",
       "Priority SLA: same-business-day on all requests",
     ],
-    cta_url: "https://calendly.com/hello-merufintech/30min",
+    cta_url: "https://calendly.com/hellogrowthcrm-sales/demo",
   },
 ];
 
@@ -131,42 +134,8 @@ const INDIA_PLANS = [
     ],
     cta_url: "https://app.hellogrowthcrm.com/signup",
   },
-  {
-    name: "Starter",
-    slug: "starter",
-    price_annual: "₹99/user/month (annual — 10 months paid, 2 months free)",
-    price_monthly: "₹129/user/month",
-    billing: "Annual billing · 10-user hard cap · No free trial",
-    best_for: "Price-sensitive Indian SMBs",
-    ai_credits: "200 per user/month",
-    limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: 3, tasks: "Unlimited", max_users: 10 },
-    features: [
-      "Unlimited leads & contacts",
-      "Accounts & deals with 3 sales pipelines",
-      "Pipeline management (Kanban + list view)",
-      "Full activity types + activity log",
-      "Email sequences, templates & booking pages",
-      "WhatsApp messaging (manual send only)",
-      "HelloMail inbox + email tracking",
-      "Task boards (Kanban, table, calendar)",
-      "Exhibition capture",
-      "Products catalog, quote requests, quotes & basic invoices",
-      "Business listings",
-      "Mobile app (iOS + Android)",
-      "30-day analytics",
-      "~10 integrations across core categories",
-      "Standard email + chat support",
-      "Onboarding checklist",
-      "200 AI credits/user/month",
-    ],
-    excluded: [
-      "No AI lead scoring or enrichment",
-      "No built-in dialer or web chat assistant",
-      "No bulk WhatsApp or SMS broadcasts",
-      "No public API or advanced workflow automation",
-    ],
-    cta_url: "https://app.hellogrowthcrm.com/signup",
-  },
+  // The India Starter plan (₹99/user/mo) was removed from the website —
+  // Growth (₹899) is now the entry paid self-serve plan for India.
   {
     name: "Growth",
     slug: "growth",
@@ -178,7 +147,7 @@ const INDIA_PLANS = [
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     popular: true,
     features: [
-      "Everything in Starter, PLUS:",
+      "Everything in Free, PLUS:",
       "AI lead scoring & enrichment",
       "Built-in dialer with call tracking & recording",
       "Bulk WhatsApp broadcasts & SMS campaigns",
@@ -190,7 +159,7 @@ const INDIA_PLANS = [
       "Products, proposals, invoices, expenses & revenue tracking",
       "Customer portal, referrals, references & landing pages",
       "Tickets + knowledge base",
-      "API access & all 90 integrations across 20 categories",
+      "API access & all 630 integrations across 116 categories",
       "Custom fields, modules, pipeline stages & workflows",
       "Territory & team management with map view",
       "AI-assisted sales forecasting",
@@ -198,7 +167,7 @@ const INDIA_PLANS = [
       "Priority support + dedicated onboarding",
       "2,500 AI credits/user/month",
     ],
-    guarantees: ["14-day free trial", "30-day pro-rated refund on annual plans"],
+    guarantees: ["14-day free trial", "14-day money-back window on annual plans (7-day on monthly renewals; pro-rated on India annual plans)"],
     cta_url: "https://app.hellogrowthcrm.com/signup",
   },
   {
@@ -221,7 +190,7 @@ const INDIA_PLANS = [
       "SLA policies, approval flows & multi-currency commerce",
       "Unlimited exports + scheduled reports",
       "Test cases for SaaS / QA teams",
-      "All 90 integrations + custom integration support",
+      "All 630 integrations + custom integration support",
       "Custom training (up to 4 sessions/year)",
       "SLA-backed 99.9% uptime",
       "Priority phone support",
@@ -229,7 +198,7 @@ const INDIA_PLANS = [
       "Data migration & onboarding support",
       "10,000 AI credits/user/month + 3-month rollover",
     ],
-    cta_url: "https://calendly.com/hello-merufintech/30min",
+    cta_url: "https://calendly.com/hellogrowthcrm-sales/demo",
   },
 ];
 
@@ -249,9 +218,9 @@ const ADDONS = {
     ],
     ai_credit_topups: [
       { credits: "100", price: "₹69", per_credit: "₹0.69", note: "Impulse buy for free users trying AI" },
-      { credits: "500", price: "₹299", per_credit: "₹0.60", note: "Repeat top-up — consider upgrading to Starter" },
-      { credits: "1,000", price: "₹549", per_credit: "₹0.55", note: "Growth gives 2,500/user for just ₹350 more/month" },
-      { credits: "2,500", price: "₹1,499", per_credit: "₹0.60", note: "Growth (₹899) gives same credits + unlimited users + full AI CRM. Upgrade saves ₹600" },
+      { credits: "500", price: "₹299", per_credit: "₹0.60", note: "Repeat top-up habit — consider upgrading to Growth" },
+      { credits: "1,000", price: "₹549", per_credit: "₹0.55", note: "Growth gives 2,500/user for just ₹350 more per month" },
+      { credits: "2,500", price: "₹1,499", per_credit: "₹0.60", note: "Growth (₹899) gives the same credits + unlimited users + full AI CRM. Upgrade saves ₹600" },
       { credits: "5,000", price: "₹2,499", per_credit: "₹0.50", note: "At ₹2,499 top-up vs ₹899/user Growth — upgrading wins every time" },
     ],
   },
@@ -260,12 +229,12 @@ const ADDONS = {
 const PRICING_FAQ = [
   { q: "Is the Free plan really forever?", a: "Yes. Free Forever is not a trial — it never expires. You keep it as long as you want." },
   { q: "Is there a free trial on paid plans?", a: "Professional (global) and Growth (India) have a 14-day free trial with full feature access. No credit card required." },
-  { q: "Is there a money-back guarantee?", a: "Yes — 30 days on Professional (global) and 30-day pro-rated refund on India annual plans." },
+  { q: "Is there a money-back guarantee?", a: "Yes — a 14-day money-back window on annual plans (7-day on monthly renewals), pro-rated on India annual plans. See the refund policy at /legal/refunds." },
   { q: "Can I switch plans anytime?", a: "Yes. You can upgrade or downgrade at any time." },
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Professional for nonprofits with documentation." },
   { q: "What payment methods are accepted?", a: "Global: credit cards, ACH (US), wire transfers. India: UPI, NEFT, Razorpay, credit cards. All India prices include GST." },
-  { q: "What is the Starter plan user cap?", a: "India Starter has a 10-user hard cap. All other paid plans have unlimited users." },
+  { q: "Is there a minimum number of users?", a: "No minimum. The Free Plan supports 1 user (200 leads). Professional and Growth scale from 1 user upward; Growth Engine and RevOps Partner are flat monthly retainers with no per-seat charge." },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
 ];
@@ -279,11 +248,11 @@ const PRICING_FAQ = [
 export const pricingGetPlans = defineTool({
   schema: z.object({
     region: z.enum(["global", "india", "both"]).default("both").describe("'global' for USD plans, 'india' for INR plans, 'both' for all."),
-    plan: z.string().optional().describe("Filter by plan slug: free, professional, starter, growth, growth-engine, enterprise, revops-partner."),
+    plan: z.string().optional().describe("Filter by plan slug: free, professional, growth, growth-engine, enterprise, revops-partner."),
   }),
   definition: {
     name: "pricing_get_plans",
-    description: "Get HelloGrowthCRM pricing plans. Use region='global' for USD plans (Free, Professional, Growth Engine, RevOps Partner) or region='india' for INR plans (Free, Starter, Growth, Enterprise).",
+    description: "Get HelloGrowthCRM pricing plans. Use region='global' for USD plans (Free, Professional, Growth Engine, RevOps Partner) or region='india' for INR plans (Free, Growth, Enterprise).",
     inputSchema: {
       type: "object",
       properties: {
@@ -388,7 +357,7 @@ export const pricingGetFaq = defineTool({
 
 export const pricingComparePlans = defineTool({
   schema: z.object({
-    plan_a: z.string().describe("First plan slug (e.g. free, starter, professional, growth)."),
+    plan_a: z.string().describe("First plan slug (e.g. free, professional, growth)."),
     plan_b: z.string().describe("Second plan slug to compare against."),
     region: z.enum(["global", "india"]).default("india"),
   }),

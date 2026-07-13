@@ -22,7 +22,7 @@
  *   SCHEMA ............. lib/seo/schema.ts (orgSchema, softwareAppSchema, …)
  */
 
-export const SYNCED_AT = "2026-06-04";
+export const SYNCED_AT = "2026-07-08";
 export const WEBSITE_SOURCE_OF_TRUTH = "https://hellogrowthcrm.com";
 
 /* ── Company / Organization (lib/seo/site.ts + lib/brand.ts) ─────────────────── */
@@ -38,6 +38,13 @@ export const COMPANY = {
   foundingDate: "2022-01-01",
   defaultDescription:
     "AI-powered CRM for small business sales teams with lead scoring, built-in dialer, WhatsApp/SMS, email automation, forecasting, and optional Managed RevOps.",
+  /**
+   * Canonical AI-friendly brand description (AEO/GEO entity anchor) —
+   * mirror of SITE.entityDescription in lib/seo/site.ts. Emitted as
+   * Organization.description in the site-wide JSON-LD.
+   */
+  entityDescription:
+    "HelloGrowthCRM is an AI-powered CRM for small and mid-sized sales teams that combines lead management, a built-in dialer, WhatsApp/SMS, email automation, quotes and invoicing, and AI insights with optional Managed RevOps specialists who run follow-up, pipeline hygiene, and weekly reporting.",
   alternateNames: ["HelloGrowthCRM", "Soor LLC"],
   /** Registered office (Organization.address). */
   address: {
@@ -52,6 +59,8 @@ export const COMPANY = {
     "https://www.linkedin.com/company/112020713/admin/dashboard/",
     "https://x.com/hellogrowthcrm",
     "https://github.com/hellogrowthcrm",
+    "https://www.instagram.com/hellogrowthcrm",
+    "https://www.facebook.com/profile.php?id=61588263746188",
     "https://www.g2.com/products/hellogrowthcrm/reviews",
     "https://www.capterra.com/p/10037980/HelloGrowthCRM/",
     "https://www.producthunt.com/products/hellogrowthcrm",
@@ -70,6 +79,8 @@ export const COMPANY = {
     github: "https://github.com/hellocrmmerufintech-star",
     linkedin: "https://www.linkedin.com/company/hellogrowthcrm/",
     youtube: "https://www.youtube.com/@HelloGrowthCRM",
+    instagram: "https://www.instagram.com/hellogrowthcrm",
+    facebook: "https://www.facebook.com/profile.php?id=61588263746188",
     productHunt: "https://www.producthunt.com/products/hellogrowthcrm",
   },
 } as const;
@@ -158,7 +169,8 @@ export interface CountryPricingSummary {
 }
 
 export const COUNTRY_PRICING: CountryPricingSummary[] = [
-  { countryName: "India", countrySlug: "in", currencyCode: "INR", currencySymbol: "₹", homeHref: "/in", starterPriceShort: "₹99/user/mo", growthPriceShort: "₹899/user/mo", pricingHref: "/in/pricing" },
+  // India Starter (₹99) tier was removed on the website 2026-06/07 — Growth is now the entry paid plan.
+  { countryName: "India", countrySlug: "in", currencyCode: "INR", currencySymbol: "₹", homeHref: "/in", starterPriceShort: "₹899/user/mo", growthPriceShort: "₹899/user/mo", pricingHref: "/in/pricing" },
   { countryName: "United States", countrySlug: "usa", currencyCode: "USD", currencySymbol: "$", homeHref: "/usa", starterPriceShort: "$10/user/mo", growthPriceShort: "$1,500/user/mo", pricingHref: "/usa/pricing" },
   { countryName: "United Kingdom", countrySlug: "uk", currencyCode: "GBP", currencySymbol: "£", homeHref: "/uk", starterPriceShort: "£9/user/mo", growthPriceShort: "£1,199/user/mo", pricingHref: "/uk/pricing" },
   { countryName: "Australia", countrySlug: "au", currencyCode: "AUD", currencySymbol: "A$", homeHref: "/au", starterPriceShort: "A$16/user/mo", growthPriceShort: "A$2,299/user/mo", pricingHref: "/au/pricing" },
@@ -224,7 +236,7 @@ export const SITEMAPS = {
 
 export const SCHEMA_TYPES = [
   { type: "Organization", scope: "site-wide (global layout, do not duplicate per page)", builder: "orgSchema()" },
-  { type: "SoftwareApplication", scope: "product / feature pages", builder: "softwareAppSchema()" },
+  { type: "SoftwareApplication", scope: "product / feature pages (includes softwareRatingFields() — single verified review, no fabricated aggregate)", builder: "softwareAppSchema()" },
   { type: "BlogPosting", scope: "individual blog posts", builder: "blogPostingSchema()" },
   { type: "BreadcrumbList", scope: "all pages (BreadcrumbJsonLd)", builder: "breadcrumb component" },
   { type: "WebSite", scope: "homepage", builder: "site.ts" },
@@ -241,13 +253,16 @@ export function orgSchema(): Record<string, unknown> {
     name: COMPANY.legalName,
     alternateName: [COMPANY.name, ...COMPANY.alternateNames],
     url: COMPANY.url,
+    // Canonical AI-friendly brand description (GEO entity anchor) — added to
+    // the website orgSchema() in lib/seo/schema.ts (synced 2026-07-08).
+    description: COMPANY.entityDescription,
     foundingDate: COMPANY.foundingDate,
     address: { "@type": "PostalAddress", ...COMPANY.address },
     sameAs: COMPANY.sameAs,
   };
 }
 
-/* ── Hreflang (faithful port of lib/hreflang.ts getHreflangTags) ─────────────── */
+/* ── Hreflang (faithful port of lib/hreflang.ts getHreflangTags, synced 2026-07-08) ── */
 
 const BASE_URL = WEBSITE_SOURCE_OF_TRUTH;
 
@@ -263,6 +278,14 @@ function normalizePath(currentPath: string): string {
   return normalized.startsWith("/") ? normalized : `/${normalized}`;
 }
 
+/** Query + hash suffix preserved for self-referencing hreflang on paginated/filtered URLs. */
+function getSearchAndHashSuffix(currentPath: string): string {
+  const withoutHash = currentPath.split("#")[0] ?? currentPath;
+  const q = withoutHash.indexOf("?");
+  if (q === -1) return "";
+  return withoutHash.slice(q);
+}
+
 function toAbsoluteUrl(p: string): string {
   return p === "/" ? BASE_URL : `${BASE_URL}${p}`;
 }
@@ -273,12 +296,6 @@ const INDIA_LANGUAGE_SLUG_HREFLANG: Record<string, string> = {
   "/in/crm-bengali": "bn", "/in/crm-malayalam": "ml", "/in/crm-punjabi": "pa",
   "/in/crm-odia": "or", "/in/crm-urdu": "ur", "/in/crm-assamese": "as",
 };
-
-const INDIA_LANG_CLUSTER: HreflangTag[] = [
-  { hreflang: "en-IN", href: `${BASE_URL}/in` },
-  ...Object.entries(INDIA_LANGUAGE_SLUG_HREFLANG).map(([p, hreflang]) => ({ hreflang, href: toAbsoluteUrl(p) })),
-  { hreflang: "x-default", href: BASE_URL },
-];
 
 const MARKET_HREFLANG_VARIANTS: ReadonlyArray<{ prefix: string; hreflang: string }> = [
   { prefix: "/in", hreflang: "en-IN" },
@@ -291,8 +308,56 @@ const MARKET_HREFLANG_VARIANTS: ReadonlyArray<{ prefix: string; hreflang: string
   { prefix: "/new-zealand", hreflang: "en-NZ" },
 ];
 
+/**
+ * Industry DETAIL slugs that exist as real, indexable pages on every country
+ * prefix. Only these join the 9-market hreflang mesh; all other
+ * /industries/<slug> pages are US/global-only (Semrush audit 2026-06-05).
+ */
+const MARKET_INDUSTRY_DETAIL_SLUGS: ReadonlySet<string> = new Set([
+  "printing-agency",
+  "textile-trader",
+  "security-agency",
+  "music-academy",
+  "catering-company",
+  "jewellery-showroom",
+]);
+
 function isMarketScopedSuffix(s: string): boolean {
-  return s === "" || s === "/pricing" || s === "/services/managed-revops" || s === "/industries" || s.startsWith("/industries/");
+  if (
+    s === "" ||
+    s === "/pricing" ||
+    s === "/services/managed-revops" ||
+    s === "/industries" ||
+    s === "/industries/categories" ||
+    s.startsWith("/industries/categories/")
+  ) {
+    return true;
+  }
+  if (s.startsWith("/industries/")) {
+    const slug = s.slice("/industries/".length);
+    return MARKET_INDUSTRY_DETAIL_SLUGS.has(slug);
+  }
+  return false;
+}
+
+/**
+ * Industry-category slugs intentionally NOT built for a given country (404),
+ * so their country variants must not be advertised in hreflang. Mirrors
+ * COUNTRY_CATEGORY_EXCLUDE in lib/country-industry-categories.ts.
+ */
+const CATEGORY_EXCLUDED_BY_PREFIX: Record<string, ReadonlySet<string>> = {
+  "/usa": new Set(["agriculture-allied"]),
+  "/uk": new Set(["agriculture-allied"]),
+  "/uae": new Set(["agriculture-allied", "nonprofits-cooperatives"]),
+  "/singapore": new Set(["agriculture-allied"]),
+};
+
+const CATEGORY_SUFFIX_PREFIX = "/industries/categories/";
+
+function getCategorySlugFromSuffix(suffix: string): string | null {
+  if (!suffix.startsWith(CATEGORY_SUFFIX_PREFIX)) return null;
+  const slug = suffix.slice(CATEGORY_SUFFIX_PREFIX.length);
+  return slug && !slug.includes("/") ? slug : null;
 }
 
 function getMarketClusterTags(path: string): HreflangTag[] | null {
@@ -309,13 +374,49 @@ function getMarketClusterTags(path: string): HreflangTag[] | null {
     else if (isMarketScopedSuffix(path)) suffix = path;
   }
   if (suffix === null) return null;
+
   const globalHref = suffix === "" ? BASE_URL : toAbsoluteUrl(suffix);
-  const variantTags: HreflangTag[] = MARKET_HREFLANG_VARIANTS.map((v) => ({
-    hreflang: v.hreflang,
-    href: toAbsoluteUrl(`${v.prefix}${suffix}` || "/"),
-  }));
-  return [{ hreflang: "en", href: globalHref }, ...variantTags, { hreflang: "x-default", href: globalHref }];
+  const categorySlug = getCategorySlugFromSuffix(suffix);
+  const variantTags: HreflangTag[] = MARKET_HREFLANG_VARIANTS
+    // Drop country variants whose category combo is a 404 (excluded per-market).
+    .filter((v) => !(categorySlug && CATEGORY_EXCLUDED_BY_PREFIX[v.prefix]?.has(categorySlug)))
+    .map((v) => ({
+      hreflang: v.hreflang,
+      href: toAbsoluteUrl(`${v.prefix}${suffix}` || "/"),
+    }));
+
+  // Hub-level cluster ("" suffix) also lists the 12 India language pages so
+  // every page in the cluster returns the identical, fully-reciprocal tag set.
+  const languageTags: HreflangTag[] =
+    suffix === ""
+      ? Object.entries(INDIA_LANGUAGE_SLUG_HREFLANG).map(([p, hreflang]) => ({
+          hreflang,
+          href: toAbsoluteUrl(p),
+        }))
+      : [];
+
+  return [
+    { hreflang: "en", href: globalHref },
+    ...variantTags,
+    ...languageTags,
+    { hreflang: "x-default", href: globalHref },
+  ];
 }
+
+/**
+ * Self-referencing locale for country-prefixed sub-pages that are NOT part of
+ * the 9-market cluster (e.g. /uk/crm-london, /us/revops-services).
+ */
+const COUNTRY_PREFIX_SELF_HREFLANG: ReadonlyArray<{ prefix: string; hreflang: string }> = [
+  { prefix: "/usa", hreflang: "en-US" },
+  { prefix: "/us", hreflang: "en-US" },
+  { prefix: "/uk", hreflang: "en-GB" },
+  { prefix: "/au", hreflang: "en-AU" },
+  { prefix: "/australia", hreflang: "en-AU" },
+  { prefix: "/canada", hreflang: "en-CA" },
+  { prefix: "/new-zealand", hreflang: "en-NZ" },
+  { prefix: "/nz", hreflang: "en-NZ" },
+];
 
 const COUNTRY_HUB_HREFLANG: Record<string, string> = {
   "/ng": "en-NG", "/pk": "en-PK", "/ph": "en-PH", "/ke": "en-KE", "/gh": "en-GH",
@@ -326,7 +427,7 @@ const COUNTRY_HUB_HREFLANG: Record<string, string> = {
 const COUNTRY_LANG_SUBPAGES: Record<string, ReadonlyArray<{ hreflang: string; path: string }>> = {
   "/ng": [{ hreflang: "yo-NG", path: "/ng/crm-yoruba" }, { hreflang: "ha-NG", path: "/ng/crm-hausa" }, { hreflang: "ig-NG", path: "/ng/crm-igbo" }],
   "/pk": [{ hreflang: "ur-PK", path: "/pk/crm-urdu" }],
-  "/ph": [{ hreflang: "fil", path: "/ph/crm-filipino" }],
+  "/ph": [{ hreflang: "tl", path: "/ph/crm-filipino" }],
   "/ke": [{ hreflang: "sw-KE", path: "/ke/crm-swahili" }],
   "/tz": [{ hreflang: "sw-TZ", path: "/tz/crm-swahili" }],
   "/ae": [{ hreflang: "ar-AE", path: "/ae/crm-arabic" }],
@@ -336,110 +437,147 @@ const COUNTRY_LANG_SUBPAGES: Record<string, ReadonlyArray<{ hreflang: string; pa
   "/bd": [{ hreflang: "bn-BD", path: "/bd/crm-bangla" }],
 };
 
-/** Exact single-language pages → their hreflang (faithful port). */
-const SINGLE_LANG_EXACT: Record<string, string> = {
-  "/crm-singapore": "en-SG",
-  "/crm-uae": "en-AE",
-  "/crm-dubai": "en-AE",
-  "/crm-nigeria": "en-NG",
-  "/crm-kenya": "en-KE",
-  "/crm-canada": "en-CA",
-  "/crm-usa": "en-US",
-  "/crm-uk": "en-GB",
-  "/crm-philippines": "en-PH",
-  "/crm-south-africa": "en-ZA",
-  "/crm-malaysia": "en-MY",
-};
-
-/** Slug suffix → hreflang for `/crm-for-…-<region>` style pages. */
-const SINGLE_LANG_SUFFIX: ReadonlyArray<{ suffix: string; lang: string }> = [
-  { suffix: "-uk", lang: "en-GB" },
-  { suffix: "-philippines", lang: "en-PH" },
-  { suffix: "-south-africa", lang: "en-ZA" },
-  { suffix: "-malaysia", lang: "en-MY" },
-];
-
-function singleLangTags(path: string, lang: string): HreflangTag[] {
-  return [
-    { hreflang: lang, href: toAbsoluteUrl(path) },
-    { hreflang: "en", href: toAbsoluteUrl(path) },
-    { hreflang: "x-default", href: BASE_URL },
-  ];
-}
-
-function germanTags(path: string): HreflangTag[] {
-  return [
-    { hreflang: "de-DE", href: toAbsoluteUrl(path) },
-    { hreflang: "de", href: toAbsoluteUrl(path) },
-    { hreflang: "x-default", href: BASE_URL },
-  ];
-}
-
-/** Resolve single-language / single-country marketing pages, or null. */
-function getSingleLangHreflang(path: string): HreflangTag[] | null {
-  if (path === "/crm-germany" || path.endsWith("-germany")) return germanTags(path);
-
-  const exact = SINGLE_LANG_EXACT[path];
-  if (exact) return singleLangTags(path, exact);
-
-  const suffixRule = SINGLE_LANG_SUFFIX.find((r) => path.endsWith(r.suffix));
-  if (suffixRule) return singleLangTags(path, suffixRule.lang);
-
-  if (path === "/crm-usa") return singleLangTags(path, "en-US");
-  if (path.startsWith("/crm-for-") && !path.endsWith("-australia")) {
-    return singleLangTags(path, "en-US");
-  }
-
-  return null;
-}
-
-/** Resolve country-hub clusters (e.g. /ng, /pk, …), or null. */
-function getCountryHubHreflang(path: string): HreflangTag[] | null {
-  const countryPrefix = Object.keys(COUNTRY_HUB_HREFLANG).find(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-  if (!countryPrefix) return null;
-
-  const hubHreflang = COUNTRY_HUB_HREFLANG[countryPrefix]!;
-  const subpages = COUNTRY_LANG_SUBPAGES[countryPrefix] ?? [];
-  return [
-    { hreflang: hubHreflang, href: toAbsoluteUrl(countryPrefix) },
-    ...subpages.map((s) => ({ hreflang: s.hreflang, href: toAbsoluteUrl(s.path) })),
-    { hreflang: "x-default", href: BASE_URL },
-  ];
-}
-
 /** Faithful port of website getHreflangTags(currentPath). */
 export function getHreflangTags(currentPath: string): HreflangTag[] {
   const normalizedPath = normalizePath(currentPath);
+  const querySuffix = getSearchAndHashSuffix(currentPath);
 
-  if (normalizedPath === "/in" || normalizedPath in INDIA_LANGUAGE_SLUG_HREFLANG) {
-    return INDIA_LANG_CLUSTER;
+  // India language sub-pages are part of the homepage-level market cluster:
+  // the mesh lists them and they return the full mesh — fully reciprocal.
+  // (/in itself is handled by getMarketClusterTags below.)
+  if (normalizedPath in INDIA_LANGUAGE_SLUG_HREFLANG) {
+    return getMarketClusterTags("/") ?? [];
   }
 
+  // 9-market cluster: homepage + /pricing + /services/managed-revops +
+  // /industries(+categories/whitelisted details) across all market prefixes.
   const marketClusterTags = getMarketClusterTags(normalizedPath);
-  if (marketClusterTags) return marketClusterTags;
+  if (marketClusterTags) {
+    if (querySuffix) {
+      const selfPrefix = toAbsoluteUrl(normalizedPath);
+      return marketClusterTags.map((tag) =>
+        tag.href === selfPrefix ? { ...tag, href: selfPrefix + querySuffix } : tag,
+      );
+    }
+    return marketClusterTags;
+  }
 
+  // Other /in/* product pages not in the cluster suffix list.
   if (normalizedPath.startsWith("/in/")) {
+    const selfHref = toAbsoluteUrl(normalizedPath) + querySuffix;
     return [
-      { hreflang: "en-IN", href: toAbsoluteUrl(normalizedPath) },
-      { hreflang: "en", href: BASE_URL },
-      { hreflang: "x-default", href: BASE_URL },
+      { hreflang: "en-IN", href: selfHref },
+      { hreflang: "x-default", href: selfHref },
     ];
   }
 
-  const singleLangTagsResult = getSingleLangHreflang(normalizedPath);
-  if (singleLangTagsResult) return singleLangTagsResult;
+  const self = toAbsoluteUrl(normalizedPath) + querySuffix;
+  const selfCluster = (lang: string): HreflangTag[] => [
+    { hreflang: lang, href: self },
+    { hreflang: "en", href: self },
+    { hreflang: "x-default", href: self },
+  ];
 
-  const countryHubTags = getCountryHubHreflang(normalizedPath);
-  if (countryHubTags) return countryHubTags;
+  // Single-country marketing pages (all now self-referencing incl. x-default).
+  if (normalizedPath === "/crm-singapore") return selfCluster("en-SG");
+  if (normalizedPath === "/crm-uae" || normalizedPath === "/crm-dubai") return selfCluster("en-AE");
+  if (normalizedPath === "/crm-nigeria") return selfCluster("en-NG");
+  if (normalizedPath === "/crm-kenya") return selfCluster("en-KE");
+  if (normalizedPath === "/crm-canada") return selfCluster("en-CA");
 
+  // North America hub targets USA + Canada.
+  if (normalizedPath === "/north-america") {
+    return [
+      { hreflang: "en-US", href: self },
+      { hreflang: "en-CA", href: self },
+      { hreflang: "en", href: self },
+      { hreflang: "x-default", href: self },
+    ];
+  }
+
+  // India-targeted /crm-for-* page — checked BEFORE the generic en-US block.
+  if (normalizedPath === "/crm-for-indian-businesses") return selfCluster("en-IN");
+
+  // USA hub + /crm-for-* verticals (country-suffixed variants excluded).
+  if (
+    normalizedPath === "/crm-usa" ||
+    (normalizedPath.startsWith("/crm-for-") &&
+      normalizedPath !== "/crm-for-indian-businesses" &&
+      !normalizedPath.endsWith("-australia") &&
+      !normalizedPath.endsWith("-uk") &&
+      !normalizedPath.endsWith("-philippines") &&
+      !normalizedPath.endsWith("-south-africa") &&
+      !normalizedPath.endsWith("-malaysia") &&
+      !normalizedPath.endsWith("-germany"))
+  ) {
+    return [
+      { hreflang: "en-US", href: self },
+      { hreflang: "en", href: self },
+      { hreflang: "x-default", href: self },
+    ];
+  }
+
+  if (normalizedPath === "/crm-uk" || normalizedPath.endsWith("-uk")) return selfCluster("en-GB");
+  if (normalizedPath === "/crm-philippines" || normalizedPath.endsWith("-philippines")) return selfCluster("en-PH");
+  if (normalizedPath === "/crm-south-africa" || normalizedPath.endsWith("-south-africa")) return selfCluster("en-ZA");
+  if (normalizedPath === "/crm-malaysia" || normalizedPath.endsWith("-malaysia")) return selfCluster("en-MY");
+
+  // Germany-specific pages — bilingual (de-DE + de).
+  if (normalizedPath === "/crm-germany" || normalizedPath.endsWith("-germany")) {
+    return [
+      { hreflang: "de-DE", href: self },
+      { hreflang: "de", href: self },
+      { hreflang: "x-default", href: self },
+    ];
+  }
+
+  // Country-prefixed sub-pages NOT in the 9-market cluster suffix list
+  // (e.g. /uk/crm-london, /us/revops-services): self-reference + x-default.
+  const countrySelfPrefix = COUNTRY_PREFIX_SELF_HREFLANG.find(
+    (v) => normalizedPath === v.prefix || normalizedPath.startsWith(`${v.prefix}/`),
+  );
+  if (countrySelfPrefix) {
+    return [
+      { hreflang: countrySelfPrefix.hreflang, href: self },
+      { hreflang: "x-default", href: self },
+    ];
+  }
+
+  // International country hubs (/ng, /pk, …) and their language sub-pages.
+  const countryPrefix = Object.keys(COUNTRY_HUB_HREFLANG).find(
+    (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`),
+  );
+  if (countryPrefix) {
+    const hubHreflang = COUNTRY_HUB_HREFLANG[countryPrefix]!;
+    const subpages = COUNTRY_LANG_SUBPAGES[countryPrefix] ?? [];
+
+    // Sub-pages NOT part of the hub/language cluster self-reference instead.
+    const isClusterPage =
+      normalizedPath === countryPrefix ||
+      subpages.some((sub) => sub.path === normalizedPath);
+    if (!isClusterPage) {
+      return [
+        { hreflang: hubHreflang, href: self },
+        { hreflang: "x-default", href: self },
+      ];
+    }
+
+    // x-default points at the hub so the group stays fully reciprocal.
+    return [
+      { hreflang: hubHreflang, href: toAbsoluteUrl(countryPrefix) },
+      ...subpages.map((s) => ({ hreflang: s.hreflang, href: toAbsoluteUrl(s.path) })),
+      { hreflang: "x-default", href: toAbsoluteUrl(countryPrefix) },
+    ];
+  }
+
+  // Root homepage / /pricing are handled by getMarketClusterTags above; these
+  // branches are kept for parity with the website source (unreachable there too).
   if (normalizedPath === "/") {
     return [
       { hreflang: "en", href: BASE_URL },
       { hreflang: "en-US", href: BASE_URL },
       { hreflang: "en-IN", href: `${BASE_URL}/in` },
-      { hreflang: "x-default", href: BASE_URL },
+      { hreflang: "x-default", href: self },
     ];
   }
 
@@ -453,9 +591,9 @@ export function getHreflangTags(currentPath: string): HreflangTag[] {
   }
 
   return [
-    { hreflang: "en", href: toAbsoluteUrl(normalizedPath) },
-    { hreflang: "en-US", href: toAbsoluteUrl(normalizedPath) },
-    { hreflang: "x-default", href: toAbsoluteUrl(normalizedPath) },
+    { hreflang: "en", href: self },
+    { hreflang: "en-US", href: self },
+    { hreflang: "x-default", href: self },
   ];
 }
 
@@ -464,3 +602,4 @@ export function getCanonicalUrl(currentPath: string): string {
   const normalized = normalizePath(currentPath);
   return normalized === "/" ? BASE_URL : `${BASE_URL}${normalized}`;
 }
+

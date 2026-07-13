@@ -3,15 +3,15 @@ import { defineTool, fail, ok } from "./tool-types.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static data — READ-MIRROR of solution/service sources.
-// Source: hellocrmwebsite/src/lib/whatsappUseCases.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/lib/managed-revops-content.ts — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/whatsappUseCases.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/managed-revops-content.ts — SYNCED_AT 2026-07-08
 //   (9 market variants of the Managed RevOps service page; prose condensed,
 //    all rows preserved)
 // Source: hellocrmwebsite/src/app/(public)/managed-revops-<city>/page.tsx
-//   (25 US city landing pages; uniform USD offer) — SYNCED_AT 2026-06-11
+//   (25 US city landing pages; uniform USD offer) — SYNCED_AT 2026-07-08
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+const SYNCED_AT = "2026-07-08";
 
 // ── WhatsApp CRM use cases ───────────────────────────────────────────────────
 
@@ -858,10 +858,10 @@ const CITY_SHARED_OFFER = {
     { name: "RevOps Partner", price: "$3,999/mo", summary: "Everything in Growth Engine plus a dedicated automation specialist, lead-scoring tuning, quarterly funnel reviews, and a monthly strategy call." },
   ],
   onboarding: "Most clients are live within 5–7 business days of signing; first weekly pipeline report arrives in week two.",
-  cta: "https://calendly.com/hello-merufintech/30min",
+  cta: "https://calendly.com/hellogrowthcrm-sales/demo",
 };
 
-// Related service routes verified under src/app/(public)/ — SYNCED_AT 2026-06-11.
+// Related service routes verified under src/app/(public)/ — SYNCED_AT 2026-07-08.
 const RELATED_OFFERINGS = [
   { route: "/managed-crm-service", name: "Managed CRM Service" },
   { route: "/fractional-revops", name: "Fractional RevOps" },

@@ -101,12 +101,12 @@ describe("partners tools", () => {
 });
 
 describe("media tools", () => {
-  it("media_list_videos returns the 5 seeded videos with watch URLs", async () => {
+  it("media_list_videos returns the 28 seeded videos with watch URLs", async () => {
     const { res, json } = await run(mediaListVideos);
     expect(res.isError).toBeFalsy();
-    expect(json.count).toBe(5);
+    expect(json.count).toBe(28);
     const videos = json.videos as { id: string; url: string; badge: string | null; tabs: string[] }[];
-    expect(videos.length).toBe(5);
+    expect(videos.length).toBe(28);
     expect(videos[0]!.url).toBe(`https://www.youtube.com/watch?v=${videos[0]!.id}`);
     expect(videos.some((v) => v.id === "5CKGKLVMKko")).toBe(true);
     expect(videos.every((v) => Array.isArray(v.tabs))).toBe(true);

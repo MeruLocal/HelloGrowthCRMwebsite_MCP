@@ -3,11 +3,11 @@ import { defineTool, ok } from "./tool-types.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static data — READ-MIRROR of website FAQ sources.
-// Source: hellocrmwebsite/src/lib/site-faqs.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/lib/faq-data.ts — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/site-faqs.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/faq-data.ts — SYNCED_AT 2026-07-08
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+const SYNCED_AT = "2026-07-08";
 
 /**
  * In site-faqs.ts the pricing answer is the placeholder PRICING_FAQ_PLACEHOLDER
@@ -78,7 +78,7 @@ const SITE_FAQ_ITEMS: SiteFaqItem[] = [
   },
   {
     q: "Is HelloGrowthCRM really free?",
-    a: "Yes. HelloGrowthCRM offers a genuinely free plan with up to 200 leads, pipeline Kanban, task boards, basic email templates, and scheduling. No credit card required, no time limit. Paid plans start at ₹99/user/mo with a 14-day free trial and a 14-day money-back window on annual plans (7-day on monthly renewals).",
+    a: "Yes. HelloGrowthCRM offers a genuinely free plan with up to 200 leads, pipeline Kanban, task boards, basic email templates, and scheduling. No credit card required, no time limit. Paid plans start at ₹899/user/mo with a 14-day free trial and a 14-day money-back window on annual plans (7-day on monthly renewals).",
     links: [{ text: "Start with the free plan", href: "/free-crm-for-small-business" }],
   },
   {
@@ -93,7 +93,7 @@ const SITE_FAQ_ITEMS: SiteFaqItem[] = [
   },
   {
     q: "What is the best free CRM for small business in 2026?",
-    a: "HelloGrowthCRM's Free Plan is one of the best free CRMs available in 2026. It includes contact management, pipeline Kanban, task boards, email templates, and scheduling - with no credit card or time limit. For teams that need AI scoring and a dialer, the Software Only plan starts at ₹99/user/mo.",
+    a: "HelloGrowthCRM's Free Plan is one of the best free CRMs available in 2026. It includes contact management, pipeline Kanban, task boards, email templates, and scheduling - with no credit card or time limit. For teams that need AI scoring and a dialer, the Software Only plan starts at ₹899/user/mo.",
     links: [{ text: "Explore the free CRM plan", href: "/free-crm-for-small-business" }],
   },
   {

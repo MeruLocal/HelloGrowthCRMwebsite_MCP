@@ -5,14 +5,14 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // Static mirror data — READ-MIRROR of the website. Never edit values here to
 // differ from the website source file; re-extract and bump SYNCED_AT instead.
 //
-// Source: hellocrmwebsite/src/lib/glossary-data.ts (glossaryTerms) — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/glossary-data.ts (glossaryTerms) — SYNCED_AT 2026-07-08
 // Served on the website at /glossary and /glossary/[slug].
 // The source has no category field; each term carries slug, term, shortDef
 // (mirrored as `definition`), long-form content (not mirrored — prose), and
 // relatedLinks (mirrored as `related`).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GLOSSARY_SYNCED_AT = "2026-06-11";
+const GLOSSARY_SYNCED_AT = "2026-07-08"; // last verified against website master
 
 interface GlossaryEntry {
   slug: string;
@@ -462,6 +462,146 @@ const GLOSSARY_TERMS: GlossaryEntry[] = [
       { label: "CRM for Chiropractors", href: "/crm-for-chiropractors" },
       { label: "CRM for Healthcare", href: "/crm-for-healthcare" },
       { label: "Sales Cadence", href: "/glossary/sales-cadence" },
+    ],
+  },
+  {
+    slug: "managed-revops",
+    term: "Managed RevOps",
+    definition: "A done-for-you service where revenue-operations specialists run your sales follow-up, pipeline hygiene, and reporting inside your CRM.",
+    related: [
+      { label: "Managed RevOps Service", href: "/revops" },
+      { label: "Managed CRM Service", href: "/managed-crm-service" },
+      { label: "Revenue Operations", href: "/glossary/revenue-operations" },
+    ],
+  },
+  {
+    slug: "ai-crm",
+    term: "AI CRM",
+    definition: "Customer relationship management software with artificial intelligence built in to score leads, draft emails, summarize calls, and forecast deals.",
+    related: [
+      { label: "AI CRM Overview", href: "/ai-crm" },
+      { label: "AI Deal Insights", href: "/product/ai-deal-insights" },
+      { label: "CRM Software", href: "/glossary/crm-software" },
+    ],
+  },
+  {
+    slug: "crm-dialer",
+    term: "CRM Dialer",
+    definition: "A phone-calling tool built into the CRM so reps call leads with one click, automatically log every call, and keep call history tied to the contact.",
+    related: [
+      { label: "CRM Dialer", href: "/crm-dialer" },
+      { label: "Sales Gamification", href: "/product/sales-gamification" },
+      { label: "Sales Automation", href: "/glossary/sales-automation" },
+    ],
+  },
+  {
+    slug: "ai-agents",
+    term: "AI Agents",
+    definition: "Software agents inside a CRM that take routine actions automatically — drafting replies, updating records, and moving work forward without manual effort.",
+    related: [
+      { label: "AI Agents", href: "/product/ai-agents" },
+      { label: "AI Insights", href: "/glossary/ai-insights" },
+      { label: "AI CRM", href: "/glossary/ai-crm" },
+    ],
+  },
+  {
+    slug: "ai-insights",
+    term: "AI Insights",
+    definition: "AI-generated recommendations inside a CRM that tell sales teams what to do next — which leads to prioritize, which deals are at risk, and where pipeline is leaking.",
+    related: [
+      { label: "AI Deal Insights", href: "/product/ai-deal-insights" },
+      { label: "Sales Forecasting", href: "/glossary/sales-forecasting" },
+      { label: "AI Agents", href: "/glossary/ai-agents" },
+    ],
+  },
+  {
+    slug: "lead-routing",
+    term: "Lead Routing",
+    definition: "The automated process of assigning incoming leads to the right sales rep based on rules like territory, score, product, or round-robin distribution.",
+    related: [
+      { label: "Lead Routing", href: "/features/lead-routing" },
+      { label: "Lead Management", href: "/glossary/lead-management" },
+      { label: "Sales Automation", href: "/glossary/sales-automation" },
+    ],
+  },
+  {
+    slug: "sales-sequence",
+    term: "Sales Sequence",
+    definition: "An automated multi-step series of emails and messages that runs on a schedule until a prospect replies, keeping follow-up consistent without manual effort.",
+    related: [
+      { label: "Auto Follow-Up", href: "/product/auto-follow-up" },
+      { label: "Email Automation", href: "/product/email-automation" },
+      { label: "Sales Cadence", href: "/glossary/sales-cadence" },
+    ],
+  },
+  {
+    slug: "visitor-tracking",
+    term: "Visitor Tracking",
+    definition: "A CRM capability that identifies which companies and visitors are browsing your website so sales teams can follow up with warm, in-market accounts.",
+    related: [
+      { label: "Visitor Tracking", href: "/product/visitor-tracking" },
+      { label: "Lead Generation", href: "/glossary/lead-generation" },
+      { label: "Web Chat", href: "/glossary/web-chat" },
+    ],
+  },
+  {
+    slug: "quote-to-cash",
+    term: "Quote-to-Cash",
+    definition: "The end-to-end process of turning an opportunity into revenue — building a quote, getting it accepted, invoicing, and collecting payment — in one connected system.",
+    related: [
+      { label: "Proposal Builder", href: "/product/proposal-builder" },
+      { label: "Payment Processing", href: "/product/payment-processing" },
+      { label: "Revenue Operations", href: "/glossary/revenue-operations" },
+    ],
+  },
+  {
+    slug: "crm-workflow-automation",
+    term: "CRM Workflow Automation",
+    definition: "Rules and triggers inside a CRM that automatically create tasks, update records, send messages, and move work forward when defined events occur.",
+    related: [
+      { label: "Automation", href: "/automation" },
+      { label: "Sales Automation", href: "/glossary/sales-automation" },
+      { label: "Lead Routing", href: "/glossary/lead-routing" },
+    ],
+  },
+  {
+    slug: "web-chat",
+    term: "Web Chat",
+    definition: "A live chat widget on your website that captures visitor questions and turns conversations into CRM leads with full context for follow-up.",
+    related: [
+      { label: "Visitor Tracking", href: "/product/visitor-tracking" },
+      { label: "Lead Generation", href: "/glossary/lead-generation" },
+      { label: "Lead Management", href: "/glossary/lead-management" },
+    ],
+  },
+  {
+    slug: "sales-gamification",
+    term: "Sales Gamification",
+    definition: "Applying game mechanics like leaderboards, goals, and points to sales activity in a CRM to motivate reps and make performance visible.",
+    related: [
+      { label: "Sales Gamification", href: "/product/sales-gamification" },
+      { label: "Sales KPIs", href: "/glossary/sales-kpis" },
+      { label: "CRM Dialer", href: "/glossary/crm-dialer" },
+    ],
+  },
+  {
+    slug: "customer-health-score",
+    term: "Customer Health Score",
+    definition: "A composite score that summarizes how likely a customer is to stay, churn, or expand, based on usage, engagement, and support signals.",
+    related: [
+      { label: "Customer Health Score", href: "/product/customer-health-score" },
+      { label: "Churn Rate", href: "/glossary/churn-rate" },
+      { label: "Customer Lifetime Value", href: "/glossary/customer-lifetime-value" },
+    ],
+  },
+  {
+    slug: "lead-management",
+    term: "Lead Management",
+    definition: "The process of capturing, scoring, routing, and following up with leads in one system so no inquiry is lost between first contact and closed deal.",
+    related: [
+      { label: "Lead Finder", href: "/product/lead-finder" },
+      { label: "Lead Routing", href: "/glossary/lead-routing" },
+      { label: "Lead Generation", href: "/glossary/lead-generation" },
     ],
   },
 ];

@@ -3,20 +3,22 @@ import { defineTool, ok } from "./tool-types.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static data — READ-MIRROR of website media sources.
-// Source: hellocrmwebsite/src/lib/home-youtube-videos.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/lib/youtube-videos.ts — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/home-youtube-videos.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/youtube-videos.ts — SYNCED_AT 2026-07-08
 //   (merge/sort helpers; live channel feed merged at runtime on the website)
-// Source: hellocrmwebsite/src/lib/home-testimonials.ts — SYNCED_AT 2026-06-11
-// Source: hellocrmwebsite/src/lib/video-testimonials.ts — SYNCED_AT 2026-06-11
+// Source: hellocrmwebsite/src/lib/home-testimonials.ts — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/video-testimonials.ts — SYNCED_AT 2026-07-08
 //   (Supabase-backed — no static rows in the repo; shape mirrored below)
 // Routes verified: /videos and /testimonials exist under src/app/(public)/.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+const SYNCED_AT = "2026-07-08"; // last verified against website master
 
-// Mirrors HOME_YOUTUBE_VIDEOS (5 seeded videos). On the website these are merged
-// with the live YouTube channel feed (fetchHomeYouTubeFeed) and sorted newest-first;
-// this mirror lists the seeded set, sorted newest-first like mergeYouTubeVideos().
+// Mirrors HOME_YOUTUBE_VIDEOS (28 seeded videos, synced from the @HelloGrowthCRM
+// channel — long-form uploads only, Shorts excluded; uploadDate approximate where
+// the Data API was unavailable). Listed in source order (grouped: product demos,
+// feature explainers, comparisons, education). On the website these are merged
+// with the live YouTube channel feed (fetchHomeYouTubeFeed) and sorted newest-first.
 const YOUTUBE_VIDEOS: Array<{
   id: string;
   uploadDate: string;
@@ -25,48 +27,242 @@ const YOUTUBE_VIDEOS: Array<{
   badge?: string;
   tabs: string[];
 }> = [
+  // ── Product demos & walkthroughs ──────────────────────────────────────────
   {
-    id: "5CKGKLVMKko",
-    uploadDate: "2026-04-21T00:00:00.000Z",
-    title: "HelloGrowthCRM Product Demo",
+    id: "lfZqyxV4MiI",
+    uploadDate: "2026-05-30T12:00:00.000Z",
+    title: "HelloGrowthCRM Dashboard Overview — Complete Walkthrough",
     description:
-      "See how HelloGrowthCRM streamlines your sales workflow with an AI-first CRM experience — from lead capture to close.",
+      "A full walkthrough of the HelloGrowthCRM dashboard — pipeline, leads, deals, tasks, and reporting in one AI-first workspace.",
     badge: "Featured",
     tabs: ["All Videos", "Product Demo"],
   },
   {
-    id: "zwKUysBWstU",
-    uploadDate: "2026-03-25T02:30:47.000Z",
-    title: "More HelloGrowthCRM in Action",
-    description: "Watch another demo to explore more of the HelloGrowthCRM interface and capabilities.",
+    id: "-C_W51utw7k",
+    uploadDate: "2026-05-16T12:00:00.000Z",
+    title: "HelloGrowthCRM Features Explained — AI-Powered CRM",
+    description:
+      "A guided tour of the core HelloGrowthCRM feature set and how its AI helps small teams sell faster.",
     badge: "New",
+    tabs: ["All Videos", "Product Demo"],
+  },
+  {
+    id: "0qnXxmOgELQ",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "How We Built HelloGrowthCRM to Replace 5 Sales Tools",
+    description:
+      "Why we consolidated CRM, dialer, email, tasks, and reporting into one platform — and what it saved our own sales team.",
+    tabs: ["All Videos", "Product Demo"],
+  },
+  {
+    id: "5CKGKLVMKko",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "HelloGrowthCRM Review — A Real Customer Speaks",
+    description:
+      "A HelloGrowthCRM customer shares an honest take on switching to an AI-first CRM.",
+    badge: "Customer Story",
+    tabs: ["All Videos", "Product Demo"],
+  },
+
+  // ── Feature explainers ────────────────────────────────────────────────────
+  {
+    id: "KyES69Q_Rxo",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "AI Lead Scoring in CRM — Prioritise Your Hottest Leads",
+    description:
+      "See how HelloGrowthCRM's AI lead scoring ranks every lead so your team always calls the most likely buyer first.",
+    badge: "AI",
     tabs: ["All Videos", "Features"],
   },
   {
-    id: "wIL_RU0xkjo",
-    uploadDate: "2026-03-23T15:02:46.000Z",
-    title: "Sales Pipeline & Task Boards",
+    id: "fJS5XsXpcwo",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "AI Lead Scoring Explained — Find Your Best Buyers First",
     description:
-      "Explore the Kanban pipeline, task boards, and calendar view that keep your sales team aligned.",
-    badge: "Popular",
-    tabs: ["All Videos", "Explore More"],
-  },
-  {
-    id: "KyES69Q_Rxo",
-    uploadDate: "2026-03-22T12:00:00.000Z",
-    title: "Explore Core Features",
-    description:
-      "A quick walkthrough of AI lead scoring, built-in dialer, and email automation inside HelloGrowthCRM.",
-    badge: "Watch",
+      "How AI lead scoring reads engagement signals to surface the buyers most likely to close — before your reps guess.",
     tabs: ["All Videos", "Features"],
   },
   {
     id: "auZbbW3tbeI",
-    uploadDate: "2026-03-18T12:00:09.000Z",
-    title: "AI Voice Agents Demo",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "CRM Task Boards — 6 Views to Manage Any Project",
     description:
-      "See AI voice agents qualify leads 24/7 with human-like conversations integrated directly into your CRM.",
+      "Kanban, list, calendar, and more — six task-board views that keep your sales and delivery teams aligned.",
+    badge: "Popular",
+    tabs: ["All Videos", "Features"],
+  },
+  {
+    id: "lwi0PWAqYlI",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "CRM Built-In Dialer — Call Leads Without Leaving Your CRM",
+    description:
+      "Place and log calls straight from the deal card with HelloGrowthCRM's built-in dialer — every call recorded against the lead.",
+    tabs: ["All Videos", "Features"],
+  },
+  {
+    id: "Js5we0u4lPI",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "Stop Losing Leads — AI CRM Automation That Boosts Conversions",
+    description:
+      "How automated follow-ups and AI nudges recover leads that would otherwise go cold in your pipeline.",
+    tabs: ["All Videos", "Features"],
+  },
+  {
+    id: "eUCLBdVq6Tg",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "5 CRM Features Every Small Business Needs",
+    description:
+      "The five CRM capabilities most small businesses are missing — and why they matter for revenue.",
+    tabs: ["All Videos", "Features"],
+  },
+  {
+    id: "QZjO6WMZmGE",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "How AI-Powered CRM Finds the Revenue You're Leaving on the Table",
+    description:
+      "AI surfaces stalled deals, neglected leads, and follow-up gaps so you capture revenue you're currently missing.",
     badge: "AI",
+    tabs: ["All Videos", "Features"],
+  },
+  {
+    id: "2ITQ6UdrbUk",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "Your Team Is Losing Deals Because They Can't Sell From Their Phone",
+    description:
+      "Why a true mobile CRM matters — and how reps close more when they can update deals and call leads on the go.",
+    tabs: ["All Videos", "Features"],
+  },
+  {
+    id: "wIL_RU0xkjo",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "CRM for Freelancers & Solopreneurs — Free Plan Walkthrough",
+    description:
+      "A walkthrough of the HelloGrowthCRM free plan for freelancers and solo founders managing clients single-handedly.",
+    tabs: ["All Videos", "Features"],
+  },
+
+  // ── Comparisons ─────────────────────────────────────────────────────────
+  {
+    id: "qs_nQkG3mwQ",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "HubSpot vs Salesforce vs HelloGrowthCRM — Honest SMB Comparison",
+    description:
+      "An honest, side-by-side look at HubSpot, Salesforce, and HelloGrowthCRM for small and mid-sized teams.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "npHjHw7eYeU",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "HelloGrowthCRM vs HubSpot vs Monday CRM — AI Features Compared",
+    description:
+      "How the AI features in HelloGrowthCRM, HubSpot, and Monday CRM stack up for SMBs.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "JrCUenUyJYs",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "HelloGrowthCRM vs HubSpot vs Pipedrive — Honest Comparison",
+    description:
+      "A practical comparison of HelloGrowthCRM, HubSpot, and Pipedrive on price, features, and ease of use.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "zwKUysBWstU",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "HelloGrowthCRM vs HubSpot — Honest Comparison for Small Business",
+    description:
+      "HelloGrowthCRM vs HubSpot for small business — where each wins, and which fits a lean sales team.",
+    tabs: ["All Videos", "Explore More"],
+  },
+
+  // ── Education & thought leadership ────────────────────────────────────────
+  {
+    id: "lYP3FqYoNi8",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "What Is a CRM — And Why Every Small Business Needs One in 2026",
+    description:
+      "A plain-English explainer on what a CRM is and why small businesses lose money without one.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "CYKT9YkKRtc",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "What Is an AI-Powered CRM — And Why Your Business Needs One",
+    description:
+      "How an AI-powered CRM differs from a traditional CRM, and the work it takes off your team's plate.",
+    badge: "AI",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "mH1Bqo-FKII",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "Agentic AI in Sales — From 'Assistive' to 'Autonomous' CRM",
+    description:
+      "The shift from AI that assists reps to AI that acts on its own inside the CRM — and what it means for sales teams.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "vG4vOXvIHJM",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "Why AI-Powered CRM Is a Game Changer for SMBs in 2026",
+    description:
+      "The concrete ways AI-powered CRM changes how small and mid-sized businesses sell in 2026.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "8X3X0Fjjkuw",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "How AI CRM Eliminates 3 Hours of Daily Admin Work for SMBs",
+    description:
+      "Where AI removes the manual data entry and admin that eats three hours of a rep's day.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "BYCR4i9UQD8",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "71% of Salespeople Spend More Time on Data Entry Than Selling",
+    description:
+      "The data-entry tax on sales teams — and how AI can simply do it for you.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "is4oqBvX2Ac",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "Why 74% of Small Businesses Now Use a CRM",
+    description:
+      "Why CRM adoption has crossed the tipping point for small business — and what it costs to go without one.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "TFBQ9h-6Y-Y",
+    uploadDate: "2026-04-13T12:00:00.000Z",
+    title: "Why 91% of Businesses Cut Customer Acquisition Costs After This Change",
+    description:
+      "The one change that helped businesses lower customer acquisition cost — and how CRM enables it.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "qX9Dtob3qEU",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "5 CRM Automations Every Startup Founder Should Set Up on Day 1",
+    description:
+      "Five automations that save startup founders hours every week from the very first day in their CRM.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "QS2HnshtPBQ",
+    uploadDate: "2026-05-13T12:00:00.000Z",
+    title: "From Spreadsheet to CRM — A Real SMB Migration Story",
+    description:
+      "A step-by-step look at how a small business moved off spreadsheets onto a CRM without losing data.",
+    tabs: ["All Videos", "Explore More"],
+  },
+  {
+    id: "Od9gDbXb9pQ",
+    uploadDate: "2026-05-16T12:00:00.000Z",
+    title: "How Shopify Store Owners Manage Customers with HelloGrowthCRM",
+    description:
+      "How e-commerce and Shopify store owners use HelloGrowthCRM to manage customers, orders, and repeat sales.",
     tabs: ["All Videos", "Explore More"],
   },
 ];
@@ -170,7 +366,7 @@ export const mediaListVideos = defineTool({
   definition: {
     name: "media_list_videos",
     description:
-      "List HelloGrowthCRM product / YouTube videos featured on hellogrowthcrm.com (home page video section + /videos page): product demo, core features walkthrough, pipeline & task boards, and AI voice agents. Returns video id, watch URL, title, description, upload date, and badge.",
+      "List HelloGrowthCRM product / YouTube videos featured on hellogrowthcrm.com (home page video section + /videos page): 28 videos covering product demos & walkthroughs, feature explainers (AI lead scoring, dialer, task boards), competitor comparisons, and CRM education. Returns video id, watch URL, title, description, upload date, and badge.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   async handle(_args) {
