@@ -18,6 +18,9 @@ import { verifyBotIdentityTool } from "./verify-bot-identity.js";
 // ── Page content (live crawl → readable content) ──────────────────────────────
 import { fetchPageContent, crawlPages } from "./fetch-page-content.js";
 
+// ── GEO/AEO diagnostics ───────────────────────────────────────────────────────
+import { checkAiExtractability, validateSitemaps } from "./geo-diagnostics.js";
+
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
   blogList,
@@ -173,6 +176,10 @@ export const tools: RegisteredTool[] = [
   // Page content (live crawl → readable content)
   fetchPageContent,
   crawlPages,
+
+  // GEO/AEO diagnostics
+  checkAiExtractability,
+  validateSitemaps,
 
   // Blog
   blogList,
