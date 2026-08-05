@@ -68,22 +68,40 @@ outcome we actually want, it outranks most of the engineering in §4.
 
 ### 2.1 Blocking — content and discovery
 
-**F1. Three sitemaps hard-fail at a ~15.3s edge timeout.** `[web]` — **worst finding in this
-document.**
+**F1. Sitemaps are slow and intermittently fail — `alternatives-sitemap.xml` returns HTTP 500
+under cache miss.** `[web]`
 
-| Sitemap | Result (3/3 attempts) |
+> **Corrected 2026-08-05.** This finding originally read *"three sitemaps hard-fail at a ~15.3s
+> edge timeout"*, based on curl: HTTP 000 at ~15.3s, 3/3 attempts each, on `tools-`,
+> `alternatives-` and `image-sitemap.xml`. Re-probing with the new `validate_sitemaps` tool
+> returned **200 for all nine children in 0.9–4.4 s**. The failure is **intermittent, not
+> permanent**, and the original wording overstated it. The tool that corrected this is in the
+> follow-up PR; catching this was the reason to build it.
+
+What is actually true, after cache-busted re-probing:
+
+| Probe | `alternatives-sitemap.xml` |
 |---|---|
-| `tools-sitemap.xml` | HTTP 000 after 15.48s |
-| `alternatives-sitemap.xml` | HTTP 000 after 15.28s |
-| `image-sitemap.xml` | HTTP 000 after 15.36s |
+| `?cb=a` | 200 in **7.68 s** |
+| `?cb=b` | **connection reset** |
+| `?cb=c` | **HTTP 500** |
 
-`alternatives-sitemap.xml` covers the **42 competitor-alternative pages** — the highest
-commercial-intent, most citation-worthy content on the site. Its discovery path is dead. The
-consistent ~15.3s cutoff means these are generated at request time and hitting a platform
-timeout, not a transient blip.
+`image-sitemap.xml` took **9.74 s** on a warm plain request. Timings across the nine children
+on a warm run: 0.88 s – 4.37 s.
 
-Working for contrast: `sitemap.xml` (263 KB), `blog-sitemap.xml` (465 URLs),
-`industries-sitemap.xml` (513), `help-sitemap.xml` (79), `agentic-ai-sitemap.xml` (10).
+So the defect is real but different: these sitemaps are **generated at request time**, are slow
+even when warm, and `alternatives-sitemap.xml` **errors outright on a cache miss**. A crawler
+arriving cold can get a 500 or a dead connection; 7–10 s is far outside any reasonable sitemap
+budget. `alternatives-sitemap.xml` covers the **42 competitor-alternative pages** — the highest
+commercial-intent, most citation-worthy content on the site.
+
+Discovery counts on a successful run: `sitemap.xml` 2,178 URLs, `image-sitemap.xml` 3,202,
+`industries-` 513, `blog-` 465, `tools-` 112, `help-` 79, `alternatives-` 65, `agentic-ai-` 10,
+`video-` 1. **6,625 total.**
+
+**Guard against re-introducing this:** run `validate_sitemaps` on a schedule, not once. A
+single green run does not clear an intermittent fault — that is exactly how the original
+measurement went wrong in both directions.
 
 **F2. No IndexNow.** `[web]` `/indexnow.txt` → 404. No key file, no submission pipeline.
 2026 GEO research is consistent that **Bing indexing is a hard prerequisite for ChatGPT
@@ -217,10 +235,13 @@ engineering in §4. Closing them is Wave 0.
 
 ### Wave 1 — discovery and index (do first)
 
-**W1.1 `[web]` Make the three failing sitemaps static and edge-cached.**
+**W1.1 `[web]` Make the slow sitemaps static and edge-cached.**
 Generate XML at build time; do not assemble through runtime/database work. Order:
-`alternatives-sitemap.xml` first, `tools` second, `image` last.
-*Accept:* all 9 child sitemaps return 200 in < 2 s, three consecutive runs, from a cold edge.
+`alternatives-sitemap.xml` first (it 500s on a cache miss), `image` second (9.7 s warm),
+`tools` last.
+*Accept:* all 9 child sitemaps return 200 in < 2 s on **ten** consecutive cache-busted runs.
+Ten, not three — the fault is intermittent, and three green runs is what produced the wrong
+reading in F1 the first time.
 
 **W1.2 `[web]` Implement IndexNow.**
 Key file at `/indexnow.txt`; submit on publish/update. Backfill all comparison, alternatives,
@@ -375,11 +396,18 @@ const strip=s=>s.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]
 const m=h.match(/<main[\s\S]*?<\/main>/i);
 console.log('main:',m?strip(m[0]).length:'none','body:',strip(h).length)"
 
-# F1 - failing sitemaps (expect http=000 at ~15.3s)
-for s in tools alternatives image; do
-  curl -s -o /dev/null -w "$s http=%{http_code} t=%{time_total}s\n" \
-    --max-time 120 "https://hellogrowthcrm.com/$s-sitemap.xml"
+# F1 - intermittent sitemap failures. Cache-bust and REPEAT: a single green run
+# proves nothing, which is how the original reading went wrong in both directions.
+# Expect occasional HTTP 500 / connection reset on alternatives-, and 7-10s on image-.
+for i in 1 2 3 4 5; do
+  for s in tools alternatives image; do
+    curl -s -o /dev/null -w "$s http=%{http_code} t=%{time_total}s\n" \
+      --max-time 120 "https://hellogrowthcrm.com/$s-sitemap.xml?cb=$RANDOM"
+  done
 done
+
+# Or, once PR #5 lands, the same check as one tool call:
+#   validate_sitemaps { sitemapIndexUrl: ".../sitemap-index.xml", timeoutMs: 25000 }
 
 # F5 - cache headers (expect CF-Cache-Status: DYNAMIC + contradictory directives)
 curl -sI -A "GPTBot/1.2" https://hellogrowthcrm.com/pricing | grep -iE 'cache|set-cookie|vary'
