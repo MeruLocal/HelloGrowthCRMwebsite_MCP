@@ -13,7 +13,9 @@ All six events are correctly wired and privacy-safe at the code level. The imple
 **Two preconditions before any event reaches GA4:**
 
 1. The server's environment must have `ENABLE_MCP_ANALYTICS=true` **and** both `GA4_MEASUREMENT_ID` and `GA4_API_SECRET` set. The repo's checked-in `.env` does **not** set these, so a default local run sends nothing. Confirm production has them.
-2. Events are sent via the GA4 Measurement Protocol **without** `debug_mode`. They appear in **Realtime** and **Events**, but **not in DebugView**. To use DebugView you'd add `debug_mode: true` (or post to `/debug/mp/collect`) in `src/lib/telemetry.ts`.
+2. ~~Events are sent via the GA4 Measurement Protocol **without** `debug_mode`. They appear in **Realtime** and **Events**, but **not in DebugView**.~~ **Resolved.** Set `GA4_DEBUG_MODE=true` and every event carries `debug_mode`, so the run appears in DebugView. Leave it unset in steady-state production.
+
+3. If the switch is on but the credentials are missing, the server now logs a one-time **`warn`** (`"...all telemetry is being dropped"`) instead of a `debug` line that was invisible at the default `LOG_LEVEL=info`. Check the deployment logs for that string before concluding "no AI clients have connected".
 
 ---
 

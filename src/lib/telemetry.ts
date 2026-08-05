@@ -16,6 +16,13 @@
  *   GA4_API_SECRET        Measurement Protocol API secret
  *   GA4_ENDPOINT          Override collect endpoint (default Google's prod URL)
  *   GA4_TIMEOUT_MS        Abort the send after N ms (default 3000)
+ *   GA4_DEBUG_MODE        "true" adds `debug_mode` to every event so the run
+ *                         shows up in GA4 DebugView (see below)
+ *
+ * On DebugView: the Measurement Protocol only surfaces events in DebugView when
+ * the event carries `debug_mode`. Without it, events land in Realtime/Events but
+ * DebugView stays empty — which reads exactly like "telemetry is broken". Set
+ * GA4_DEBUG_MODE=true while verifying, then unset it.
  */
 
 import { randomUUID } from "node:crypto";
@@ -30,15 +37,40 @@ export type TelemetrySink = (event: TelemetryEvent) => void;
 
 const DEFAULT_ENDPOINT = "https://www.google-analytics.com/mp/collect";
 
+/**
+ * Warn once — and at `warn`, not `debug` — when analytics is switched on but
+ * unusable. The previous behaviour logged only at `debug`, so a production
+ * server running the default LOG_LEVEL=info with a missing GA4_API_SECRET
+ * emitted no signal at all: every event was silently discarded and the operator
+ * had no way to tell that from "no traffic".
+ */
+let warnedMisconfigured = false;
+
 function analyticsEnabled(): boolean {
   // OFF unless explicitly switched on.
   if ((process.env.ENABLE_MCP_ANALYTICS ?? "").toLowerCase() !== "true") {
     return false;
   }
   // ...and only when GA4 credentials are present.
-  return Boolean(
+  const configured = Boolean(
     process.env.GA4_MEASUREMENT_ID && process.env.GA4_API_SECRET,
   );
+  if (!configured && !warnedMisconfigured) {
+    warnedMisconfigured = true;
+    logger.warn(
+      "ENABLE_MCP_ANALYTICS=true but GA4 is not configured — all telemetry is being dropped",
+      {
+        hasMeasurementId: Boolean(process.env.GA4_MEASUREMENT_ID),
+        hasApiSecret: Boolean(process.env.GA4_API_SECRET),
+      },
+    );
+  }
+  return configured;
+}
+
+/** Test seam: reset the once-only misconfiguration warning. */
+export function resetTelemetryWarnings(): void {
+  warnedMisconfigured = false;
 }
 
 /**
@@ -68,9 +100,18 @@ function ga4Sink(event: TelemetryEvent): void {
   const clientId =
     typeof sessionId === "string" && sessionId ? sessionId : randomUUID();
 
+  // GA4 DebugView only shows events that carry `debug_mode`. Without it a
+  // correctly-working integration looks dead in DebugView, which is how the
+  // previous verification attempt stalled.
+  const debugMode =
+    (process.env.GA4_DEBUG_MODE ?? "").toLowerCase() === "true";
+  const params = debugMode
+    ? { ...event.params, debug_mode: true }
+    : event.params;
+
   const body = JSON.stringify({
     client_id: clientId,
-    events: [{ name: event.name, params: event.params }],
+    events: [{ name: event.name, params }],
   });
 
   const controller = new AbortController();
