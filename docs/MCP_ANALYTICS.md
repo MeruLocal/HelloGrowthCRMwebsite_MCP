@@ -248,3 +248,22 @@ curl -N -A "Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)" \
 > never make an event show up in DebugView. Use `GA4_DEBUG_MODE` to confirm events
 > are *arriving*, `GA4_VALIDATE` to confirm they are *well-formed*.
 
+### On DebugView and the "is it even on?" problem
+
+Two things previously made a *working* integration look dead:
+
+1. **DebugView stayed empty.** The Measurement Protocol only surfaces events in
+   DebugView when the event carries `debug_mode`. Events were landing in
+   Realtime/Events the whole time, but the first place anyone looks showed
+   nothing. Set `GA4_DEBUG_MODE=true` while verifying, then unset it.
+2. **A misconfigured server was silent.** If `ENABLE_MCP_ANALYTICS=true` but
+   `GA4_MEASUREMENT_ID` or `GA4_API_SECRET` was missing, every event was dropped
+   and the only trace was a `debug`-level log — invisible at the default
+   `LOG_LEVEL=info`. That is now a **`warn`**, emitted once per process:
+
+   ```
+   WARN ENABLE_MCP_ANALYTICS=true but GA4 is not configured — all telemetry is being dropped
+        {"hasMeasurementId":false,"hasApiSecret":true}
+   ```
+
+   It logs once, not per event, so a busy server cannot flood the log.

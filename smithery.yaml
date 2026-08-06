@@ -3,6 +3,7 @@ startCommand:
   type: stdio
   configSchema:
     type: object
+    required: []
     properties:
       defaultTargetUrl:
         type: string
@@ -11,21 +12,33 @@ startCommand:
           Base URL used by scan_website_bots and generate_robots_txt when the
           tool call does not supply one.
         default: https://hellogrowthcrm.com
+      defaultAccessLog:
+        type: string
+        title: Default access log
+        description: Fallback Apache/Nginx combined-format access log path.
+        default: ./samples/access.log
       crawlerUserAgent:
         type: string
         title: Crawler User-Agent
         description: >-
           User-Agent this server identifies itself with on outbound fetches.
-          Be honest — never spoof another crawler.
+          Be honest — never spoof another crawler. Keep a contact URL in it.
         default: mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)
       maxSitemapPages:
         type: number
         title: Max sitemap pages per run
+        description: Hard cap on pages fetched per scan.
         default: 25
       crawlDelayMs:
         type: number
         title: Per-host crawl delay (ms)
+        description: Per-host delay between outbound fetches.
         default: 1000
+      logLevel:
+        type: string
+        title: Log level
+        enum: [error, warn, info, debug]
+        default: info
       supabaseUrl:
         type: string
         title: Supabase project URL
@@ -41,15 +54,21 @@ startCommand:
       args: ['dist/index.js'],
       env: {
         DEFAULT_TARGET_URL: config.defaultTargetUrl ?? 'https://hellogrowthcrm.com',
+        DEFAULT_ACCESS_LOG: config.defaultAccessLog ?? './samples/access.log',
         CRAWLER_USER_AGENT: config.crawlerUserAgent ?? 'mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)',
         MAX_SITEMAP_PAGES: String(config.maxSitemapPages ?? 25),
         CRAWL_DELAY_MS: String(config.crawlDelayMs ?? 1000),
+        LOG_LEVEL: config.logLevel ?? 'info',
         ...(config.supabaseUrl ? { SUPABASE_URL: config.supabaseUrl } : {}),
         ...(config.supabaseServiceRoleKey ? { SUPABASE_SERVICE_ROLE_KEY: config.supabaseServiceRoleKey } : {}),
       },
     })
   exampleConfig:
     defaultTargetUrl: https://hellogrowthcrm.com
+    defaultAccessLog: ./samples/access.log
     crawlerUserAgent: mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)
     maxSitemapPages: 25
     crawlDelayMs: 1000
+    logLevel: info
+build:
+  dockerfile: Dockerfile

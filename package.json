@@ -32,11 +32,13 @@
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
+    "check:versions": "node scripts/check-versions.mjs",
+    "verify": "npm run typecheck && npm run check:versions && npm test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run check:versions && npm run build"
   },
   "keywords": [
     "mcp",

@@ -13,7 +13,9 @@ All six events are correctly wired and privacy-safe at the code level. The imple
 **Two preconditions before any event reaches GA4:**
 
 1. The server's environment must have `ENABLE_MCP_ANALYTICS=true` **and** both `GA4_MEASUREMENT_ID` and `GA4_API_SECRET` set. The repo's checked-in `.env` does **not** set these, so a default local run sends nothing. Confirm production has them.
-2. ~~Events are sent without `debug_mode`, so DebugView stays empty.~~ **Fixed 2026-08-06.** `src/lib/telemetry.ts` now supports two env switches: `GA4_DEBUG_MODE=true` tags every event with `debug_mode: 1` (event still recorded, and now visible in GA4 → Admin → DebugView), and `GA4_VALIDATE=true` posts to `/debug/mp/collect` and logs `validationMessages` (validated, **not** recorded). Set `GA4_DEBUG_MODE=true` in the deployment env for the verification run, then turn it back off.
+2. ~~Events are sent via the GA4 Measurement Protocol **without** `debug_mode`. They appear in **Realtime** and **Events**, but **not in DebugView**.~~ **Fixed 2026-08-06.** `src/lib/telemetry.ts` now supports two env switches: `GA4_DEBUG_MODE=true` tags every event with `debug_mode: 1` (event still recorded, and now visible in GA4 → Admin → DebugView), and `GA4_VALIDATE=true` posts to `/debug/mp/collect` and logs `validationMessages` (validated, **not** recorded). Set `GA4_DEBUG_MODE=true` in the deployment env for the verification run, then turn it back off.
+
+3. If the switch is on but the credentials are missing, the server now logs a one-time **`warn`** (`"...all telemetry is being dropped"`) instead of a `debug` line that was invisible at the default `LOG_LEVEL=info`. Check the deployment logs for that string before concluding "no AI clients have connected".
 
 ---
 

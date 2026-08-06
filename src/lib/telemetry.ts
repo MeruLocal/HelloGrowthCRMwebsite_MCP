@@ -24,6 +24,11 @@
  *                         validationMessages. Payloads sent this way are
  *                         checked but NOT recorded — one-off diagnosis only.
  *
+ * On DebugView: the Measurement Protocol only surfaces events in DebugView when
+ * the event carries `debug_mode`. Without it, events land in Realtime/Events but
+ * DebugView stays empty — which reads exactly like "telemetry is broken". Set
+ * GA4_DEBUG_MODE=true while verifying, then unset it.
+ *
  * Why both switches: DebugView is populated by the `debug_mode` parameter on
  * the NORMAL endpoint. The /debug/mp/collect endpoint validates a payload and
  * returns errors but records nothing, so it can never make an event appear in
@@ -48,15 +53,40 @@ function envFlag(name: string): boolean {
   return (process.env[name] ?? "").toLowerCase() === "true";
 }
 
+/**
+ * Warn once — and at `warn`, not `debug` — when analytics is switched on but
+ * unusable. The previous behaviour logged only at `debug`, so a production
+ * server running the default LOG_LEVEL=info with a missing GA4_API_SECRET
+ * emitted no signal at all: every event was silently discarded and the operator
+ * had no way to tell that from "no traffic".
+ */
+let warnedMisconfigured = false;
+
 function analyticsEnabled(): boolean {
   // OFF unless explicitly switched on.
   if (!envFlag("ENABLE_MCP_ANALYTICS")) {
     return false;
   }
   // ...and only when GA4 credentials are present.
-  return Boolean(
+  const configured = Boolean(
     process.env.GA4_MEASUREMENT_ID && process.env.GA4_API_SECRET,
   );
+  if (!configured && !warnedMisconfigured) {
+    warnedMisconfigured = true;
+    logger.warn(
+      "ENABLE_MCP_ANALYTICS=true but GA4 is not configured — all telemetry is being dropped",
+      {
+        hasMeasurementId: Boolean(process.env.GA4_MEASUREMENT_ID),
+        hasApiSecret: Boolean(process.env.GA4_API_SECRET),
+      },
+    );
+  }
+  return configured;
+}
+
+/** Test seam: reset the once-only misconfiguration warning. */
+export function resetTelemetryWarnings(): void {
+  warnedMisconfigured = false;
 }
 
 /** Resolve the collect endpoint, honouring GA4_VALIDATE and GA4_ENDPOINT. */
@@ -95,8 +125,8 @@ function ga4Sink(event: TelemetryEvent): void {
     typeof sessionId === "string" && sessionId ? sessionId : randomUUID();
 
   // `debug_mode: 1` is what surfaces an event in GA4's DebugView. Without it
-  // DebugView stays empty no matter how many events land — which is exactly
-  // why MCP telemetry was previously unverifiable in production.
+  // DebugView stays empty no matter how many events land — a correctly-working
+  // integration looks dead, which is how the previous verification stalled.
   const params: Record<string, unknown> = envFlag("GA4_DEBUG_MODE")
     ? { ...event.params, debug_mode: 1 }
     : event.params;

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
-  "description": "Bot detection and governance MCP server: scans a site, classifies every search-engine, AI and scraper crawler that touches it, parses access logs, and generates robots.txt policy.",
+  "description": "Discover, identify and govern every bot hitting your website - search engines, AI crawlers, SEO tools and scrapers - with reverse-DNS identity verification and policy-driven robots.txt generation.",
   "status": "active",
+  "version": "1.0.0",
   "repository": {
     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
     "source": "github"
   },
-  "version": "1.0.0",
   "websiteUrl": "https://hellogrowthcrm.com",
   "packages": [
     {
@@ -24,6 +24,12 @@
           "description": "Base URL used by scan_website_bots and generate_robots_txt when no url argument is given.",
           "isRequired": false,
           "default": "https://hellogrowthcrm.com"
+        },
+        {
+          "name": "DEFAULT_ACCESS_LOG",
+          "description": "Fallback Apache/Nginx combined-format access log path used by analyze_access_logs.",
+          "isRequired": false,
+          "default": "./samples/access.log"
         },
         {
           "name": "CRAWLER_USER_AGENT",
@@ -44,6 +50,12 @@
           "default": "1000"
         },
         {
+          "name": "LOG_LEVEL",
+          "description": "Log verbosity: error, warn, info or debug.",
+          "isRequired": false,
+          "default": "info"
+        },
+        {
           "name": "SUPABASE_URL",
           "description": "Supabase project URL. Only needed for the blog, help, newsletter, forms and analytics tools.",
           "isRequired": false
@@ -61,6 +73,10 @@
     {
       "type": "streamable-http",
       "url": "https://mcp.hellogrowthcrm.com/mcp"
+    },
+    {
+      "type": "sse",
+      "url": "https://mcp.hellogrowthcrm.com/sse"
     }
   ]
 }
