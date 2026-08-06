@@ -1,0 +1,26 @@
+# Normalise all text files to LF in the repository.
+#
+# Without this, a Windows checkout rewrites every file to CRLF and `git diff`
+# reports the entire tree as modified — 10,000+ phantom line changes that bury
+# the handful of real ones and make `git merge --abort` fail with
+# "Entry '<file>' not uptodate". (Diagnosed 2026-08-06.)
+#
+# `text=auto` lets git decide what is text; `eol=lf` pins the working-tree
+# ending so the stored blob and the checkout agree on every platform.
+* text=auto eol=lf
+
+# Binary — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+
+# Shell scripts must keep LF or they will not execute.
+*.sh text eol=lf
+*.mjs text eol=lf
