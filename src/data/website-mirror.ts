@@ -246,19 +246,31 @@ export const COUNTRIES: CountryMarket[] = [
 /* ── Country pricing summaries (lib/pricing-*-data.ts + market-pricing.ts) ────── */
 
 /**
- * CORRECTED 2026-08-06 — the previous rows were materially wrong.
+ * RESTRUCTURED 2026-08-06 — the field names were wrong, not (mostly) the values.
  *
- * `growthPriceShort` held the Managed RevOps *Growth Engine retainer* for every
- * non-India market ($1,500, £1,199, A$2,299, C$2,049, AED 5,499, S$1,999,
- * NZ$2,499) instead of the Growth CRM plan price. Two different products with
- * similar names got crossed, so the MCP was quoting a $1,500/user/month CRM —
- * roughly 150× the real price. The retainers now live in MANAGED_REVOPS below,
- * where they belong (and at their current values: the site moved to $1,499 /
- * $3,999, so even the retainer figures were stale).
+ * The previous shape carried two prices per market under names that described
+ * neither of them:
+ *   • `starterPriceShort` held the GROWTH CRM plan price. There is no Starter
+ *     tier in any market — the ladder is Free Forever → Growth → Enterprise.
+ *     India's ₹99 Starter was retired in 2026-06/07 and the field was left
+ *     named after a plan nobody sells.
+ *   • `growthPriceShort` held the Managed RevOps GROWTH ENGINE retainer — a
+ *     flat monthly service fee, not a per-user CRM price. Two products with
+ *     similar names sharing one field name.
  *
- * `starterPriceShort` is removed. The website has no Starter tier in any market
- * — the ladder is Free Forever → Growth → Enterprise. India's ₹99 Starter was
- * retired in 2026-06/07 and the field was left describing a plan nobody sells.
+ * Most values were right. Reading the old rows correctly (starter=CRM,
+ * growth=retainer), 7 of 8 CRM prices and 7 of 8 retainers matched the site.
+ * Only India's retainer was genuinely wrong here — it duplicated the CRM price
+ * (₹899) instead of carrying the retainer (₹39,999).
+ *
+ * The USA retainer discrepancy went the other way: the mirror said $1,500 and
+ * managed-revops-content.ts said $1,499, but the site's own comparison pages
+ * said $1,500 in eight places. $1,500 was correct and the WEBSITE was fixed
+ * (hellocrmwebsite 2ebbaa4c, 49 files). Same for RevOps Partner: $4,000, not
+ * $3,999. UK CRM is £8 per the site; the mirror's old £9 was stale.
+ *
+ * So this change is mainly about naming and structure: `growthPriceShort` now
+ * means what it says, and the retainers move to MANAGED_REVOPS below.
  *
  * Note on currency symbols: COUNTRIES.currencySymbol for UAE is "AED"
  * (country-industry-categories.ts, used for prose) while the pricing surface
@@ -354,8 +366,8 @@ export const COUNTRY_PRICING: CountryPricingSummary[] = [
 /**
  * Managed RevOps is a SERVICE sold alongside the CRM, not a plan tier. Growth
  * lists it as an add-on; Enterprise bundles it. Flat monthly retainer, not
- * per-seat — which is exactly why folding these numbers into a per-user pricing
- * field (as the old COUNTRY_PRICING did) produced nonsense.
+ * per-seat — which is why it does not belong in a field named "per user/mo",
+ * where COUNTRY_PRICING used to keep it.
  */
 export interface ManagedRevOpsTier {
   slug: string;
