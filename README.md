@@ -6,7 +6,7 @@ It is **polite by design**: it respects `robots.txt`, rate-limits its own fetche
 
 ## Features
 
-- **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus 75 more, see [the full catalog](#full-mcp-tool-catalog-83-tools).
+- **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus 80 more, see [the full catalog](#full-mcp-tool-catalog-88-tools).
 - **Curated database of 58 well-known bots** — Googlebot, Bingbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Amazonbot, Google-Extended, Applebot-Extended, FacebookBot, LinkedInBot, AhrefsBot, SemrushBot, Bytespider, and more — each tagged with category, operator, baseline risk, and reverse-DNS verification suffixes.
 - **Behavioural risk scoring**: combines UA matching, robots.txt compliance, error rate, request rate, and unique-path fan-out into a 0–100 score and a recommended action (`allow` / `monitor` / `rate-limit` / `block` / `verify-identity`).
 - **Cryptographic-grade identity verification** via PTR + forward DNS (same method documented by Google, Microsoft, OpenAI).
@@ -21,7 +21,7 @@ HelloGrowthCRMwebsite_MCP/
 ├─ src/
 │  ├─ index.ts                # entrypoint: loads .env, starts the MCP server
 │  ├─ server.ts               # wires tools into ListTools / CallTool
-│  ├─ tools/                  # 34 files — one per tool group, plus:
+│  ├─ tools/                  # 36 files — one per tool group, plus:
 │  │  ├─ tool-types.ts        #   defineTool() / ok() / fail() helpers
 │  │  ├─ index.ts             #   the registry every tool must be added to
 │  │  └─ …                    #   bot governance, page content, and the
@@ -43,7 +43,10 @@ HelloGrowthCRMwebsite_MCP/
 ├─ crm-mcp-tools/             # standalone CRM tools (WhatsApp, calls, sequences)
 ├─ docs/                      # analytics, GA4 verification, release notes
 │  └─ plans/                  # GEO/AEO master plan
-├─ scripts/verify-mcp-ga4.sh
+├─ scripts/
+│  ├─ verify-mcp-ga4.sh        # live GA4 telemetry check
+│  ├─ geo-audit.sh             # re-derives every GEO plan finding; exit 1 on regression
+│  └─ check-versions.mjs       # release gate: the 3 version strings must agree
 ├─ samples/
 │  ├─ robots.txt
 │  ├─ sitemap.xml
@@ -54,6 +57,7 @@ HelloGrowthCRMwebsite_MCP/
 ├─ .env.example
 ├─ package.json
 ├─ tsconfig.json
+├─ RELEASING.md               # version-bump procedure enforced by check-versions
 └─ README.md
 ```
 
@@ -117,12 +121,13 @@ A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
 `/mcp`, SSE at `/sse`. Manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`.
 
 > ⚠️ **The hosted deployment can lag `main`.** Verified 2026-08-05: local `main`
-> and production both expose the same 83 tools, but `fetch_page_content` on
+> and production both exposed the same 83 tools, but `fetch_page_content` on
 > `/pricing` returned `wordCount: 3194` locally and `wordCount: 0` in production
 > — production is running a build that predates the 2026-07-13 extraction fix.
 > **A matching tool count does not mean a matching build.** If a tool behaves
 > unexpectedly against the hosted endpoint, reproduce it locally before
-> filing a bug.
+> filing a bug. As of 2026-08-06 `main` is at **88** tools, so a hosted server
+> still reporting 83 has not picked this branch up either.
 
 ## The eight MCP tools
 
@@ -139,7 +144,7 @@ A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
 
 Full payload examples live in [`examples/usage.md`](examples/usage.md).
 
-## Full MCP tool catalog (83 tools)
+## Full MCP tool catalog (88 tools)
 
 Beyond the original eight bot-governance tools, this server exposes the entire
 hellogrowthcrm.com website — every module, feature, product, pricing table, AI
@@ -151,12 +156,14 @@ of the website source files (see [`WEBSITE_DATA_TOOLS.md`](WEBSITE_DATA_TOOLS.md
 |----------|-------|
 | Bot governance (8) | `scan_website_bots`, `analyze_access_logs`, `verify_bot_identity`, `list_allowed_bots`, `list_blocked_bots`, `generate_robots_txt`, `suggest_bot_policy`, `export_bot_report` |
 | Page content (2) | `fetch_page_content`, `crawl_pages` — fetch a live page (or walk the sitemap) and return title, meta, canonical, headings, links and readable text |
+| llms.txt corpus (2) | `generate_llms_txt`, `check_llms_txt` — build an `llms-full.txt` grounding corpus from the mirror and compare it against the live file |
+| GEO/AEO diagnostics (2) | `check_ai_extractability`, `validate_sitemaps` — measure `<main>` vs `<body>` readable text to catch pages that are HTTP 200 but blank to an extractor, and expand a sitemap index to catch children that time out, reset or 5xx |
 | Blog (7) | `blog_list`, `blog_get`, `blog_search`, `blog_create`, `blog_update`, `blog_revalidate`, `blog_get_categories` |
 | Help center (6) | `help_list_categories`, `help_list_articles`, `help_get_article`, `help_search`, `help_create_article`, `help_update_article` |
 | Newsletter (4) | `newsletter_subscribe`, `newsletter_unsubscribe`, `newsletter_get_subscribers`, `newsletter_get_stats` |
 | Contact forms (4) | `forms_submit`, `forms_list_submissions`, `forms_get_submission`, `forms_export_csv` |
 | Static content (6) | `content_list_case_studies`, `content_list_comparisons`, `content_get_comparison`, `content_list_industries`, `content_list_tools`, `content_get_seo_rules` |
-| Pricing (5) | `pricing_get_plans`, `pricing_get_addons`, `pricing_get_faq`, `pricing_compare_plans`, `pricing_get_country_plans` |
+| Pricing (6) | `pricing_get_plans`, `pricing_get_addons`, `pricing_get_faq`, `pricing_compare_plans`, `pricing_get_country_plans`, `pricing_get_managed_revops` — the CRM ladder is Free → Growth → Enterprise; Managed RevOps is a flat monthly service retainer, not a per-seat tier |
 | Features (3) | `features_list`, `features_get`, `features_list_products` |
 | Analytics (1) | `analytics_social_proof` |
 | Countries (2) | `countries_list`, `country_get` |
