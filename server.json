@@ -1,0 +1,52 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.merulocal/hellogrowthcrmwebsite-mcp",
+  "description": "Discover, identify and govern every bot hitting your website - search engines, AI crawlers, SEO tools and scrapers - with reverse-DNS identity verification and policy-driven robots.txt generation.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
+    "source": "github"
+  },
+  "websiteUrl": "https://hellogrowthcrm.com",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "mcp-bot-crawler",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DEFAULT_TARGET_URL",
+          "description": "Site to scan when a tool call omits a URL.",
+          "isRequired": false,
+          "default": "https://example.com"
+        },
+        {
+          "name": "DEFAULT_ACCESS_LOG",
+          "description": "Fallback Apache/Nginx combined-format access log path.",
+          "isRequired": false,
+          "default": "./samples/access.log"
+        },
+        {
+          "name": "CRAWLER_USER_AGENT",
+          "description": "Outbound User-Agent used for polite fetches.",
+          "isRequired": false,
+          "default": "mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)"
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.hellogrowthcrm.com/mcp"
+    },
+    {
+      "type": "sse",
+      "url": "https://mcp.hellogrowthcrm.com/sse"
+    }
+  ]
+}
