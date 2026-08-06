@@ -1,10 +1,25 @@
 import { z } from "zod";
 import { defineTool, ok } from "./tool-types.js";
-import { COUNTRY_PRICING, SYNCED_AT } from "../data/website-mirror.js";
+import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirror.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pricing data — sourced from hellocrmwebsite/src/lib/pricing-india-data.ts,
-// src/views/Pricing.tsx, and src/hooks/usePricing.ts (synced 2026-07-08)
+// Pricing data — sourced from hellocrmwebsite/src/lib/pricing-usa-data.ts,
+// pricing-india-data.ts and managed-revops-content.ts (synced 2026-08-06)
+//
+// REWRITTEN 2026-08-06. The previous GLOBAL_PLANS was a full plan generation
+// behind the website and was quoting plans that no longer exist:
+//
+//   • "Professional" was renamed to "Growth" and its monthly rate moved
+//     $12 → $13. AI credits were 2,500/user/mo, not 50,000.
+//   • The Free tier caps tightened: 150 leads / 20 accounts / 100 tasks /
+//     2 templates (this file claimed 200 / 50 / 500 / 5).
+//   • "Growth Engine" and "RevOps Partner" are NOT CRM plan tiers. They are
+//     Managed RevOps service retainers — Growth lists the service as an add-on
+//     and Enterprise bundles it. They are exposed by pricing_get_managed_revops
+//     below, at their current prices ($1,499 / $3,999, not $1,500 / $4,000).
+//   • "Enterprise" (custom pricing) was missing entirely from the global ladder.
+//
+// The live ladder in every market is: Free Forever → Growth → Enterprise.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const GLOBAL_PLANS = [
@@ -13,98 +28,95 @@ const GLOBAL_PLANS = [
     slug: "free",
     price_annual: "$0",
     price_monthly: "$0",
-    billing: "Free forever · No credit card · 1 user · 200 leads · Never expires",
+    billing: "Free forever · No credit card · 1 user · 150 leads · Never expires",
     best_for: "Our default starter — not a trial",
     ai_credits: "50 total",
-    limits: { users: 1, leads: 200, accounts: 50, pipelines: 1, tasks: 500 },
+    limits: { users: 1, leads: 150, accounts: 20, pipelines: 1, tasks: 100 },
     features: [
-      "Lead & Contact Management (200 leads cap)",
-      "Accounts (50 cap) + 1 deal pipeline",
+      "Lead & Contact Management (150 leads/contacts cap)",
+      "Accounts (20 cap) + 1 deal pipeline",
       "Pipeline Management (Kanban)",
-      "Task Board (500 tasks, Kanban only)",
+      "Task Board (100 tasks, Kanban only)",
       "Basic activity logging",
-      "5 Basic Email Templates",
-      "Appointment Scheduling",
+      "2 Basic Email Templates",
+      "3 Custom Fields",
+      "WhatsApp click-to-chat only (no API-backed inbox)",
+      "AI Writing Assistant (capped, 5 uses/month)",
+      "AI Chatbot — 1 conversation/month",
       "Mobile dashboard (read-only)",
       "30-day analytics",
       "1 Growth Audit included",
       "Community support",
+      "\"Powered by HelloGrowthCRM\" branding shown",
     ],
     cta_url: "https://app.hellogrowthcrm.com/signup",
   },
   {
-    name: "Professional",
-    slug: "professional",
-    price_annual: "$10/user/month (billed annually — 2 months free)",
-    price_monthly: "$12/user/month",
-    billing: "Annual billing · $12/user/mo monthly · 14-day free trial · No credit card",
-    best_for: "Tech-savvy self-serve teams",
-    ai_credits: "50,000 per user/month · Overage $0.005/K",
+    name: "Growth",
+    slug: "growth",
+    price_annual: "$10/user/month (billed annually)",
+    price_monthly: "$13/user/month",
+    billing: "Annual billing · Unlimited users · 14-day free trial",
+    best_for: "Growing US sales teams",
+    ai_credits: "2,500 per user/month",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
+    popular: true,
     features: [
-      "Unlimited leads & contacts",
-      "Unlimited accounts, deals, activities, prospecting & exhibition capture",
-      "Pipeline management (Kanban + drag-and-drop)",
+      "Everything in Free, PLUS:",
+      "Unlimited leads, contacts & deals with unlimited pipelines",
       "AI lead scoring & enrichment",
-      "Built-in dialer with call tracking",
-      "HelloMail inbox, sequences, templates & shared communications",
-      "WhatsApp & SMS (incl. bulk broadcast)",
-      "Real-time dashboards & analytics",
-      "Task boards (Kanban, table, calendar) + automation",
-      "Products, quotes, invoices, payments & revenue tracking",
+      "Built-in dialer with call tracking & recording",
+      "Bulk WhatsApp broadcasts & SMS campaigns",
+      "Real-time dashboards, team analytics & custom reports",
+      "Prospecting + exhibition capture",
       "Campaigns, web chat assistant & visitor tracking",
-      "Customer portal, referrals, landing pages, tickets & knowledge base",
-      "Scheduling & booking pages",
-      "API access & 630+ integrations",
-      "Standard support (email + chat)",
-      "Onboarding checklist",
+      "Market Radar, Growth Audit, AI Insights & AI Agents (Beta)",
+      "Gamification, goals, leaderboard & pipeline forecast",
+      "Products, proposals, invoices, expenses & revenue tracking",
+      "Customer portal, referrals, references & landing pages",
+      "Tickets + knowledge base",
+      "API access & all 630+ integrations across 116 categories",
+      "Custom fields, modules, pipeline stages & workflows",
+      "Territory & team management with map view",
+      "AI-assisted sales forecasting",
+      "Role-based access control",
+      "Priority support + dedicated onboarding",
+      "Managed RevOps add-on available — our specialists run your pipeline (from $1,499/mo flat)",
+      "2,500 AI credits/user/month",
     ],
     guarantees: ["14-day free trial", "14-day money-back guarantee on annual plans (7-day on monthly renewals)"],
     cta_url: "https://app.hellogrowthcrm.com/signup",
   },
   {
-    name: "Growth Engine",
-    slug: "growth-engine",
-    price_annual: "$1,500/month (flat retainer)",
-    price_monthly: "$1,500/month (flat retainer)",
-    billing: "Monthly retainer · Includes Professional software · No long-term contract required",
-    best_for: "Founders who won't manage the CRM themselves",
-    ai_credits: "15,000/month shared pool",
+    name: "Enterprise",
+    slug: "enterprise",
+    price_annual: "Talk to us — custom pricing",
+    price_monthly: "Annual contract · Custom pricing",
+    billing: "Annual contract · Custom per-company pricing",
+    best_for: "Large US enterprises",
+    ai_credits: "10,000 per user/month + 3-month rollover",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     features: [
-      "Everything in Professional, PLUS:",
-      "Dedicated Revenue Specialist assigned",
-      "Weekly cadence: triage → assign → follow-up → clean → report",
-      "Same-business-day SLA for inbound leads",
-      "Email & SMS sequence management (specialist-run)",
-      "Pipeline cleanup & data hygiene (weekly)",
-      "Weekly KPI report with narrative commentary",
-      "Client approval workflow for templates",
-      "90-minute kickoff + pipeline architecture session",
+      "Everything in Growth, PLUS:",
+      "Dedicated named Account Manager",
+      "Custom workflow automation (multi-step, approval flows)",
+      "Advanced revenue intelligence, attribution & churn prediction",
+      "Multi-location / branch management",
+      "Audit trails, compliance reporting & full activity audit",
+      "White-label customer portal & custom agents",
+      "SLA policies, approval flows & multi-currency commerce",
+      "Unlimited exports + scheduled reports",
+      "All 630+ integrations + custom integration support",
+      "Managed RevOps included — dedicated RevOps Specialists run your pipeline (Growth Engine + RevOps Partner tiers)",
+      "Custom training (up to 4 sessions/year)",
+      "SLA-backed 99.9% uptime",
+      "Priority phone support",
+      "Custom API rate limits",
+      "Data migration & onboarding support",
+      "10,000 AI credits/user/month + 3-month rollover",
     ],
-    cta_url: "https://calendly.com/hellogrowthcrm-sales/demo",
-  },
-  {
-    name: "RevOps Partner",
-    slug: "revops-partner",
-    price_annual: "$4,000/month (flat retainer)",
-    price_monthly: "$4,000/month (flat retainer)",
-    billing: "Monthly retainer · Includes Professional software · Dedicated pod",
-    best_for: "Scaling teams 15+ people",
-    ai_credits: "Unlimited (fair use)",
-    limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
-    features: [
-      "Everything in Growth Engine, PLUS:",
-      "Dedicated pod: Revenue Specialist + Automation Specialist",
-      "Quarterly funnel review with KPI targets",
-      "Automation optimization (sequencing, routing, scoring)",
-      "Lead scoring model tuning (quarterly)",
-      "Governance & instrumentation plan",
-      "Monthly stack review",
-      "Custom automation builds (up to 3/month)",
-      "Priority SLA: same-business-day on all requests",
-    ],
-    cta_url: "https://calendly.com/hellogrowthcrm-sales/demo",
+    cta_url:
+      "https://app.hellogrowthcrm.com/book/hellogrowthcrm-app-free-demo?token=77396889-c602-4e59-be14-d16f8663e5ba",
   },
 ];
 
@@ -114,23 +126,26 @@ const INDIA_PLANS = [
     slug: "free",
     price_annual: "₹0",
     price_monthly: "₹0",
-    billing: "Free forever · No credit card · 1 user · 200 leads · Never expires",
+    billing: "Free forever · No credit card · 1 user · 150 leads · Never expires",
     best_for: "Default starter — not a trial",
     ai_credits: "50 total",
-    limits: { leads: 200, accounts: 50, pipelines: 1, tasks: 500 },
+    limits: { leads: 150, accounts: 20, pipelines: 1, tasks: 100 },
     features: [
-      "Lead & Contact Management (200 leads cap)",
-      "Accounts (50 cap) + 1 deal pipeline",
+      "Lead & Contact Management (150 leads/contacts cap)",
+      "Accounts (20 cap) + 1 deal pipeline",
       "Pipeline Management (Kanban)",
-      "Task Board (500 tasks, Kanban only)",
+      "Task Board (100 tasks, Kanban only)",
       "Basic activity logging",
-      "5 Basic Email Templates",
-      "Appointment Scheduling",
+      "2 Basic Email Templates",
+      "3 Custom Fields",
+      "WhatsApp click-to-chat only (no API-backed inbox)",
+      "AI Writing Assistant (capped, 5 uses/month)",
+      "AI Chatbot — 1 conversation/month",
       "Mobile dashboard (read-only)",
       "30-day analytics",
       "1 Growth Audit included",
       "Community support",
-      "Business listings",
+      "\"Powered by HelloGrowthCRM\" branding shown",
     ],
     cta_url: "https://app.hellogrowthcrm.com/signup",
   },
@@ -228,13 +243,14 @@ const ADDONS = {
 
 const PRICING_FAQ = [
   { q: "Is the Free plan really forever?", a: "Yes. Free Forever is not a trial — it never expires. You keep it as long as you want." },
-  { q: "Is there a free trial on paid plans?", a: "Professional (global) and Growth (India) have a 14-day free trial with full feature access. No credit card required." },
+  { q: "Is there a free trial on paid plans?", a: "Growth has a 14-day free trial with full feature access in every market. No credit card required." },
   { q: "Is there a money-back guarantee?", a: "Yes — a 14-day money-back window on annual plans (7-day on monthly renewals), pro-rated on India annual plans. See the refund policy at /legal/refunds." },
   { q: "Can I switch plans anytime?", a: "Yes. You can upgrade or downgrade at any time." },
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
-  { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Professional for nonprofits with documentation." },
-  { q: "What payment methods are accepted?", a: "Global: credit cards, ACH (US), wire transfers. India: UPI, NEFT, Razorpay, credit cards. All India prices include GST." },
-  { q: "Is there a minimum number of users?", a: "No minimum. The Free Plan supports 1 user (200 leads). Professional and Growth scale from 1 user upward; Growth Engine and RevOps Partner are flat monthly retainers with no per-seat charge." },
+  { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($13 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
+  { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
+  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. All India prices include GST. Call pricing_get_country_plans for a specific market." },
+  { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
 ];
@@ -248,11 +264,11 @@ const PRICING_FAQ = [
 export const pricingGetPlans = defineTool({
   schema: z.object({
     region: z.enum(["global", "india", "both"]).default("both").describe("'global' for USD plans, 'india' for INR plans, 'both' for all."),
-    plan: z.string().optional().describe("Filter by plan slug: free, professional, growth, growth-engine, enterprise, revops-partner."),
+    plan: z.string().optional().describe("Filter by plan slug: free, growth, enterprise."),
   }),
   definition: {
     name: "pricing_get_plans",
-    description: "Get HelloGrowthCRM pricing plans. Use region='global' for USD plans (Free, Professional, Growth Engine, RevOps Partner) or region='india' for INR plans (Free, Growth, Enterprise).",
+    description: "Get HelloGrowthCRM CRM plans. The ladder is Free Forever → Growth → Enterprise in every market. Use region='global' for USD or region='india' for INR. Managed RevOps retainers are a separate service — call pricing_get_managed_revops for those.",
     inputSchema: {
       type: "object",
       properties: {
@@ -357,7 +373,7 @@ export const pricingGetFaq = defineTool({
 
 export const pricingComparePlans = defineTool({
   schema: z.object({
-    plan_a: z.string().describe("First plan slug (e.g. free, professional, growth)."),
+    plan_a: z.string().describe("First plan slug (free, growth, enterprise)."),
     plan_b: z.string().describe("Second plan slug to compare against."),
     region: z.enum(["global", "india"]).default("india"),
   }),
@@ -399,7 +415,8 @@ export const pricingComparePlans = defineTool({
 // ── pricing_get_country_plans ──────────────────────────────────────────────────
 // Country-localized pricing summaries (sourced from lib/pricing-*-data.ts).
 // The full global/India plan detail lives in pricing_get_plans; this surfaces the
-// 8 localized hubs (currency, Starter/Growth short prices, pricing page href).
+// 8 localized hubs (currency, Growth annual/monthly price, payment methods,
+// compliance, pricing page href).
 
 export const pricingGetCountryPlans = defineTool({
   schema: z.object({
@@ -411,7 +428,7 @@ export const pricingGetCountryPlans = defineTool({
   definition: {
     name: "pricing_get_country_plans",
     description:
-      "Get HelloGrowthCRM country-localized pricing summaries for the 8 market hubs: currency, Starter & Growth short prices, and the country pricing page URL.",
+      "Get HelloGrowthCRM country-localized pricing for the 8 market hubs: currency, the Growth plan's annual and monthly per-user price, the full plan-ladder summary line, accepted payment methods, compliance posture, and the country pricing page URL.",
     inputSchema: {
       type: "object",
       properties: {
@@ -440,6 +457,62 @@ export const pricingGetCountryPlans = defineTool({
         home_url: `https://hellogrowthcrm.com${p.homeHref}`,
         pricing_url: `https://hellogrowthcrm.com${p.pricingHref}`,
       })),
+    });
+  },
+});
+
+// ── pricing_get_managed_revops ─────────────────────────────────────────────────
+// Managed RevOps is a SERVICE, not a CRM plan tier. It is sold as a flat monthly
+// retainer alongside the CRM: available as an add-on on Growth, bundled with
+// Enterprise. These figures used to be stored in the per-user CRM pricing field,
+// which made the MCP quote a ~$1,500/user/month CRM. Keep them here.
+
+export const pricingGetManagedRevOps = defineTool({
+  schema: z.object({
+    country: z
+      .string()
+      .optional()
+      .describe(
+        "Market slug (global, in, usa, uk, canada, au, uae, singapore, new-zealand). Omit for all.",
+      ),
+  }),
+  definition: {
+    name: "pricing_get_managed_revops",
+    description:
+      "Get HelloGrowthCRM Managed RevOps service pricing — the Growth Engine and RevOps Partner tiers, as a flat monthly retainer in local currency. This is a done-for-you service where HelloGrowthCRM specialists run the customer's pipeline; it is NOT a per-seat CRM plan. Available as an add-on on Growth and included with Enterprise.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        country: {
+          type: "string",
+          description: "global | in | usa | uk | canada | au | uae | singapore | new-zealand",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  async handle(args) {
+    const available = Object.keys(MANAGED_REVOPS).join(", ");
+
+    if (args.country) {
+      const key = args.country.toLowerCase();
+      const tiers = MANAGED_REVOPS[key];
+      if (!tiers) {
+        return ok({ error: `Market "${args.country}" not found. Available: ${available}.` });
+      }
+      return ok({
+        synced_at: SYNCED_AT,
+        billing_model: "Flat monthly retainer — not per seat. No long-term contract required.",
+        market: key,
+        tiers,
+      });
+    }
+
+    return ok({
+      synced_at: SYNCED_AT,
+      billing_model: "Flat monthly retainer — not per seat. No long-term contract required.",
+      market_count: Object.keys(MANAGED_REVOPS).length,
+      markets: MANAGED_REVOPS,
     });
   },
 });

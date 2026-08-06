@@ -95,7 +95,10 @@ describe("company tools", () => {
 
   it("company_get_contacts returns all contacts when no region given", async () => {
     const { json } = await run(companyGetContacts);
-    expect((json.count as number)).toBe(2);
+    // IN, US and GLOBAL. The GLOBAL desk was added 2026-08-06 to mirror
+    // GLOBAL_CONTACT in lib/contact-matrix.ts — previously non-US/non-IN
+    // visitors were told "US support" instead of "Global support".
+    expect((json.count as number)).toBe(3);
   });
 
   it("company_get_contacts resolves a specific region", async () => {

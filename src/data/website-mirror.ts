@@ -12,17 +12,18 @@
  *
  * PROVENANCE (hellocrmwebsite/src/…)
  *   COMPANY ............ lib/seo/site.ts (SITE) + lib/brand.ts
- *   CONTACTS ........... lib/contact-matrix.ts
+ *   CONTACTS ........... lib/contact-matrix.ts + lib/support-hours.ts
  *   COUNTRIES .......... lib/country-industry-categories.ts + lib/home-market.ts
  *   COUNTRY_PRICING .... lib/pricing-{usa,uk,au,canada,uae,singapore,nz,india}-data.ts
  *                        + lib/market-pricing.ts
+ *   MANAGED_REVOPS ..... lib/managed-revops-content.ts (MANAGED_REVOPS_CONTENT)
  *   PRODUCTS ........... lib/product-feature-pages.ts (PRODUCT_FEATURE_PAGES)
  *   HREFLANG ........... lib/hreflang.ts (getHreflangTags)
  *   SITEMAPS ........... app/sitemap-index.xml + app/*-sitemap.xml routes
  *   SCHEMA ............. lib/seo/schema.ts (orgSchema, softwareAppSchema, …)
  */
 
-export const SYNCED_AT = "2026-07-08";
+export const SYNCED_AT = "2026-08-06";
 export const WEBSITE_SOURCE_OF_TRUTH = "https://hellogrowthcrm.com";
 
 /* ── Company / Organization (lib/seo/site.ts + lib/brand.ts) ─────────────────── */
@@ -54,9 +55,18 @@ export const COMPANY = {
     postalCode: "19958",
     addressCountry: "US",
   },
-  /** Organization.sameAs profiles. */
+  /**
+   * Organization.sameAs profiles — exact order and values of SITE.sameAs.
+   *
+   * Fixed 2026-08-06: sameAs[0] was the LinkedIn *admin dashboard* URL
+   * (/company/112020713/admin/dashboard/), a logged-in-only page that was being
+   * published as a public entity profile. The website has always used the public
+   * vanity URL. The Software Advice entry was also stale — the old
+   * "/crm/hellogrowthcrm-profile/" slug 404s; the live profile is keyed by the
+   * Gartner Digital Markets numeric listing ID (corrected on the site 2026-07-13).
+   */
   sameAs: [
-    "https://www.linkedin.com/company/112020713/admin/dashboard/",
+    "https://www.linkedin.com/company/hellogrowthcrm/",
     "https://x.com/hellogrowthcrm",
     "https://github.com/hellogrowthcrm",
     "https://www.instagram.com/hellogrowthcrm",
@@ -64,7 +74,7 @@ export const COMPANY = {
     "https://www.g2.com/products/hellogrowthcrm/reviews",
     "https://www.capterra.com/p/10037980/HelloGrowthCRM/",
     "https://www.producthunt.com/products/hellogrowthcrm",
-    "https://www.softwareadvice.com/crm/hellogrowthcrm-profile/",
+    "https://www.softwareadvice.com/product/539392-HelloGrowthCRM/",
     "https://www.getapp.com/customer-management-software/a/hellogrowthcrm/",
     "https://play.google.com/store/apps/details?id=com.hellogrowthcrm.app",
   ],
@@ -73,6 +83,9 @@ export const COMPANY = {
     blueHex: "#2B38A5",
     logoLight: "/HelloGrowthCRM_LIGHT_560.webp",
     logoDark: "/HelloGrowthCRM_DARK_560.webp",
+    /** 324w srcset variants — the header renders ≤323 CSS px. */
+    logoLight324: "/HelloGrowthCRM_LIGHT_324.webp",
+    logoDark324: "/HelloGrowthCRM_DARK_324.webp",
     logoWidth: 560,
     logoHeight: 97,
     x: "https://x.com/hellogrowthcrm",
@@ -82,8 +95,71 @@ export const COMPANY = {
     instagram: "https://www.instagram.com/hellogrowthcrm",
     facebook: "https://www.facebook.com/profile.php?id=61588263746188",
     productHunt: "https://www.producthunt.com/products/hellogrowthcrm",
+    /** Review-site profiles verified live on the website 2026-07-13. */
+    alternativeTo: "https://alternativeto.net/software/hellogrowthcrm/about/",
+    slashdot: "https://slashdot.org/software/p/HelloGrowthCRM/alternatives",
+    technologyAdvice: "https://technologyadvice.com/products/hellogrowthcrm/",
+    softwareAdvice: "https://www.softwareadvice.com/product/539392-HelloGrowthCRM/",
   },
 } as const;
+
+/* ── Support hours (lib/support-hours.ts — ops-editable source of truth) ─────── */
+
+export interface SupportHours {
+  label: string;
+  short: string;
+  long: string;
+  timeZone: string;
+  spec: { dayOfWeek: string[]; opens: string; closes: string };
+}
+
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const MON_TO_SAT = [...WEEKDAYS, "Saturday"];
+
+/**
+ * Mirror of SUPPORT_HOURS. The US window is 9 AM–6 PM Eastern, NOT the
+ * "9am–5pm EST" this file previously claimed — the mirror was advertising a
+ * shorter support window than the website does.
+ */
+export const SUPPORT_HOURS: Record<"IN" | "US" | "CA" | "GLOBAL", SupportHours> = {
+  IN: {
+    label: "India support hours",
+    short: "Mon–Sat, 10 AM–7 PM IST",
+    long: "Monday–Saturday, 10:00 AM–7:00 PM IST",
+    timeZone: "Asia/Kolkata",
+    spec: { dayOfWeek: MON_TO_SAT, opens: "10:00", closes: "19:00" },
+  },
+  US: {
+    label: "US support hours",
+    short: "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)",
+    long: "Monday–Friday, 9:00 AM–6:00 PM Eastern (6:00 AM–3:00 PM Pacific)",
+    timeZone: "America/New_York",
+    spec: { dayOfWeek: WEEKDAYS, opens: "09:00", closes: "18:00" },
+  },
+  CA: {
+    label: "Canada support hours",
+    short: "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)",
+    long: "Monday–Friday, 9:00 AM–6:00 PM Eastern (6:00 AM–3:00 PM Pacific)",
+    timeZone: "America/Toronto",
+    spec: { dayOfWeek: WEEKDAYS, opens: "09:00", closes: "18:00" },
+  },
+  GLOBAL: {
+    label: "Support hours",
+    short: "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)",
+    long: "Monday–Friday, 9:00 AM–6:00 PM Eastern (6:00 AM–3:00 PM Pacific)",
+    timeZone: "America/New_York",
+    spec: { dayOfWeek: WEEKDAYS, opens: "09:00", closes: "18:00" },
+  },
+};
+
+/** Mirrors getSupportHours(): IN→IN, CA→CA, US/empty→US, anything else→GLOBAL. */
+export function getSupportHours(countryCode?: string | null): SupportHours {
+  const c = (countryCode ?? "").toUpperCase();
+  if (c === "IN") return SUPPORT_HOURS.IN;
+  if (c === "CA") return SUPPORT_HOURS.CA;
+  if (c === "US" || !c) return SUPPORT_HOURS.US;
+  return SUPPORT_HOURS.GLOBAL;
+}
 
 /* ── Regional contacts (lib/contact-matrix.ts) ───────────────────────────────── */
 
@@ -108,7 +184,7 @@ export const CONTACTS: RegionalContact[] = [
       "902, 903, Shivalik Complex, Panchvati Cir, opp. Bank of Baroda nr",
       "Panchavati Society, Ambawadi, Ahmedabad, Gujarat 380006, India",
     ],
-    hours: "Mon–Sat, 10am–7pm IST",
+    hours: SUPPORT_HOURS.IN.short,
   },
   {
     region: "US",
@@ -117,15 +193,27 @@ export const CONTACTS: RegionalContact[] = [
     phoneDisplay: "+1 607 318-2126",
     addressLabel: "Lewes, Delaware, USA",
     addressLines: ["16192 Coastal Hwy", "Lewes, DE 19958, USA"],
-    hours: "Mon–Fri, 9am–5pm EST",
+    hours: SUPPORT_HOURS.US.short,
+  },
+  {
+    // GLOBAL_CONTACT on the website: same desk and address as US, different
+    // label. Previously absent, so non-US/non-IN callers were told "US support".
+    region: "GLOBAL",
+    label: "Global support",
+    phoneE164: "+16073182126",
+    phoneDisplay: "+1 607 318-2126",
+    addressLabel: "Lewes, Delaware, USA",
+    addressLines: ["16192 Coastal Hwy", "Lewes, DE 19958, USA"],
+    hours: SUPPORT_HOURS.US.short,
   },
 ];
 
-/** Mirrors getRegionalContact(): IN→India, US/empty→US, anything else→US (global). */
+/** Mirrors getRegionalContact(): IN→India, US/empty→US, anything else→Global. */
 export function getRegionalContact(countryCode?: string | null): RegionalContact {
   const normalized = (countryCode ?? "").toUpperCase();
   if (normalized === "IN") return CONTACTS[0]!;
-  return CONTACTS[1]!;
+  if (!normalized || normalized === "US") return CONTACTS[1]!;
+  return CONTACTS[2]!;
 }
 
 /* ── Country market contexts (lib/country-industry-categories.ts) ────────────── */
@@ -157,28 +245,164 @@ export const COUNTRIES: CountryMarket[] = [
 
 /* ── Country pricing summaries (lib/pricing-*-data.ts + market-pricing.ts) ────── */
 
+/**
+ * CORRECTED 2026-08-06 — the previous rows were materially wrong.
+ *
+ * `growthPriceShort` held the Managed RevOps *Growth Engine retainer* for every
+ * non-India market ($1,500, £1,199, A$2,299, C$2,049, AED 5,499, S$1,999,
+ * NZ$2,499) instead of the Growth CRM plan price. Two different products with
+ * similar names got crossed, so the MCP was quoting a $1,500/user/month CRM —
+ * roughly 150× the real price. The retainers now live in MANAGED_REVOPS below,
+ * where they belong (and at their current values: the site moved to $1,499 /
+ * $3,999, so even the retainer figures were stale).
+ *
+ * `starterPriceShort` is removed. The website has no Starter tier in any market
+ * — the ladder is Free Forever → Growth → Enterprise. India's ₹99 Starter was
+ * retired in 2026-06/07 and the field was left describing a plan nobody sells.
+ *
+ * Note on currency symbols: COUNTRIES.currencySymbol for UAE is "AED"
+ * (country-industry-categories.ts, used for prose) while the pricing surface
+ * uses the Arabic "د.إ" (pricing-uae-data.ts). Both are correct for their own
+ * context; they are deliberately not unified.
+ */
 export interface CountryPricingSummary {
   countryName: string;
   countrySlug: string;
   currencyCode: string;
   currencySymbol: string;
   homeHref: string;
-  starterPriceShort: string;
+  /** Growth plan, annual billing — the headline per-user price. */
   growthPriceShort: string;
+  /** Growth plan billed monthly (higher than the annual rate). */
+  growthPriceMonthly: string;
+  /** Full plan-ladder line shown on the pricing page. */
+  pricingSummaryLine: string;
+  paymentMethods: string;
+  compliance: string;
   pricingHref: string;
 }
 
 export const COUNTRY_PRICING: CountryPricingSummary[] = [
-  // India Starter (₹99) tier was removed on the website 2026-06/07 — Growth is now the entry paid plan.
-  { countryName: "India", countrySlug: "in", currencyCode: "INR", currencySymbol: "₹", homeHref: "/in", starterPriceShort: "₹899/user/mo", growthPriceShort: "₹899/user/mo", pricingHref: "/in/pricing" },
-  { countryName: "United States", countrySlug: "usa", currencyCode: "USD", currencySymbol: "$", homeHref: "/usa", starterPriceShort: "$10/user/mo", growthPriceShort: "$1,500/user/mo", pricingHref: "/usa/pricing" },
-  { countryName: "United Kingdom", countrySlug: "uk", currencyCode: "GBP", currencySymbol: "£", homeHref: "/uk", starterPriceShort: "£9/user/mo", growthPriceShort: "£1,199/user/mo", pricingHref: "/uk/pricing" },
-  { countryName: "Australia", countrySlug: "au", currencyCode: "AUD", currencySymbol: "A$", homeHref: "/au", starterPriceShort: "A$16/user/mo", growthPriceShort: "A$2,299/user/mo", pricingHref: "/au/pricing" },
-  { countryName: "Canada", countrySlug: "canada", currencyCode: "CAD", currencySymbol: "C$", homeHref: "/canada", starterPriceShort: "C$14/user/mo", growthPriceShort: "C$2,049/user/mo", pricingHref: "/canada/pricing" },
-  { countryName: "UAE", countrySlug: "uae", currencyCode: "AED", currencySymbol: "AED", homeHref: "/uae", starterPriceShort: "AED 37/user/mo", growthPriceShort: "AED 5,499/user/mo", pricingHref: "/uae/pricing" },
-  { countryName: "Singapore", countrySlug: "singapore", currencyCode: "SGD", currencySymbol: "S$", homeHref: "/singapore", starterPriceShort: "S$14/user/mo", growthPriceShort: "S$1,999/user/mo", pricingHref: "/singapore/pricing" },
-  { countryName: "New Zealand", countrySlug: "new-zealand", currencyCode: "NZD", currencySymbol: "NZ$", homeHref: "/new-zealand", starterPriceShort: "NZ$17/user/mo", growthPriceShort: "NZ$2,499/user/mo", pricingHref: "/new-zealand/pricing" },
+  {
+    countryName: "India", countrySlug: "in", currencyCode: "INR", currencySymbol: "₹", homeHref: "/in",
+    growthPriceShort: "₹899/user/mo", growthPriceMonthly: "₹1,099/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth ₹899/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "UPI, Razorpay, Net Banking, Credit/Debit card",
+    compliance: "DPDPA compliant, India data residency available",
+    pricingHref: "/in/pricing",
+  },
+  {
+    countryName: "United States", countrySlug: "usa", currencyCode: "USD", currencySymbol: "$", homeHref: "/usa",
+    growthPriceShort: "$10/user/mo", growthPriceMonthly: "$13/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth $10/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit card, ACH, PayPal, Stripe",
+    compliance: "SOC 2 Type II, CCPA compliant",
+    pricingHref: "/usa/pricing",
+  },
+  {
+    countryName: "United Kingdom", countrySlug: "uk", currencyCode: "GBP", currencySymbol: "£", homeHref: "/uk",
+    growthPriceShort: "£8/user/mo", growthPriceMonthly: "£10/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth £8/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit/debit card, Stripe, GoCardless, bank transfer",
+    compliance: "UK GDPR compliant, ICO-registered data processor",
+    pricingHref: "/uk/pricing",
+  },
+  {
+    countryName: "Australia", countrySlug: "au", currencyCode: "AUD", currencySymbol: "A$", homeHref: "/au",
+    growthPriceShort: "A$16/user/mo", growthPriceMonthly: "A$20/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth A$16/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit card, Stripe, PayPal, BPAY",
+    compliance: "Australian Privacy Act compliant",
+    pricingHref: "/au/pricing",
+  },
+  {
+    countryName: "Canada", countrySlug: "canada", currencyCode: "CAD", currencySymbol: "C$", homeHref: "/canada",
+    growthPriceShort: "C$14/user/mo", growthPriceMonthly: "C$18/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth C$14/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit card, Stripe, PayPal, Interac e-Transfer",
+    compliance: "PIPEDA compliant",
+    pricingHref: "/canada/pricing",
+  },
+  {
+    countryName: "UAE", countrySlug: "uae", currencyCode: "AED", currencySymbol: "د.إ", homeHref: "/uae",
+    growthPriceShort: "AED 37/user/mo", growthPriceMonthly: "AED 48/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth AED 37/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit card, bank transfer, Stripe",
+    compliance: "UAE PDPL compliant",
+    pricingHref: "/uae/pricing",
+  },
+  {
+    countryName: "Singapore", countrySlug: "singapore", currencyCode: "SGD", currencySymbol: "S$", homeHref: "/singapore",
+    growthPriceShort: "S$14/user/mo", growthPriceMonthly: "S$18/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth S$14/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit card, PayNow, Stripe, bank transfer",
+    compliance: "PDPA (Singapore) compliant",
+    pricingHref: "/singapore/pricing",
+  },
+  {
+    countryName: "New Zealand", countrySlug: "new-zealand", currencyCode: "NZD", currencySymbol: "NZ$", homeHref: "/new-zealand",
+    growthPriceShort: "NZ$17/user/mo", growthPriceMonthly: "NZ$22/user/mo monthly",
+    pricingSummaryLine: "Free Forever · Growth NZ$17/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Credit card, Stripe, PayPal, POLi, bank transfer",
+    compliance: "New Zealand Privacy Act 2020 compliant",
+    pricingHref: "/new-zealand/pricing",
+  },
 ];
+
+/* ── Managed RevOps retainers (lib/managed-revops-content.ts) ─────────────────── */
+
+/**
+ * Managed RevOps is a SERVICE sold alongside the CRM, not a plan tier. Growth
+ * lists it as an add-on; Enterprise bundles it. Flat monthly retainer, not
+ * per-seat — which is exactly why folding these numbers into a per-user pricing
+ * field (as the old COUNTRY_PRICING did) produced nonsense.
+ */
+export interface ManagedRevOpsTier {
+  slug: string;
+  name: string;
+  priceLabel: string;
+  priceValue: string;
+  priceCurrency: string;
+}
+
+export const MANAGED_REVOPS: Record<string, ManagedRevOpsTier[]> = {
+  global: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "$1,499/mo flat", priceValue: "1499", priceCurrency: "USD" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "$3,999/mo flat", priceValue: "3999", priceCurrency: "USD" },
+  ],
+  in: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "₹39,999/mo flat", priceValue: "39999", priceCurrency: "INR" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "₹1,07,999/mo flat", priceValue: "107999", priceCurrency: "INR" },
+  ],
+  usa: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "$1,499/mo flat", priceValue: "1499", priceCurrency: "USD" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "$3,999/mo flat", priceValue: "3999", priceCurrency: "USD" },
+  ],
+  uk: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "£1,199/mo flat", priceValue: "1199", priceCurrency: "GBP" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "£3,199/mo flat", priceValue: "3199", priceCurrency: "GBP" },
+  ],
+  au: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "A$2,299/mo flat", priceValue: "2299", priceCurrency: "AUD" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "A$6,099/mo flat", priceValue: "6099", priceCurrency: "AUD" },
+  ],
+  canada: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "C$2,049/mo flat", priceValue: "2049", priceCurrency: "CAD" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "C$5,499/mo flat", priceValue: "5499", priceCurrency: "CAD" },
+  ],
+  uae: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "AED 5,499/mo flat", priceValue: "5499", priceCurrency: "AED" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "AED 14,699/mo flat", priceValue: "14699", priceCurrency: "AED" },
+  ],
+  singapore: [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "S$1,999/mo flat", priceValue: "1999", priceCurrency: "SGD" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "S$5,399/mo flat", priceValue: "5399", priceCurrency: "SGD" },
+  ],
+  "new-zealand": [
+    { slug: "growth-engine", name: "Growth Engine", priceLabel: "NZ$2,499/mo flat", priceValue: "2499", priceCurrency: "NZD" },
+    { slug: "revops-partner", name: "RevOps Partner", priceLabel: "NZ$6,649/mo flat", priceValue: "6649", priceCurrency: "NZD" },
+  ],
+};
 
 /* ── Products (lib/product-feature-pages.ts → /product/[slug]) ───────────────── */
 
@@ -238,23 +462,40 @@ export const SCHEMA_TYPES = [
   { type: "Organization", scope: "site-wide (global layout, do not duplicate per page)", builder: "orgSchema()" },
   { type: "SoftwareApplication", scope: "product / feature pages (includes softwareRatingFields() — single verified review, no fabricated aggregate)", builder: "softwareAppSchema()" },
   { type: "BlogPosting", scope: "individual blog posts", builder: "blogPostingSchema()" },
-  { type: "BreadcrumbList", scope: "all pages (BreadcrumbJsonLd)", builder: "breadcrumb component" },
+  { type: "BreadcrumbList", scope: "all pages (BreadcrumbJsonLd)", builder: "breadcrumbSchema()" },
   { type: "WebSite", scope: "homepage", builder: "site.ts" },
   { type: "VideoObject", scope: "pages with video (home-video-schema.ts)", builder: "home-video-schema" },
   { type: "Review/AggregateRating", scope: "only with real review counts (customer-review-schema.ts)", builder: "customer-review-schema" },
+  { type: "HowTo", scope: "guide pages, auto-detected from markdown", builder: "detectHowToSchemaFromMarkdown()" },
 ] as const;
 
-/** Live Organization JSON-LD object (mirror of orgSchema()). */
+/**
+ * FAQPage is RETIRED site-wide. `faqPageSchema()` in lib/seo/schema.ts now
+ * returns `null` unconditionally — FAQs must be rendered as visible page
+ * content, never as structured data alone. Do not add FAQPage to SCHEMA_TYPES
+ * and do not emit it from any tool.
+ */
+export const RETIRED_SCHEMA_TYPES = ["FAQPage"] as const;
+
+/**
+ * Live Organization JSON-LD object (mirror of orgSchema()).
+ *
+ * Fixed 2026-08-06 to match the website's entity fix ("issue 16"): the public
+ * brand goes in `name` with the legal entity in `legalName`, and
+ * `alternateName` excludes the brand name itself. The old shape put the legal
+ * entity in `name` and repeated the brand inside `alternateName`, which splits
+ * the brand across two competing entity labels in structured data.
+ */
 export function orgSchema(): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": `${COMPANY.url}/#organization`,
-    name: COMPANY.legalName,
-    alternateName: [COMPANY.name, ...COMPANY.alternateNames],
+    name: COMPANY.name,
+    legalName: COMPANY.legalName,
+    alternateName: COMPANY.alternateNames.filter((n) => n !== COMPANY.name),
     url: COMPANY.url,
-    // Canonical AI-friendly brand description (GEO entity anchor) — added to
-    // the website orgSchema() in lib/seo/schema.ts (synced 2026-07-08).
+    // Canonical AI-friendly brand description (GEO entity anchor).
     description: COMPANY.entityDescription,
     foundingDate: COMPANY.foundingDate,
     address: { "@type": "PostalAddress", ...COMPANY.address },
@@ -262,7 +503,7 @@ export function orgSchema(): Record<string, unknown> {
   };
 }
 
-/* ── Hreflang (faithful port of lib/hreflang.ts getHreflangTags, synced 2026-07-08) ── */
+/* ── Hreflang (faithful port of lib/hreflang.ts getHreflangTags, synced 2026-08-06) ── */
 
 const BASE_URL = WEBSITE_SOURCE_OF_TRUTH;
 
@@ -297,6 +538,18 @@ const INDIA_LANGUAGE_SLUG_HREFLANG: Record<string, string> = {
   "/in/crm-odia": "or", "/in/crm-urdu": "ur", "/in/crm-assamese": "as",
 };
 
+/**
+ * Non-India language pages that belong to the HUB-LEVEL market cluster. These
+ * are full localized homepages, so they join the same reciprocal tag set as the
+ * India language pages rather than self-referencing.
+ *
+ * /uae/crm-arabic became the Arabic-first RTL homepage in the July 2026
+ * country-homepage rebuild (moved from /ae/crm-arabic).
+ */
+const HUB_LANGUAGE_PAGE_HREFLANG: Record<string, string> = {
+  "/uae/crm-arabic": "ar-AE",
+};
+
 const MARKET_HREFLANG_VARIANTS: ReadonlyArray<{ prefix: string; hreflang: string }> = [
   { prefix: "/in", hreflang: "en-IN" },
   { prefix: "/usa", hreflang: "en-US" },
@@ -326,6 +579,12 @@ function isMarketScopedSuffix(s: string): boolean {
   if (
     s === "" ||
     s === "/pricing" ||
+    // Added on the website 2026-08-05 (audit): these two ship in all 8 markets
+    // AND bare, exactly like /pricing, so the mesh cannot advertise a 404 or a
+    // redirect. /demo is deliberately EXCLUDED — /au/demo and /canada/demo 301
+    // to /demo.
+    s === "/free-trial" ||
+    s === "/tools" ||
     s === "/services/managed-revops" ||
     s === "/industries" ||
     s === "/industries/categories" ||
@@ -385,11 +644,15 @@ function getMarketClusterTags(path: string): HreflangTag[] | null {
       href: toAbsoluteUrl(`${v.prefix}${suffix}` || "/"),
     }));
 
-  // Hub-level cluster ("" suffix) also lists the 12 India language pages so
-  // every page in the cluster returns the identical, fully-reciprocal tag set.
+  // Hub-level cluster ("" suffix) also lists the 12 India language pages and
+  // the Arabic UAE homepage, so every page in the cluster returns the
+  // identical, fully-reciprocal tag set.
   const languageTags: HreflangTag[] =
     suffix === ""
-      ? Object.entries(INDIA_LANGUAGE_SLUG_HREFLANG).map(([p, hreflang]) => ({
+      ? [
+          ...Object.entries(INDIA_LANGUAGE_SLUG_HREFLANG),
+          ...Object.entries(HUB_LANGUAGE_PAGE_HREFLANG),
+        ].map(([p, hreflang]) => ({
           hreflang,
           href: toAbsoluteUrl(p),
         }))
@@ -420,7 +683,10 @@ const COUNTRY_PREFIX_SELF_HREFLANG: ReadonlyArray<{ prefix: string; hreflang: st
 
 const COUNTRY_HUB_HREFLANG: Record<string, string> = {
   "/ng": "en-NG", "/pk": "en-PK", "/ph": "en-PH", "/ke": "en-KE", "/gh": "en-GH",
-  "/ug": "en-UG", "/tz": "en-TZ", "/sg": "en-SG", "/ae": "en-AE", "/id": "en-ID",
+  // "/ae" removed on the website 2026-07-14 — it 301s to /uae. /uae owns en-AE
+  // in the 9-market mesh, and two live UAE hubs were sending Google conflicting
+  // country signals. Keeping it here made the mirror advertise a redirect.
+  "/ug": "en-UG", "/tz": "en-TZ", "/sg": "en-SG", "/id": "en-ID",
   "/br": "en-BR", "/mx": "en-MX", "/bd": "en-BD", "/my": "en-MY", "/vn": "en-VN", "/th": "en-TH",
 };
 
@@ -430,15 +696,16 @@ const COUNTRY_LANG_SUBPAGES: Record<string, ReadonlyArray<{ hreflang: string; pa
   "/ph": [{ hreflang: "tl", path: "/ph/crm-filipino" }],
   "/ke": [{ hreflang: "sw-KE", path: "/ke/crm-swahili" }],
   "/tz": [{ hreflang: "sw-TZ", path: "/tz/crm-swahili" }],
-  "/ae": [{ hreflang: "ar-AE", path: "/ae/crm-arabic" }],
+  // "/ae" entry removed with the hub above; the Arabic homepage now lives at
+  // /uae/crm-arabic and is listed in HUB_LANGUAGE_PAGE_HREFLANG.
   "/id": [{ hreflang: "id-ID", path: "/id/crm-bahasa" }],
   "/br": [{ hreflang: "pt-BR", path: "/br/crm-portugues" }],
   "/mx": [{ hreflang: "es-MX", path: "/mx/crm-espanol" }],
   "/bd": [{ hreflang: "bn-BD", path: "/bd/crm-bangla" }],
 };
 
-/** Faithful port of website getHreflangTags(currentPath). */
-export function getHreflangTags(currentPath: string): HreflangTag[] {
+/** Faithful port of website resolveHreflangTags(currentPath). */
+function resolveHreflangTags(currentPath: string): HreflangTag[] {
   const normalizedPath = normalizePath(currentPath);
   const querySuffix = getSearchAndHashSuffix(currentPath);
 
@@ -462,6 +729,14 @@ export function getHreflangTags(currentPath: string): HreflangTag[] {
     return marketClusterTags;
   }
 
+  // Arabic UAE homepage under the canonical /uae hub. Listed in the hub-level
+  // cluster via HUB_LANGUAGE_PAGE_HREFLANG, so it returns the full mesh exactly
+  // like the India language homepages — fully reciprocal. Checked after the
+  // market-cluster lookup so /uae itself keeps the full mesh.
+  if (normalizedPath === "/uae/crm-arabic") {
+    return getMarketClusterTags("/") ?? [];
+  }
+
   // Other /in/* product pages not in the cluster suffix list.
   if (normalizedPath.startsWith("/in/")) {
     const selfHref = toAbsoluteUrl(normalizedPath) + querySuffix;
@@ -480,10 +755,48 @@ export function getHreflangTags(currentPath: string): HreflangTag[] {
 
   // Single-country marketing pages (all now self-referencing incl. x-default).
   if (normalizedPath === "/crm-singapore") return selfCluster("en-SG");
-  if (normalizedPath === "/crm-uae" || normalizedPath === "/crm-dubai") return selfCluster("en-AE");
+  if (
+    normalizedPath === "/crm-uae" ||
+    normalizedPath === "/crm-dubai" ||
+    normalizedPath === "/real-estate-crm-dubai" ||
+    normalizedPath === "/best-crm-for-real-estate-dubai"
+  ) {
+    return selfCluster("en-AE");
+  }
   if (normalizedPath === "/crm-nigeria") return selfCluster("en-NG");
   if (normalizedPath === "/crm-kenya") return selfCluster("en-KE");
-  if (normalizedPath === "/crm-canada") return selfCluster("en-CA");
+
+  // French-Canada (Québec / Bill 96) route tree under /canada/fr/*. MUST be
+  // checked BEFORE the /canada COUNTRY_PREFIX_SELF_HREFLANG rule below, which
+  // would otherwise mislabel these French pages as en-CA.
+  //   • /canada/fr forms a reciprocal fr-CA ↔ en-CA pair with /crm-canada.
+  //   • Deeper French pages self-reference fr-CA only — they are standalone
+  //     French surfaces, not translated twins of a specific English URL.
+  if (normalizedPath === "/canada/fr" || normalizedPath.startsWith("/canada/fr/")) {
+    if (normalizedPath === "/canada/fr") {
+      return [
+        { hreflang: "fr-CA", href: self },
+        { hreflang: "en-CA", href: toAbsoluteUrl("/crm-canada") },
+        { hreflang: "x-default", href: toAbsoluteUrl("/crm-canada") },
+      ];
+    }
+    return [
+      { hreflang: "fr-CA", href: self },
+      { hreflang: "x-default", href: self },
+    ];
+  }
+
+  // Canada-specific pages. Tag set must be IDENTICAL to the one /canada/fr
+  // emits (fr-CA / en-CA / x-default) — an extra generic "en" self-tag made the
+  // two group members advertise different variant sets, which crawlers flag as
+  // "missing reciprocal hreflang (no return tag)". (Crawl audit 2026-07-10.)
+  if (normalizedPath === "/crm-canada") {
+    return [
+      { hreflang: "fr-CA", href: toAbsoluteUrl("/canada/fr") },
+      { hreflang: "en-CA", href: self },
+      { hreflang: "x-default", href: self },
+    ];
+  }
 
   // North America hub targets USA + Canada.
   if (normalizedPath === "/north-america") {
@@ -515,6 +828,14 @@ export function getHreflangTags(currentPath: string): HreflangTag[] {
       { hreflang: "en", href: self },
       { hreflang: "x-default", href: self },
     ];
+  }
+
+  // Australia-specific pages (/crm-australia, /best-crm-australia,
+  // /crm-for-tradies-australia). The "-australia" suffix is excluded from the
+  // en-US /crm-for-* block above; without this handler those paths fell through
+  // to the generic en/en-US default and emitted the wrong locale.
+  if (normalizedPath === "/crm-australia" || normalizedPath.endsWith("-australia")) {
+    return selfCluster("en-AU");
   }
 
   if (normalizedPath === "/crm-uk" || normalizedPath.endsWith("-uk")) return selfCluster("en-GB");
@@ -595,6 +916,43 @@ export function getHreflangTags(currentPath: string): HreflangTag[] {
     { hreflang: "en-US", href: self },
     { hreflang: "x-default", href: self },
   ];
+}
+
+/**
+ * Cluster-of-one suppression — added to the website 2026-07-31 and previously
+ * MISSING from this mirror, which is why the MCP reported hreflang tags for
+ * pages that emit none in the shipped HTML.
+ *
+ * An hreflang group whose members all resolve to the same single URL declares
+ * no alternate for any other language or region, so it carries no signal. Worse,
+ * hundreds of pages each self-declaring `x-default` is noise — x-default names
+ * the ONE fallback page, and a regional page claiming it competes with the
+ * homepage for generic queries.
+ *
+ *   • one distinct href   → emit nothing
+ *   • many distinct hrefs → emit unchanged
+ *
+ * Genuine clusters pass through untouched: the 9-market mesh, the India-language
+ * mesh, /crm-canada ↔ /canada/fr, the country hubs, and /pricing ↔ /in/pricing
+ * all resolve to 2+ distinct URLs.
+ */
+function sanitizeHreflangTags(tags: HreflangTag[]): HreflangTag[] {
+  if (tags.length === 0) return tags;
+  const distinctTargets = new Set(tags.map((tag) => tag.href));
+  if (distinctTargets.size <= 1) return [];
+  return tags;
+}
+
+/** Faithful port of website getHreflangTags(currentPath). */
+export function getHreflangTags(currentPath: string): HreflangTag[] {
+  return sanitizeHreflangTags(resolveHreflangTags(currentPath));
+}
+
+/** Faithful port of website getHreflangLanguageMap(currentPath). */
+export function getHreflangLanguageMap(currentPath: string): Record<string, string> {
+  return Object.fromEntries(
+    getHreflangTags(currentPath).map((tag) => [tag.hreflang, tag.href]),
+  );
 }
 
 /** Canonical URL for a path — always the non-www apex host, no trailing slash. */

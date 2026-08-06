@@ -75,6 +75,7 @@ import {
   pricingGetFaq,
   pricingComparePlans,
   pricingGetCountryPlans,
+  pricingGetManagedRevOps,
 } from "./pricing.js";
 
 // ── Features ──────────────────────────────────────────────────────────────────
@@ -224,6 +225,7 @@ export const tools: RegisteredTool[] = [
   pricingGetFaq,
   pricingComparePlans,
   pricingGetCountryPlans,
+  pricingGetManagedRevOps,
 
   // Features
   featuresList,
