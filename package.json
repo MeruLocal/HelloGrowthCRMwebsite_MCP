@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "MCP server that crawls, discovers, and analyzes bots (search engines, AI crawlers, scrapers) interacting with your website.",
   "license": "MIT",
+  "author": "Meru Technosoft Private Limited",
   "homepage": "https://hellogrowthcrm.com",
   "repository": {
     "type": "git",
@@ -11,6 +12,7 @@
   "bugs": {
     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/issues"
   },
+  "mcpName": "io.github.merulocal/hellogrowthcrm-bot-crawler",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -21,6 +23,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",

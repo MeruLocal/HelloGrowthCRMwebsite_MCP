@@ -1,7 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.merulocal/hellogrowthcrmwebsite-mcp",
+  "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
   "description": "Discover, identify and govern every bot hitting your website - search engines, AI crawlers, SEO tools and scrapers - with reverse-DNS identity verification and policy-driven robots.txt generation.",
+  "status": "active",
   "version": "1.0.0",
   "repository": {
     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
@@ -20,21 +21,50 @@
       "environmentVariables": [
         {
           "name": "DEFAULT_TARGET_URL",
-          "description": "Site to scan when a tool call omits a URL.",
+          "description": "Base URL used by scan_website_bots and generate_robots_txt when no url argument is given.",
           "isRequired": false,
-          "default": "https://example.com"
+          "default": "https://hellogrowthcrm.com"
         },
         {
           "name": "DEFAULT_ACCESS_LOG",
-          "description": "Fallback Apache/Nginx combined-format access log path.",
+          "description": "Fallback Apache/Nginx combined-format access log path used by analyze_access_logs.",
           "isRequired": false,
           "default": "./samples/access.log"
         },
         {
           "name": "CRAWLER_USER_AGENT",
-          "description": "Outbound User-Agent used for polite fetches.",
+          "description": "User-Agent the crawler identifies itself with on outbound fetches.",
           "isRequired": false,
           "default": "mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)"
+        },
+        {
+          "name": "MAX_SITEMAP_PAGES",
+          "description": "Maximum number of sitemap pages fetched in a single crawl run.",
+          "isRequired": false,
+          "default": "25"
+        },
+        {
+          "name": "CRAWL_DELAY_MS",
+          "description": "Per-host delay between outbound requests, in milliseconds.",
+          "isRequired": false,
+          "default": "1000"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "description": "Log verbosity: error, warn, info or debug.",
+          "isRequired": false,
+          "default": "info"
+        },
+        {
+          "name": "SUPABASE_URL",
+          "description": "Supabase project URL. Only needed for the blog, help, newsletter, forms and analytics tools.",
+          "isRequired": false
+        },
+        {
+          "name": "SUPABASE_SERVICE_ROLE_KEY",
+          "description": "Supabase service-role key. Only needed for the blog, help, newsletter, forms and analytics tools.",
+          "isRequired": false,
+          "isSecret": true
         }
       ]
     }

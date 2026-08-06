@@ -21,6 +21,9 @@ import { fetchPageContent, crawlPages } from "./fetch-page-content.js";
 // ── llms.txt corpus generation ────────────────────────────────────────────────
 import { generateLlmsTxt, checkLlmsTxt } from "./llms-txt.js";
 
+// ── GEO/AEO diagnostics ───────────────────────────────────────────────────────
+import { checkAiExtractability, validateSitemaps } from "./geo-diagnostics.js";
+
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
   blogList,
@@ -75,6 +78,7 @@ import {
   pricingGetFaq,
   pricingComparePlans,
   pricingGetCountryPlans,
+  pricingGetManagedRevOps,
 } from "./pricing.js";
 
 // ── Features ──────────────────────────────────────────────────────────────────
@@ -181,6 +185,10 @@ export const tools: RegisteredTool[] = [
   generateLlmsTxt,
   checkLlmsTxt,
 
+  // GEO/AEO diagnostics
+  checkAiExtractability,
+  validateSitemaps,
+
   // Blog
   blogList,
   blogGet,
@@ -224,6 +232,7 @@ export const tools: RegisteredTool[] = [
   pricingGetFaq,
   pricingComparePlans,
   pricingGetCountryPlans,
+  pricingGetManagedRevOps,
 
   // Features
   featuresList,

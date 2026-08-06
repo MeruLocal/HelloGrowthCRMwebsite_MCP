@@ -239,7 +239,14 @@ curl -N -A "Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)" \
 | `GA4_API_SECRET` | — | Measurement Protocol API secret. Required to send. |
 | `GA4_ENDPOINT` | `https://www.google-analytics.com/mp/collect` | Override (use `/debug/mp/collect` to validate). |
 | `GA4_TIMEOUT_MS` | `3000` | Abort a telemetry send after N ms. |
-| `GA4_DEBUG_MODE` | `false` | `true` adds `debug_mode` to every event so the run appears in GA4 **DebugView**. |
+| `GA4_DEBUG_MODE` | `false` | `true` tags every event with `debug_mode: 1` so it appears in GA4 → Admin → **DebugView**. Events are still recorded normally. Turn off after verifying. |
+| `GA4_VALIDATE` | `false` | `true` POSTs to `/debug/mp/collect` and logs `validationMessages` at info level. Payloads are checked but **not recorded** — one-off diagnosis only. |
+
+> `GA4_DEBUG_MODE` and `GA4_VALIDATE` answer different questions. DebugView is
+> populated by the `debug_mode` parameter on the **normal** endpoint; the
+> `/debug/mp/collect` endpoint validates a payload and records nothing, so it can
+> never make an event show up in DebugView. Use `GA4_DEBUG_MODE` to confirm events
+> are *arriving*, `GA4_VALIDATE` to confirm they are *well-formed*.
 
 ### On DebugView and the "is it even on?" problem
 

@@ -16,13 +16,24 @@
  *   GA4_API_SECRET        Measurement Protocol API secret
  *   GA4_ENDPOINT          Override collect endpoint (default Google's prod URL)
  *   GA4_TIMEOUT_MS        Abort the send after N ms (default 3000)
- *   GA4_DEBUG_MODE        "true" adds `debug_mode` to every event so the run
- *                         shows up in GA4 DebugView (see below)
+ *   GA4_DEBUG_MODE        "true" -> tag every event with `debug_mode: 1` so it
+ *                         shows up in GA4 -> Admin -> DebugView. Events are
+ *                         still recorded normally. Turn off after verifying.
+ *   GA4_VALIDATE          "true" -> POST to Google's /debug/mp/collect
+ *                         validation endpoint instead and log the returned
+ *                         validationMessages. Payloads sent this way are
+ *                         checked but NOT recorded — one-off diagnosis only.
  *
  * On DebugView: the Measurement Protocol only surfaces events in DebugView when
  * the event carries `debug_mode`. Without it, events land in Realtime/Events but
  * DebugView stays empty — which reads exactly like "telemetry is broken". Set
  * GA4_DEBUG_MODE=true while verifying, then unset it.
+ *
+ * Why both switches: DebugView is populated by the `debug_mode` parameter on
+ * the NORMAL endpoint. The /debug/mp/collect endpoint validates a payload and
+ * returns errors but records nothing, so it can never make an event appear in
+ * DebugView. They answer different questions ("is it arriving?" vs "is it
+ * well-formed?"), hence two flags.
  */
 
 import { randomUUID } from "node:crypto";
@@ -36,6 +47,11 @@ export interface TelemetryEvent {
 export type TelemetrySink = (event: TelemetryEvent) => void;
 
 const DEFAULT_ENDPOINT = "https://www.google-analytics.com/mp/collect";
+const VALIDATION_ENDPOINT = "https://www.google-analytics.com/debug/mp/collect";
+
+function envFlag(name: string): boolean {
+  return (process.env[name] ?? "").toLowerCase() === "true";
+}
 
 /**
  * Warn once — and at `warn`, not `debug` — when analytics is switched on but
@@ -48,7 +64,7 @@ let warnedMisconfigured = false;
 
 function analyticsEnabled(): boolean {
   // OFF unless explicitly switched on.
-  if ((process.env.ENABLE_MCP_ANALYTICS ?? "").toLowerCase() !== "true") {
+  if (!envFlag("ENABLE_MCP_ANALYTICS")) {
     return false;
   }
   // ...and only when GA4 credentials are present.
@@ -73,6 +89,14 @@ export function resetTelemetryWarnings(): void {
   warnedMisconfigured = false;
 }
 
+/** Resolve the collect endpoint, honouring GA4_VALIDATE and GA4_ENDPOINT. */
+function resolveEndpoint(): { url: string; validating: boolean } {
+  if (envFlag("GA4_VALIDATE")) {
+    return { url: VALIDATION_ENDPOINT, validating: true };
+  }
+  return { url: process.env.GA4_ENDPOINT ?? DEFAULT_ENDPOINT, validating: false };
+}
+
 /**
  * Default sink: GA4 Measurement Protocol. Non-blocking — the fetch is fired
  * without `await`, with an abort timeout, and all failures are swallowed.
@@ -87,8 +111,8 @@ function ga4Sink(event: TelemetryEvent): void {
 
   const measurementId = process.env.GA4_MEASUREMENT_ID!;
   const apiSecret = process.env.GA4_API_SECRET!;
-  const endpoint = process.env.GA4_ENDPOINT ?? DEFAULT_ENDPOINT;
   const timeoutMs = Number.parseInt(process.env.GA4_TIMEOUT_MS ?? "3000", 10);
+  const { url: endpoint, validating } = resolveEndpoint();
 
   const url =
     `${endpoint}?measurement_id=${encodeURIComponent(measurementId)}` +
@@ -100,13 +124,11 @@ function ga4Sink(event: TelemetryEvent): void {
   const clientId =
     typeof sessionId === "string" && sessionId ? sessionId : randomUUID();
 
-  // GA4 DebugView only shows events that carry `debug_mode`. Without it a
-  // correctly-working integration looks dead in DebugView, which is how the
-  // previous verification attempt stalled.
-  const debugMode =
-    (process.env.GA4_DEBUG_MODE ?? "").toLowerCase() === "true";
-  const params = debugMode
-    ? { ...event.params, debug_mode: true }
+  // `debug_mode: 1` is what surfaces an event in GA4's DebugView. Without it
+  // DebugView stays empty no matter how many events land — a correctly-working
+  // integration looks dead, which is how the previous verification stalled.
+  const params: Record<string, unknown> = envFlag("GA4_DEBUG_MODE")
+    ? { ...event.params, debug_mode: 1 }
     : event.params;
 
   const body = JSON.stringify({
@@ -125,6 +147,23 @@ function ga4Sink(event: TelemetryEvent): void {
     body,
     signal: controller.signal,
   })
+    .then(async (res) => {
+      if (!validating) return;
+      // The validation endpoint returns 200 with a validationMessages array;
+      // an empty array means the payload is well-formed. Surface it at info
+      // level — this only runs when an operator explicitly set GA4_VALIDATE.
+      let detail: unknown = null;
+      try {
+        detail = await res.json();
+      } catch {
+        detail = null;
+      }
+      logger.info("Telemetry: GA4 payload validation result", {
+        event: event.name,
+        status: res.status,
+        validation: detail,
+      });
+    })
     .catch((err: unknown) =>
       logger.debug("Telemetry send failed", {
         event: event.name,
