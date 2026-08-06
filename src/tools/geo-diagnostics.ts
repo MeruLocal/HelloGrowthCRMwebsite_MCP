@@ -11,10 +11,17 @@
  *     extractor that prefers <main> reads an empty page. Uptime checks, status
  *     checks and schema validators all pass while this is happening.
  *
- *   - A sitemap listed in the index can be entirely unreachable. Three of ours
- *     hard-fail at a ~15s edge timeout, so they never appear as a 4xx/5xx in
- *     any dashboard — the connection simply dies. Fetching the *index* succeeds,
- *     which is what most monitoring looks at.
+ *   - A sitemap listed in the index can be unreachable *intermittently*. Three
+ *     of ours are generated at request time; on a cache miss the same URL
+ *     returns 200 in 7.7s, then a connection reset, then a 500. None of that
+ *     shows up as a steady 4xx/5xx in a dashboard, and fetching the *index*
+ *     succeeds throughout — which is what most monitoring looks at.
+ *
+ *     The original reading of this was "three sitemaps hard-fail at a ~15s edge
+ *     timeout", from three curl attempts each. Re-probing with this tool
+ *     returned 200 for all nine children in 0.9–4.4s. Both readings were wrong
+ *     for the same reason: too few runs against an intermittent fault. Run this
+ *     tool on a schedule, not once — a single green run clears nothing.
  *
  * Politeness is inherited from PoliteCrawler: robots.txt is honoured for our own
  * User-Agent, the UA is honest and identifiable, and there is a per-host delay.
@@ -284,7 +291,7 @@ export const validateSitemaps = defineTool({
   definition: {
     name: "validate_sitemaps",
     description:
-      "Expand a sitemap index and fetch every child sitemap, reporting status, elapsed time, byte size and <loc> count for each. Flags children that time out or reset — the failure mode where the index itself returns 200 (so monitoring looks green) while individual sitemaps are entirely unreachable to crawlers. Use a timeoutMs above the platform timeout you suspect.",
+      "Expand a sitemap index and fetch every child sitemap, reporting status, elapsed time, byte size and <loc> count for each. Flags children that time out, reset or 5xx — the failure mode where the index itself returns 200 (so monitoring looks green) while individual sitemaps are unreachable to crawlers. The fault is often intermittent, so run this repeatedly rather than once; a single green run does not clear it. Use a timeoutMs above the platform timeout you suspect.",
     inputSchema: {
       type: "object",
       properties: {

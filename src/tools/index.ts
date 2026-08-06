@@ -21,6 +21,9 @@ import { fetchPageContent, crawlPages } from "./fetch-page-content.js";
 // ── llms.txt corpus generation ────────────────────────────────────────────────
 import { generateLlmsTxt, checkLlmsTxt } from "./llms-txt.js";
 
+// ── GEO/AEO diagnostics ───────────────────────────────────────────────────────
+import { checkAiExtractability, validateSitemaps } from "./geo-diagnostics.js";
+
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
   blogList,
@@ -181,6 +184,10 @@ export const tools: RegisteredTool[] = [
   // llms.txt corpus generation
   generateLlmsTxt,
   checkLlmsTxt,
+
+  // GEO/AEO diagnostics
+  checkAiExtractability,
+  validateSitemaps,
 
   // Blog
   blogList,
