@@ -6,8 +6,8 @@ It is **polite by design**: it respects `robots.txt`, rate-limits its own fetche
 
 ## Features
 
-- **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export).
-- **Curated database of 55+ well-known bots** — Googlebot, Bingbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Amazonbot, Google-Extended, Applebot-Extended, FacebookBot, LinkedInBot, AhrefsBot, SemrushBot, Bytespider, and more — each tagged with category, operator, baseline risk, and reverse-DNS verification suffixes.
+- **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus 75 more, see [the full catalog](#full-mcp-tool-catalog-83-tools).
+- **Curated database of 58 well-known bots** — Googlebot, Bingbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Amazonbot, Google-Extended, Applebot-Extended, FacebookBot, LinkedInBot, AhrefsBot, SemrushBot, Bytespider, and more — each tagged with category, operator, baseline risk, and reverse-DNS verification suffixes.
 - **Behavioural risk scoring**: combines UA matching, robots.txt compliance, error rate, request rate, and unique-path fan-out into a 0–100 score and a recommended action (`allow` / `monitor` / `rate-limit` / `block` / `verify-identity`).
 - **Cryptographic-grade identity verification** via PTR + forward DNS (same method documented by Google, Microsoft, OpenAI).
 - **robots.txt + sitemap.xml parser** with proper longest-match Allow/Disallow semantics.
@@ -17,21 +17,15 @@ It is **polite by design**: it respects `robots.txt`, rate-limits its own fetche
 ## Repository layout
 
 ```
-mcp-bot-crawler/
+HelloGrowthCRMwebsite_MCP/
 ├─ src/
 │  ├─ index.ts                # entrypoint: loads .env, starts the MCP server
 │  ├─ server.ts               # wires tools into ListTools / CallTool
-│  ├─ tools/                  # one file per MCP tool
-│  │  ├─ scan-website-bots.ts
-│  │  ├─ analyze-access-logs.ts
-│  │  ├─ verify-bot-identity.ts
-│  │  ├─ list-allowed-bots.ts
-│  │  ├─ list-blocked-bots.ts
-│  │  ├─ generate-robots-txt.ts
-│  │  ├─ suggest-bot-policy.ts
-│  │  ├─ export-bot-report.ts
-│  │  ├─ tool-types.ts
-│  │  └─ index.ts
+│  ├─ tools/                  # 34 files — one per tool group, plus:
+│  │  ├─ tool-types.ts        #   defineTool() / ok() / fail() helpers
+│  │  ├─ index.ts             #   the registry every tool must be added to
+│  │  └─ …                    #   bot governance, page content, and the
+│  │                          #   website-mirror groups (see catalog below)
 │  ├─ core/                   # detection engine
 │  │  ├─ bot-detector.ts
 │  │  ├─ aggregator.ts
@@ -39,26 +33,43 @@ mcp-bot-crawler/
 │  │  ├─ robots-parser.ts
 │  │  ├─ reverse-dns.ts
 │  │  └─ crawler.ts           # polite HTTP client
-│  ├─ data/known-bots.ts      # signature database
+│  ├─ data/
+│  │  ├─ known-bots.ts        # signature database (58 bots)
+│  │  └─ website-mirror.ts    # read-mirror of the website source
+│  ├─ lib/                    # supabase client, telemetry, client detection
+│  ├─ middleware/             # MCP/SSE analytics hooks
 │  ├─ reports/report-generator.ts
 │  └─ utils/                  # types, logger, rate limiter
+├─ crm-mcp-tools/             # standalone CRM tools (WhatsApp, calls, sequences)
+├─ docs/                      # analytics, GA4 verification, release notes
+│  └─ plans/                  # GEO/AEO master plan
+├─ scripts/verify-mcp-ga4.sh
 ├─ samples/
-│  ├─ access.log              # realistic mixed-bot traffic
 │  ├─ robots.txt
-│  └─ sitemap.xml
+│  ├─ sitemap.xml
+│  └─ sitemap-main.xml
 ├─ examples/usage.md
-├─ reports/                   # generated reports land here
+├─ server.json                # official MCP Registry manifest
+├─ smithery.yaml              # Smithery configuration
 ├─ .env.example
 ├─ package.json
 ├─ tsconfig.json
 └─ README.md
 ```
 
+> There is **no `samples/access.log`** in the repo, though `DEFAULT_ACCESS_LOG`
+> defaults to that path. Point `DEFAULT_ACCESS_LOG` at a real log, or pass
+> `logPath` / `logText` explicitly to `analyze_access_logs` and
+> `export_bot_report`. `reports/` is created on first export.
+
 ## Quick start
 
+This is a **standalone repository** — it is no longer a subdirectory of
+`hellocrmwebsite`.
+
 ```bash
-# From the hellocrmwebsite repo root:
-cd mcp-bot-crawler
+git clone https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP.git
+cd HelloGrowthCRMwebsite_MCP
 
 cp .env.example .env          # already pre-configured for hellogrowthcrm.com
 
@@ -89,7 +100,7 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
   "mcpServers": {
     "bot-crawler": {
       "command": "node",
-      "args": ["/absolute/path/to/hellocrmwebsite/mcp-bot-crawler/dist/index.js"],
+      "args": ["/absolute/path/to/HelloGrowthCRMwebsite_MCP/dist/index.js"],
       "env": {
         "DEFAULT_TARGET_URL": "https://hellogrowthcrm.com",
         "DEFAULT_ACCESS_LOG": "/var/log/nginx/access.log",
@@ -99,6 +110,19 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
   }
 }
 ```
+
+### Or use the hosted server (no clone, no build)
+
+A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
+`/mcp`, SSE at `/sse`. Manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`.
+
+> ⚠️ **The hosted deployment can lag `main`.** Verified 2026-08-05: local `main`
+> and production both expose the same 83 tools, but `fetch_page_content` on
+> `/pricing` returned `wordCount: 3194` locally and `wordCount: 0` in production
+> — production is running a build that predates the 2026-07-13 extraction fix.
+> **A matching tool count does not mean a matching build.** If a tool behaves
+> unexpectedly against the hosted endpoint, reproduce it locally before
+> filing a bug.
 
 ## The eight MCP tools
 
@@ -115,7 +139,7 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
 
 Full payload examples live in [`examples/usage.md`](examples/usage.md).
 
-## Full MCP tool catalog (81 tools)
+## Full MCP tool catalog (83 tools)
 
 Beyond the original eight bot-governance tools, this server exposes the entire
 hellogrowthcrm.com website — every module, feature, product, pricing table, AI
@@ -126,6 +150,7 @@ of the website source files (see [`WEBSITE_DATA_TOOLS.md`](WEBSITE_DATA_TOOLS.md
 | Category | Tools |
 |----------|-------|
 | Bot governance (8) | `scan_website_bots`, `analyze_access_logs`, `verify_bot_identity`, `list_allowed_bots`, `list_blocked_bots`, `generate_robots_txt`, `suggest_bot_policy`, `export_bot_report` |
+| Page content (2) | `fetch_page_content`, `crawl_pages` — fetch a live page (or walk the sitemap) and return title, meta, canonical, headings, links and readable text |
 | Blog (7) | `blog_list`, `blog_get`, `blog_search`, `blog_create`, `blog_update`, `blog_revalidate`, `blog_get_categories` |
 | Help center (6) | `help_list_categories`, `help_list_articles`, `help_get_article`, `help_search`, `help_create_article`, `help_update_article` |
 | Newsletter (4) | `newsletter_subscribe`, `newsletter_unsubscribe`, `newsletter_get_subscribers`, `newsletter_get_stats` |
@@ -138,9 +163,9 @@ of the website source files (see [`WEBSITE_DATA_TOOLS.md`](WEBSITE_DATA_TOOLS.md
 | Company (2) | `company_get_profile`, `company_get_contacts` |
 | SEO (5) | `seo_get_site_config`, `seo_get_hreflang`, `seo_get_canonical`, `seo_get_sitemaps`, `seo_get_schema` |
 | Products (2) | `products_list`, `product_get` |
-| Integrations (3) | `integrations_list`, `integrations_get`, `integrations_list_categories` — 397-entry catalog, 55 categories |
+| Integrations (3) | `integrations_list`, `integrations_get`, `integrations_list_categories` — 630-entry catalog, 116 categories |
 | AI Agents / Agentic AI (4) | `agents_list`, `agents_get`, `agents_get_autonomy_levels`, `agents_list_comparisons` — 12 agents, autonomy matrix, 4 vs-competitor pages |
-| Glossary (2) | `glossary_list_terms`, `glossary_get_term` — 44 terms |
+| Glossary (2) | `glossary_list_terms`, `glossary_get_term` — 58 terms |
 | Templates (2) | `templates_list`, `templates_get` — 42 templates in 7 categories |
 | Feature guides (2) | `guides_list`, `guides_get` — 32 guides |
 | Alternatives & migration (4) | `alternatives_list`, `alternatives_get`, `switch_list_competitors`, `switch_get_guide` — 42 alternatives pages, 26 switch-from guides |
@@ -150,9 +175,15 @@ of the website source files (see [`WEBSITE_DATA_TOOLS.md`](WEBSITE_DATA_TOOLS.md
 | Partner program (2) | `partners_get_program`, `partners_get_application_schema` |
 | Solutions (2) | `solutions_list_whatsapp_use_cases`, `solutions_get_managed_revops` — incl. 9 market variants + 25 US city pages |
 
-All mirror tools carry `synced_at` provenance (last sync: 2026-06-11) and validate
-inputs with zod; unknown slugs return a clear error listing valid values.
-Run `npm run build && node test-tools.mjs` for 62 smoke assertions across the catalog.
+All mirror tools carry `synced_at` provenance and validate inputs with zod;
+unknown slugs return a clear error listing valid values.
+
+**`synced_at` is per tool group, not global** — as of 2026-08-05 the values in
+the tree range from `2026-06-11` (templates, guides) through `2026-06-17`
+(integrations) to `2026-07-08` (glossary, alternatives, agents). Read the
+`synced_at` in the response rather than assuming a single site-wide sync date.
+
+Run `npm run build && node test-tools.mjs` for the catalog smoke assertions.
 
 ## How detection works
 
@@ -198,7 +229,7 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `DEFAULT_ACCESS_LOG` | `./samples/access.log` | Fallback log path. |
+| `DEFAULT_ACCESS_LOG` | `./samples/access.log` | Fallback log path. **This file is not in the repo** — set it to a real log. |
 | `DEFAULT_TARGET_URL` | `https://example.com` | Fallback site for scans. |
 | `MAX_SITEMAP_PAGES` | `25` | Hard cap per scan. |
 | `CRAWL_DELAY_MS` | `1000` | Per-host delay. |
@@ -246,8 +277,14 @@ Everything else (registration, schema validation, error handling) is automatic.
 npm run dev          # run with tsx, no build needed
 npm run typecheck    # strict TS check
 npm run build        # compile to dist/
-npm test             # (add your own tests under src/__tests__/)
+npm test             # vitest — 149 tests across 10 files
+npm run test:watch   # vitest in watch mode
+npm run test:coverage
 ```
+
+Tests live in `__tests__/` directories next to the code they cover
+(`src/core/__tests__`, `src/tools/__tests__`, `src/lib/__tests__`,
+`src/middleware/__tests__`, `src/data/__tests__`).
 
 ## License
 

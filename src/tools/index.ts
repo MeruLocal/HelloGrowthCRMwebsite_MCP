@@ -18,8 +18,8 @@ import { verifyBotIdentityTool } from "./verify-bot-identity.js";
 // ── Page content (live crawl → readable content) ──────────────────────────────
 import { fetchPageContent, crawlPages } from "./fetch-page-content.js";
 
-// ── GEO/AEO diagnostics ───────────────────────────────────────────────────────
-import { checkAiExtractability, validateSitemaps } from "./geo-diagnostics.js";
+// ── llms.txt corpus generation ────────────────────────────────────────────────
+import { generateLlmsTxt, checkLlmsTxt } from "./llms-txt.js";
 
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
@@ -177,9 +177,9 @@ export const tools: RegisteredTool[] = [
   fetchPageContent,
   crawlPages,
 
-  // GEO/AEO diagnostics
-  checkAiExtractability,
-  validateSitemaps,
+  // llms.txt corpus generation
+  generateLlmsTxt,
+  checkLlmsTxt,
 
   // Blog
   blogList,

@@ -1,0 +1,51 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      defaultTargetUrl:
+        type: string
+        title: Default target URL
+        description: Site to scan when a tool call omits a URL.
+        default: https://hellogrowthcrm.com
+      defaultAccessLog:
+        type: string
+        title: Default access log
+        description: Fallback Apache/Nginx combined-format access log path.
+        default: ./samples/access.log
+      crawlerUserAgent:
+        type: string
+        title: Crawler User-Agent
+        description: Outbound User-Agent used for polite fetches. Keep a contact URL in it.
+        default: mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)
+      crawlDelayMs:
+        type: number
+        title: Crawl delay (ms)
+        description: Per-host delay between outbound fetches.
+        default: 1000
+      maxSitemapPages:
+        type: number
+        title: Max sitemap pages
+        description: Hard cap on pages fetched per scan.
+        default: 25
+      logLevel:
+        type: string
+        title: Log level
+        enum: [error, warn, info, debug]
+        default: info
+  commandFunction: |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js'],
+      env: {
+        DEFAULT_TARGET_URL: config.defaultTargetUrl,
+        DEFAULT_ACCESS_LOG: config.defaultAccessLog,
+        CRAWLER_USER_AGENT: config.crawlerUserAgent,
+        CRAWL_DELAY_MS: String(config.crawlDelayMs),
+        MAX_SITEMAP_PAGES: String(config.maxSitemapPages),
+        LOG_LEVEL: config.logLevel
+      }
+    })
+build:
+  dockerfile: Dockerfile
