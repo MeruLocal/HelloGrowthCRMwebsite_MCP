@@ -161,12 +161,23 @@ thousands of URLs is paying for this.
 **F8. Homepage schema is noise.** `[web]` 63 × `Organization`, 61 × `VideoObject`, 1 × `WebPage`,
 1 × `BreadcrumbList`. **No `SoftwareApplication`, no `Offer`.**
 
+> **Partly out of date as of 2026-08-06.** `SoftwareApplication` (1) and `Offer` (16) are now
+> present, so W4.1's additive half is already shipped. The duplication is not fixed and is
+> marginally worse: **64** × `Organization`. W4.1 is now a deduplication task only — plus a
+> decision the plan did not anticipate: `AggregateRating` is correctly absent, but a
+> self-authored `Review` + `Rating` pair is present, and the reasoning that bans the first
+> applies to the second. See `GEO_AEO_VERIFICATION_2026-08-06.md` §7.1.
+
 Already good, leave alone: `/pricing` (21 `Offer`, 16 `UnitPriceSpecification`, 6 `Question`/
 `Answer`), `/compare/hubspot` (`SoftwareApplication`, 5 `Question`/`Answer`, 2
 `SpeakableSpecification`).
 
 **F9. `llms-full.txt` is smaller than `llms.txt`.** `[web]` 10.2 KB vs 14.7 KB. A "full corpus"
 smaller than its own index is internally incoherent.
+
+> **Re-measured 2026-08-06 with `curl | wc -c`: 10,182 B vs 14,737 B — these figures are exact
+> and unchanged.** An intermediate re-verification reported ~31,500 / ~109,800 chars; those came
+> from a summarising fetcher and are wrong. Ignore them.
 
 Working and worth keeping as-is: `robots.txt` (all major AI bots allowed), `llms.txt`,
 `ai.txt`, `.well-known/mcp.json`, `.well-known/ai-plugin.json`, `oauth-protected-resource`,
@@ -211,6 +222,10 @@ Radar SOV/mentions endpoints return `Missing addon: Brand Radar` on this plan.
 **F15. Two GA4 properties fire on the site.** `[web]` `G-4QS17WFH8R` and `G-ZLRF73DCXS`.
 Attribution is fragmented across both.
 
+> **Likely resolved.** The homepage source contains only `G-ZLRF73DCXS` as of 2026-08-06. This
+> is a grep of `/` alone, so a GTM-fired tag or another route would not show — confirm in the
+> GA4 admin before closing W4.4.
+
 ---
 
 ## 3. What we have NOT measured (reviewer's gap list)
@@ -242,6 +257,17 @@ Generate XML at build time; do not assemble through runtime/database work. Order
 *Accept:* all 9 child sitemaps return 200 in < 2 s on **ten** consecutive cache-busted runs.
 Ten, not three — the fault is intermittent, and three green runs is what produced the wrong
 reading in F1 the first time.
+
+> **Acceptance MET 2026-08-06**, measured with `validate_sitemaps` now that PR #5 has landed
+> (this criterion was unexecutable until then — see N3 in the re-verification). 10/10 clean
+> rounds, 0 failures across 90 child-fetches, slowest child `image-sitemap.xml` at 1,829 ms
+> against 9.74 s in F1. Numbers in `GEO_AEO_VERIFICATION_2026-08-06.md` §7.2.
+>
+> **Do not close this item yet.** The fault this criterion exists to catch is intermittent, and
+> ten green runs from one vantage point on one afternoon is the same shape of evidence that
+> produced the wrong reading twice already. Schedule `validate_sitemaps` and close after a week
+> of green. Separately: the run discovered **6,024** URLs, 601 fewer than the 6,625 recorded in
+> F1. That is not a sitemap-health signal and it is not explained — worth asking about on its own.
 
 **W1.2 `[web]` Implement IndexNow.**
 Key file at `/indexnow.txt`; submit on publish/update. Backfill all comparison, alternatives,
@@ -406,8 +432,11 @@ for i in 1 2 3 4 5; do
   done
 done
 
-# Or, once PR #5 lands, the same check as one tool call:
+# PR #5 has landed, so the same check is one tool call:
 #   validate_sitemaps { sitemapIndexUrl: ".../sitemap-index.xml", timeoutMs: 25000 }
+#
+# Or re-derive every finding in this section in one pass, exit 1 on regression:
+#   SITEMAP_ROUNDS=10 ./scripts/geo-audit.sh
 
 # F5 - cache headers (expect CF-Cache-Status: DYNAMIC + contradictory directives)
 curl -sI -A "GPTBot/1.2" https://hellogrowthcrm.com/pricing | grep -iE 'cache|set-cookie|vary'
