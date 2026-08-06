@@ -18,6 +18,9 @@ import { verifyBotIdentityTool } from "./verify-bot-identity.js";
 // ── Page content (live crawl → readable content) ──────────────────────────────
 import { fetchPageContent, crawlPages } from "./fetch-page-content.js";
 
+// ── llms.txt corpus generation ────────────────────────────────────────────────
+import { generateLlmsTxt, checkLlmsTxt } from "./llms-txt.js";
+
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
   blogList,
@@ -173,6 +176,10 @@ export const tools: RegisteredTool[] = [
   // Page content (live crawl → readable content)
   fetchPageContent,
   crawlPages,
+
+  // llms.txt corpus generation
+  generateLlmsTxt,
+  checkLlmsTxt,
 
   // Blog
   blogList,
