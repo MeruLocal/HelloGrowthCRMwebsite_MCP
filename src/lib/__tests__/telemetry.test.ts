@@ -84,4 +84,62 @@ describe("track", () => {
     expect(sent.events[0].name).toBe("mcp_tool_call");
     fetchSpy.mockRestore();
   });
+  it("does NOT tag debug_mode by default", () => {
+    vi.stubEnv("ENABLE_MCP_ANALYTICS", "true");
+    vi.stubEnv("GA4_MEASUREMENT_ID", "G-TEST");
+    vi.stubEnv("GA4_API_SECRET", "secret");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+    resetTelemetrySink();
+    track("mcp_request", { sessionId: "s" });
+    const sent = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+    expect(sent.events[0].params.debug_mode).toBeUndefined();
+    fetchSpy.mockRestore();
+  });
+
+  it("tags debug_mode:1 when GA4_DEBUG_MODE=true so DebugView shows the event", () => {
+    vi.stubEnv("ENABLE_MCP_ANALYTICS", "true");
+    vi.stubEnv("GA4_MEASUREMENT_ID", "G-TEST");
+    vi.stubEnv("GA4_API_SECRET", "secret");
+    vi.stubEnv("GA4_DEBUG_MODE", "true");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+    resetTelemetrySink();
+    track("mcp_tool_call", { sessionId: "s", toolName: "fetch_page_content" });
+    const [url, init] = fetchSpy.mock.calls[0];
+    // debug_mode rides on the NORMAL endpoint - the event is still recorded.
+    expect(String(url)).toContain("/mp/collect");
+    expect(String(url)).not.toContain("/debug/mp/collect");
+    const sent = JSON.parse((init as RequestInit).body as string);
+    expect(sent.events[0].params.debug_mode).toBe(1);
+    expect(sent.events[0].params.toolName).toBe("fetch_page_content");
+    fetchSpy.mockRestore();
+  });
+
+  it("posts to the validation endpoint when GA4_VALIDATE=true", () => {
+    vi.stubEnv("ENABLE_MCP_ANALYTICS", "true");
+    vi.stubEnv("GA4_MEASUREMENT_ID", "G-TEST");
+    vi.stubEnv("GA4_API_SECRET", "secret");
+    vi.stubEnv("GA4_VALIDATE", "true");
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ validationMessages: [] })));
+    resetTelemetrySink();
+    track("mcp_request", { sessionId: "s" });
+    expect(String(fetchSpy.mock.calls[0][0])).toContain("/debug/mp/collect");
+    fetchSpy.mockRestore();
+  });
+
+  it("GA4_VALIDATE wins over a custom GA4_ENDPOINT", () => {
+    vi.stubEnv("ENABLE_MCP_ANALYTICS", "true");
+    vi.stubEnv("GA4_MEASUREMENT_ID", "G-TEST");
+    vi.stubEnv("GA4_API_SECRET", "secret");
+    vi.stubEnv("GA4_ENDPOINT", "https://example.test/collect");
+    vi.stubEnv("GA4_VALIDATE", "true");
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ validationMessages: [] })));
+    resetTelemetrySink();
+    track("mcp_request", { sessionId: "s" });
+    expect(String(fetchSpy.mock.calls[0][0])).toContain("/debug/mp/collect");
+    fetchSpy.mockRestore();
+  });
 });

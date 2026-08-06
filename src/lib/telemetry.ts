@@ -16,6 +16,19 @@
  *   GA4_API_SECRET        Measurement Protocol API secret
  *   GA4_ENDPOINT          Override collect endpoint (default Google's prod URL)
  *   GA4_TIMEOUT_MS        Abort the send after N ms (default 3000)
+ *   GA4_DEBUG_MODE        "true" -> tag every event with `debug_mode: 1` so it
+ *                         shows up in GA4 -> Admin -> DebugView. Events are
+ *                         still recorded normally. Turn off after verifying.
+ *   GA4_VALIDATE          "true" -> POST to Google's /debug/mp/collect
+ *                         validation endpoint instead and log the returned
+ *                         validationMessages. Payloads sent this way are
+ *                         checked but NOT recorded — one-off diagnosis only.
+ *
+ * Why both switches: DebugView is populated by the `debug_mode` parameter on
+ * the NORMAL endpoint. The /debug/mp/collect endpoint validates a payload and
+ * returns errors but records nothing, so it can never make an event appear in
+ * DebugView. They answer different questions ("is it arriving?" vs "is it
+ * well-formed?"), hence two flags.
  */
 
 import { randomUUID } from "node:crypto";
@@ -29,16 +42,29 @@ export interface TelemetryEvent {
 export type TelemetrySink = (event: TelemetryEvent) => void;
 
 const DEFAULT_ENDPOINT = "https://www.google-analytics.com/mp/collect";
+const VALIDATION_ENDPOINT = "https://www.google-analytics.com/debug/mp/collect";
+
+function envFlag(name: string): boolean {
+  return (process.env[name] ?? "").toLowerCase() === "true";
+}
 
 function analyticsEnabled(): boolean {
   // OFF unless explicitly switched on.
-  if ((process.env.ENABLE_MCP_ANALYTICS ?? "").toLowerCase() !== "true") {
+  if (!envFlag("ENABLE_MCP_ANALYTICS")) {
     return false;
   }
   // ...and only when GA4 credentials are present.
   return Boolean(
     process.env.GA4_MEASUREMENT_ID && process.env.GA4_API_SECRET,
   );
+}
+
+/** Resolve the collect endpoint, honouring GA4_VALIDATE and GA4_ENDPOINT. */
+function resolveEndpoint(): { url: string; validating: boolean } {
+  if (envFlag("GA4_VALIDATE")) {
+    return { url: VALIDATION_ENDPOINT, validating: true };
+  }
+  return { url: process.env.GA4_ENDPOINT ?? DEFAULT_ENDPOINT, validating: false };
 }
 
 /**
@@ -55,8 +81,8 @@ function ga4Sink(event: TelemetryEvent): void {
 
   const measurementId = process.env.GA4_MEASUREMENT_ID!;
   const apiSecret = process.env.GA4_API_SECRET!;
-  const endpoint = process.env.GA4_ENDPOINT ?? DEFAULT_ENDPOINT;
   const timeoutMs = Number.parseInt(process.env.GA4_TIMEOUT_MS ?? "3000", 10);
+  const { url: endpoint, validating } = resolveEndpoint();
 
   const url =
     `${endpoint}?measurement_id=${encodeURIComponent(measurementId)}` +
@@ -68,9 +94,16 @@ function ga4Sink(event: TelemetryEvent): void {
   const clientId =
     typeof sessionId === "string" && sessionId ? sessionId : randomUUID();
 
+  // `debug_mode: 1` is what surfaces an event in GA4's DebugView. Without it
+  // DebugView stays empty no matter how many events land — which is exactly
+  // why MCP telemetry was previously unverifiable in production.
+  const params: Record<string, unknown> = envFlag("GA4_DEBUG_MODE")
+    ? { ...event.params, debug_mode: 1 }
+    : event.params;
+
   const body = JSON.stringify({
     client_id: clientId,
-    events: [{ name: event.name, params: event.params }],
+    events: [{ name: event.name, params }],
   });
 
   const controller = new AbortController();
@@ -84,6 +117,23 @@ function ga4Sink(event: TelemetryEvent): void {
     body,
     signal: controller.signal,
   })
+    .then(async (res) => {
+      if (!validating) return;
+      // The validation endpoint returns 200 with a validationMessages array;
+      // an empty array means the payload is well-formed. Surface it at info
+      // level — this only runs when an operator explicitly set GA4_VALIDATE.
+      let detail: unknown = null;
+      try {
+        detail = await res.json();
+      } catch {
+        detail = null;
+      }
+      logger.info("Telemetry: GA4 payload validation result", {
+        event: event.name,
+        status: res.status,
+        validation: detail,
+      });
+    })
     .catch((err: unknown) =>
       logger.debug("Telemetry send failed", {
         event: event.name,

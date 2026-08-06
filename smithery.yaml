@@ -1,0 +1,55 @@
+# Smithery deployment config — https://smithery.ai/docs/config
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      defaultTargetUrl:
+        type: string
+        title: Default target URL
+        description: >-
+          Base URL used by scan_website_bots and generate_robots_txt when the
+          tool call does not supply one.
+        default: https://hellogrowthcrm.com
+      crawlerUserAgent:
+        type: string
+        title: Crawler User-Agent
+        description: >-
+          User-Agent this server identifies itself with on outbound fetches.
+          Be honest — never spoof another crawler.
+        default: mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)
+      maxSitemapPages:
+        type: number
+        title: Max sitemap pages per run
+        default: 25
+      crawlDelayMs:
+        type: number
+        title: Per-host crawl delay (ms)
+        default: 1000
+      supabaseUrl:
+        type: string
+        title: Supabase project URL
+        description: Optional. Required only for the blog/help/newsletter/forms/analytics tools.
+      supabaseServiceRoleKey:
+        type: string
+        title: Supabase service-role key
+        description: Optional. Required only for the blog/help/newsletter/forms/analytics tools.
+        format: password
+  commandFunction: |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js'],
+      env: {
+        DEFAULT_TARGET_URL: config.defaultTargetUrl ?? 'https://hellogrowthcrm.com',
+        CRAWLER_USER_AGENT: config.crawlerUserAgent ?? 'mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)',
+        MAX_SITEMAP_PAGES: String(config.maxSitemapPages ?? 25),
+        CRAWL_DELAY_MS: String(config.crawlDelayMs ?? 1000),
+        ...(config.supabaseUrl ? { SUPABASE_URL: config.supabaseUrl } : {}),
+        ...(config.supabaseServiceRoleKey ? { SUPABASE_SERVICE_ROLE_KEY: config.supabaseServiceRoleKey } : {}),
+      },
+    })
+  exampleConfig:
+    defaultTargetUrl: https://hellogrowthcrm.com
+    crawlerUserAgent: mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)
+    maxSitemapPages: 25
+    crawlDelayMs: 1000

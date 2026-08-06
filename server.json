@@ -1,0 +1,66 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
+  "description": "Bot detection and governance MCP server: scans a site, classifies every search-engine, AI and scraper crawler that touches it, parses access logs, and generates robots.txt policy.",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "websiteUrl": "https://hellogrowthcrm.com",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "mcp-bot-crawler",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DEFAULT_TARGET_URL",
+          "description": "Base URL used by scan_website_bots and generate_robots_txt when no url argument is given.",
+          "isRequired": false,
+          "default": "https://hellogrowthcrm.com"
+        },
+        {
+          "name": "CRAWLER_USER_AGENT",
+          "description": "User-Agent the crawler identifies itself with on outbound fetches.",
+          "isRequired": false,
+          "default": "mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)"
+        },
+        {
+          "name": "MAX_SITEMAP_PAGES",
+          "description": "Maximum number of sitemap pages fetched in a single crawl run.",
+          "isRequired": false,
+          "default": "25"
+        },
+        {
+          "name": "CRAWL_DELAY_MS",
+          "description": "Per-host delay between outbound requests, in milliseconds.",
+          "isRequired": false,
+          "default": "1000"
+        },
+        {
+          "name": "SUPABASE_URL",
+          "description": "Supabase project URL. Only needed for the blog, help, newsletter, forms and analytics tools.",
+          "isRequired": false
+        },
+        {
+          "name": "SUPABASE_SERVICE_ROLE_KEY",
+          "description": "Supabase service-role key. Only needed for the blog, help, newsletter, forms and analytics tools.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.hellogrowthcrm.com/mcp"
+    }
+  ]
+}

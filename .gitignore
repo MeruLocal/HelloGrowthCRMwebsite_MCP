@@ -3,7 +3,6 @@ dist/
 coverage/
 .env
 .env.local
-.env.example
 *.log
 .DS_Store
 .idea/
@@ -11,3 +10,4 @@ coverage/
 /reports/
 !/reports/.gitkeep
 *.tsbuildinfo
+vitest.config.ts.timestamp-*.mjs
