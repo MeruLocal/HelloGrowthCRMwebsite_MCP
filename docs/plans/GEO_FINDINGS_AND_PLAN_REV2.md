@@ -396,6 +396,93 @@ that **A is the correct P0**.
 
 ---
 
+### R5 — Grok (live X access): the artefact plan attacked, with real data
+
+Grok has live X/Twitter search, which no other reviewer had. It ran **17 searches** and cited
+**87 sources**. This is the only reviewer input in this audit backed by observed market data
+rather than reasoning.
+
+**It directly contradicts R3b's headline advice. Both cannot be right — see the verdict below.**
+
+**What Indian buyers are actually saying (real posts, not inference):**
+
+> *"Organic discussion is thin. Most volume is vendor self-promotion or low-engagement noise.
+> Genuine buyer/user posts are sporadic and cluster around switching, support pain, and
+> 'no perfect tool yet.'"*
+
+- **Zoho has the deepest real conversation, even when negative.** @svembu is cultural gravity.
+  @abhaybhargav (Aug 2025, 1.5k+ likes) migrated to Zoho One partly out of patriotism.
+- **Wati / Interakt / AiSensy own the practical *"I'm using this for broadcasts/inbox"* talk**
+  among D2C/SMB operators. @RohitAryannn: *"Switched from AiSensy to Interakt… Indian D2C
+  brands need reliable WhatsApp API providers. Many options, but few deliver."* Later:
+  ***"There is no perfect app available in India right now. You can go with any."***
+- **LeadSquared and Kylas are mostly invisible on X** outside their own and partner channels.
+- Pure paid noise — new WhatsApp CRM accounts blasting the same templates — **gets near-zero
+  engagement** and is easy to spot.
+- Recurring pain: orphaned WABA after disconnecting a provider; long unsubscribe forms.
+
+**Is X itself a citation surface?** *"Honest answer: **mostly no** for ranking/naming leverage."*
+Models retrieve from indexed pages, review sites, docs and high-authority structured data far
+more than raw posts. X matters only if a post gets widely quoted or scraped into articles.
+**Treat X as distribution and relationship surface, not a primary AEO lever.** Useful honesty —
+this closes off a plausible-sounding channel before anyone invests in it.
+
+**Handles that actually drive Indian SMB software discovery:** @YourStoryCo · @Inc42 ·
+@sajithpai (Blume — deep vertical SaaS/GTM content) · @BlumeVentures · @svembu · plus
+founder/operator accounts posting real switches.
+
+**⚠️ The attack on R3b's eight artefacts:**
+
+> *"It is elegant citation bait that will almost certainly fail for a small vendor with no
+> existing review volume or authority."*
+
+1. **Nobody searches for or cites an obscure taxonomy from an unknown domain.** Retrieval
+   weights domain authority, backlinks and corroboration. Publishing on your own site does not
+   create any of those.
+2. **Travel agents don't read taxonomies.** They ask *"what actually works on WhatsApp + dialer
+   for my leads."* Models answer from product pages, comparison articles and review aggregators
+   that already exist.
+3. **Open specs only matter when a critical mass of integrators adopt them, or a regulator
+   references them.** A single small vendor publishing one does nothing.
+4. **Opportunity cost is high** — time on abstract artefacts is time not spent on the concrete
+   quotable things models actually surface.
+
+**What Grok would do instead — and its 30-day answer:** ship and aggressively distribute **one
+high-signal, query-matched landing page plus 2–3 real customer outcome stories** answering
+*"best CRM for travel agents in India"* verbatim. Exact buyer phrases, side-by-side tables
+against the tools that **do** get named (Zoho, Wati, Interakt, LeadSquared), real response-time
+numbers, screenshots, Indian-language considerations. *"Models currently surface the tools that
+have concrete, indexed pages answering the question; an empty or generic site does not.
+Everything else — reviews, taxonomies, MCP — is slower."*
+
+---
+
+### Verdict on the R3b vs R5 conflict
+
+They disagree on the **highest-leverage artefact**, and the disagreement is decidable:
+
+| | R3b (Gemini) | R5 (Grok) |
+|---|---|---|
+| Build | 8 canonical data artefacts | 1 query-matched page + 2–3 case studies |
+| Basis | Claims about its own retrieval | 17 live X searches, 87 sources |
+| Falsifiable? | No | Partly — the market data is checkable |
+
+**Grok's critique is better argued and its evidence is real, so it wins on priority ordering.**
+But its point 3 quietly concedes R3b's: a spec matters *once integrators adopt it*. These are
+not mutually exclusive — they are sequenced. **Query-matched pages first** (weeks), **artefacts
+later** (quarters, and only if distribution exists to make them adopted).
+
+Two things both agree on, which raises confidence considerably:
+- **Concrete, indexed, extractable pages beat abstract content.** R5's "empty or generic site
+  does not [get surfaced]" is finding **A** again, now from a fifth independent source.
+- **Localised intent beats broad terms** (R3b trap 3; R5's whole §5).
+
+**Note the recurring pattern:** the reviewer with real data disagreed with the reviewer without
+it. Everything unfalsifiable in this document should be read with that in mind — including the
+parts I wrote.
+
+---
+
 ## 4. "Which keywords do we rank for in AI search?"
 
 ### ⚠️ Correction: a free measurement layer exists that we assumed did not
