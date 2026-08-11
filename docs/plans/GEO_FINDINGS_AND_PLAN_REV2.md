@@ -57,6 +57,76 @@ omitted the `sessionId`.** Full handshake verified: `GET /sse` hands out a sessi
 stop discovering it, and the endpoint stays up so already-configured clients keep working.
 **Do not delete it.** *(Ninth correction in this document.)*
 
+### R9 — Grok, re-briefed with the COMPLETE findings, on MCP listing
+
+**First, an admission about reviewer coverage.** Gemini and Grok were briefed on four accepted
+premises and strategy questions. **Neither ever saw finding V, the credential exposure, the
+`/sse` correction, or the listing status** — those were discovered afterwards. Only the last GPT
+reviewer (R8) saw the credential finding at all. So the earlier Gemini and Grok advice was given
+on an incomplete picture, and this round fixes that for Grok.
+
+Re-briefed with everything and asked, with live search, what is *actually* happening with MCP
+discovery. **63 sources, data as of 2026-08-11.**
+
+**(a) The state of MCP discovery — "not a ghost town, but a massive long-tail desert."**
+
+| | |
+|---|---|
+| Tracked servers (Official Registry + Glama + Smithery + mcp.so + PulseMCP) | **~101–102k** |
+| Added in the last 30 days | **+15–16k (~500/day)** |
+| Glama alone | ~70k |
+| Historical concentration | **Top 10 servers captured nearly half of all GitHub stars** |
+
+Real usage is dominated by Playwright, GitHub, Browser Use, n8n, Context7, filesystem, Postgres,
+Fetch, Memory, Sequential Thinking. Registries *do* drive discovery **for the head** — Smithery
+became the one-click install path; the Official Registry is more a machine-readable
+source-of-truth than a consumer marketplace.
+
+> **"For a new, unknown server: listing gets you indexed. It does NOT get you installs. Most of
+> the 100k+ entries sit at zero meaningful usage."**
+
+**(b) Is there an audience for a read-only website mirror? "Very limited."**
+What actually gets used in the docs/website category is high-quality always-current
+*documentation* retrieval (Context7, Algolia DocSearch), general fetch/scrape tools, and
+high-authority spec mirrors. *"Developers and agents do not go looking for 'the HelloGrowthCRM
+website as an MCP tool.'"* Listing is **low-cost hygiene now the manifest is truthful** — the
+security downside is low because it is public, read-only and needs no auth — but expecting
+installs or mindshare is unrealistic.
+
+**(c) What actually drove adoption for servers that got used** — five patterns:
+1. Solves a frequent, painful, **general** developer/agent problem, used daily by coding agents.
+2. **Official or near-official status** — Microsoft, Google, Anthropic reference servers,
+   GitHub's own, Notion/Slack/Stripe/Sentry. Being in the "safe default" set matters.
+3. **Zero-friction install + a remote option.** `npx` / Smithery one-click / hosted endpoints.
+   Local-only stdio servers with complicated setup lose.
+4. High GitHub signal + continuous maintenance; clear README with exact client config snippets.
+5. **"Clear, narrow tool surface that agents can actually call usefully. Not 88 miscellaneous
+   tools. A small set of well-described tools with good schemas."**
+
+> *"Website-mirror / brand-docs servers that gain traction do so when the underlying content is
+> uniquely valuable and frequently needed (React docs, framework APIs, large public specs).
+> **A CRM marketing site does not clear that bar.**"*
+
+Point 5 independently reaches R1's conclusion from live adoption data rather than reasoning:
+**88 tools is a liability, not an asset.**
+
+**(d) Does a truthful, well-documented public MCP server help AI search visibility?
+"Still essentially zero"** for being named on *"best CRM for travel agents in India"*. MCP
+discovery surfaces are **almost entirely orthogonal** to the web indexes and retrieval corpora
+that power general LLM answers.
+
+It helps in exactly two narrow ways, both already banked by hcweb #1114:
+1. Agents already pointed at our domain get **accurate** tool descriptions instead of the
+   previous mismatch.
+2. **It removes a credibility landmine** — false tool claims plus credential instructions
+   pointing at a no-auth endpoint.
+
+**Bottom line, adopted into this plan:** ship the truthful manifest and the do-not-send-
+credentials skill (done, #1114). List in the Official Registry **plus one or two directories
+only if the effort is near-zero**. **Do not invest further engineering or marketing energy in
+this server as a growth or visibility lever.** The product still needs query-matched content and
+social proof; an accurate website-mirror MCP does not replace that.
+
 ### Where the MCP server is listed: nowhere
 
 | Surface | Status |
