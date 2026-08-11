@@ -6,6 +6,77 @@
 
 ---
 
+## 0a. STATUS — the single view. Updated 2026-08-11.
+
+| ID | Item | Status | Where |
+|---|---|---|---|
+| **V** | Manifest advertised 14 CRM tools that don't exist | ✅ **FIXED** | hcweb **#1114** |
+| **T** | `/sse` deprecated — manifest + README | ✅ **FIXED** | hcweb #1114 · mcp #16 |
+| **G** | `geo-audit.sh` false positives | ✅ shipped | mcp #12 |
+| **L′** | Rate-limit bypass via spoofed `X-Forwarded-For` | ✅ shipped | mcp #13 |
+| **I+J** | `HEAD /` 404 · `/healthz` · `/robots.txt` · landing page | ✅ shipped | mcp #14 |
+| **M** | Protocol monitor asserting manifest/server parity | ✅ shipped | mcp #15 |
+| ~~S~~ | ~~"zero Resources"~~ | ❌ **withdrawn — was wrong** | 9 resources live |
+| **A** | **`<main>` = 0 chars on every key page** | 🔴 **OPEN — P0** | hcweb |
+| **B** | Cloudflare `DYNAMIC` despite `public` headers | 🟠 open | Cloudflare dashboard |
+| **C** | `/blog` sends `private, no-store` | 🟠 open | hcweb |
+| **D** | Bing Webmaster unverified | 🟠 open — **needs a human** | `layout.tsx` ~L88 |
+| **E** | Five sources for `llms.txt` | 🟡 open | hcweb |
+| **F** | `/in/pricing` 1-year `s-maxage` | 🟡 open | hcweb |
+| **W** | `/agentic-ai/mcp` never mentions `/mcp` | 🟠 open | hcweb |
+| **H** | **No citation baseline has ever been run** | 🔴 **OPEN — blocks everything** | ops |
+| **P** | Check GSC Search Generative AI report | 🔴 **30 min, free** | ops |
+| **Q** | Check GA4 for `utm_source=chatgpt.com` | 🔴 **30 min, free** | ops |
+
+**Do these three first, in this order:** **P** and **Q** (an hour total, no developer, may
+change what else is worth doing) → **A** (the only P0 engineering item) → **H** (nothing else is
+testable without it).
+
+### What V actually was — the root cause, and why it mattered more than a wrong list
+
+The manifest's own comment gave it away: it was written for a planned CRM server (**"Track B"**)
+that was never built, and `server_url` was later pointed at `mcp.hellogrowthcrm.com`, which runs
+a **different product** — the website-mirror and bot-governance server.
+
+Three published surfaces carried the false claim, not one: the manifest route, the agent-skill
+`SKILL.md`, and the `index.json` that pins it by sha256 digest.
+
+And the severity was higher than "wrong tool list". Verified 2026-08-11: **the endpoint requires
+no auth** — no `Authorization` header and `Bearer totally-invalid-key-12345` both return `200`,
+identically. The skill was instructing agents to have the customer **generate a live CRM API key
+and transmit it** to a server that ignores it. Fixed in hcweb #1114, including recomputing the
+digest — a stale one would have broken skill discovery outright.
+
+### ⚠️ Correction: `/sse` works. My earlier probe was wrong.
+
+I reported `POST /message` returning 404 and implied the SSE transport was broken. **I had
+omitted the `sessionId`.** Full handshake verified: `GET /sse` hands out a session,
+`POST /message?sessionId=…` returns **202 Accepted**.
+
+`/sse` is **deprecated by spec, not broken.** It is removed from the manifest so new clients
+stop discovering it, and the endpoint stays up so already-configured clients keep working.
+**Do not delete it.** *(Ninth correction in this document.)*
+
+### Where the MCP server is listed: nowhere
+
+| Surface | Status |
+|---|---|
+| npm `mcp-bot-crawler` | **404** |
+| npm `hellogrowthcrm` | **404** |
+| Official MCP Registry (both searches) | **0 results** |
+
+It is listed in **exactly zero places** — and it is not "listed with the LLMs", because that is
+not how they work. Nothing about listing an MCP server makes ChatGPT or Gemini more likely to
+name you; a user must deliberately connect it. R1: *"availability is not discovery, and
+discovery is not invocation."* R2 called a 26-directory campaign vanity.
+
+Listing stays descoped to **official registry + claim 3 auto-indexed listings**, gated on
+telemetry showing any AI client connects at all. It is at least *safe* to list now that #1114
+has stopped the manifest misdescribing the server — publishing it before would have spread the
+error further.
+
+---
+
 ## 0. Corrections to Rev 1 — read before doing anything
 
 Rev 1 was written from live measurement, but **five of its findings were wrong**. Two would
@@ -806,20 +877,80 @@ trace.
 
 R2 was asked: one dev, near-zero budget, only 3 things in 30 days.
 
+**Superseded — items 2 and 3 below are now shipped or descoped. See the live plan that follows.**
+
 ```
-0.  P + Q      30 minutes each, do them TODAY. Check whether GSC has the
-               Search Generative AI report for us, and whether GA4 shows any
-               utm_source=chatgpt.com traffic. Both are free and may change
-               what the rest of this plan should prioritise.
+0.  P + Q      30 minutes each, do them TODAY.
 1.  A          fix <main> on the top ~20 commercial pages.
-               "If you skip this, MCP work does nothing for the goal."
-2.  I+J+L+M    harden the public MCP to "not embarrassing" — HEAD, /healthz,
-               robots, rate limiting, synthetic monitor, real landing page.
-3.  O (pilot)  read-only authenticated CRM MCP, 1 design partner, NO writes.
+2.  I+J+L+M    SHIPPED (mcp #12-#16).
+3.  O (pilot)  read-only authenticated CRM MCP — deferred, see gate below.
 ```
 
-**P and Q are inserted ahead of R2's list.** They did not exist when R2 answered, they cost an
-hour combined, and measuring before building is the whole lesson of §0.
+### THE PLAN — what actually needs doing, in order
+
+**Week 0 — one hour, no developer, do first**
+
+| | Task | Done when |
+|---|---|---|
+| **P** | Open GSC → check whether this property has the **Search Generative AI** report (launched 2026-06-03) | The AI Overviews / AI Mode impression numbers are written into this doc |
+| **Q** | GA4 → segment sessions on `utm_source=chatgpt.com`, and on `perplexity`/`gemini`/`copilot` referrers | We know whether AI referral traffic is zero or non-zero |
+
+*Why first: both are free, neither needs a developer, and either could change what else is worth
+doing. If Q shows real ChatGPT traffic already, the priority order changes.*
+
+**Week 1 — the only P0 engineering item**
+
+**A. Put real content inside `<main>`** on the top ~20 commercial pages.
+Approach in order: render primary content outside Suspense on marketing routes → force SSR on
+those routes → *last resort* non-streamed HTML for AI-bot UAs (cloaking risk, needs SEO
+sign-off; `BOT_UA` already exists in `src/middleware.ts`).
+**Accept:** `<main>` ≥ 2,000 chars on all five reference pages as GPTBot; `geo-audit.sh` C1
+reports `mainEmptyCount: 0`.
+
+**Week 1–2 — measurement, in parallel with A**
+
+**H. Run the 60-run citation baseline.** 4 prompts × 5 fresh chats × 3 engines. Full spec in §3.
+Score **cited / mentioned / recommended separately.**
+⚠️ **Read it as directional telemetry, not evidence** — ~26% chance of at least one false
+"finding" across the four prompts, and it misses most real moderate gains.
+**Accept:** the baseline table is committed; re-run identical at week 4 and week 8.
+
+**Week 2–3 — crawl efficiency and hygiene**
+
+| | Task | Owner |
+|---|---|---|
+| **B** | Cloudflare Cache Rule so HTML is eligible. **Do not edit `next.config.js`** — origin headers are already correct. Leave `/` + `/pricing` on `no-store`. | ops |
+| **C** | Justify or remove `private, no-store` on `/blog` | web |
+| **D** | Verify Bing Webmaster, then URL-Inspect the comparison + top industry pages | human → web |
+| **W** | Rewrite `/agentic-ai/mcp` to lead with `POST /mcp` | web |
+| **E** | Resolve the five `llms.txt` sources, then wire `generate_llms_txt` (91 KB vs the live 10 KB) | web |
+| **F** | Fix `/in/pricing` 1-year `s-maxage` | web |
+
+**Starting now, in parallel, no engineering dependency — and per §7 this decides the outcome**
+
+- **U3.** Audit real presence on G2, Capterra/GetApp/Software Advice, Techjockey,
+  SoftwareSuggest, SaaSworthy. Presence without reviews is worthless; the reviews are the asset.
+- **The travel-fit test (R6's biggest miss).** Run HelloGrowthCRM and the five most-named
+  competitors through three real travel-agency workflows. Interview ≥10 agencies.
+  **If there are no successful travel customers, stop calling the product "best for travel
+  agents"** — a query-matched page cannot repair a capability gap, and a comparison page would
+  expose it.
+- **U4.** Are the 513 industry pages genuinely distinct, or noun-replacement templates? Settle
+  it before building more.
+- **Claim integrity.** Audit ≥50 of the 630 integration pages: can a buyer actually activate
+  each one today? The manifest defect was a *pattern*, not an isolated bug.
+
+**Gated, not scheduled**
+
+| Gate | Unlocks |
+|---|---|
+| MCP telemetry shows ≥1 real AI client in 7 days | W3.4 registry listing + directory claims |
+| 2 named implementation partners **or** 3 committed adopters | Any canonical artefact / open spec |
+| Travel agencies activate and retain | Continuing to target this query at all |
+
+**Explicitly not doing:** 26-directory submission campaign · Product Hunt · press syndication ·
+Wikipedia · buying Ahrefs units now · more AI bot names in `robots.txt` · publishing any new
+indexable page before **A** lands.
 
 Then, in parallel and with no engineering dependency: **D** (Bing, human-blocked), **H**
 (baseline — you cannot tell whether any of this worked without it), and **N** (entity signals,
