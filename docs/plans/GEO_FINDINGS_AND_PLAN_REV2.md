@@ -576,10 +576,42 @@ official citation rate · **independent** citation rate · median rank · claim 
 competitor frequency.
 
 **Signal vs nondeterminism:** 0/5 none · 1–2/5 noise · 3–4/5 probable · 5/5 stable. Treat as a
-real cross-model finding only at **≥3/5 on ≥2 engines for the same unbranded prompt.** For later
+cross-model signal only at **≥3/5 on ≥2 engines for the same unbranded prompt.** For later
 waves, require **+2/5 in the same prompt-engine cell, on ≥2 engines, persisting into the next
 wave.** Re-run the identical 60 at week 4 and week 8. **Do not change prompt wording between
 waves.**
+
+> ### ⚠️ This design is DIRECTIONAL TELEMETRY, not decision-grade evidence
+>
+> A sixth reviewer was asked only to falsify the adjudication above, with *"I found no material
+> error"* explicitly allowed. It found exactly one — **this design is underpowered, and the
+> language above ("probable", "stable", "real cross-model finding") overstates what n=5 can
+> support.** Its arithmetic was re-derived independently and is exactly right:
+>
+> | At a true rate of 30% (i.e. pure noise) | Probability |
+> |---|---|
+> | One engine shows ≥3/5 by chance | **16.3%** |
+> | ≥2 of 3 engines clear the bar for one prompt | **7.1%** |
+> | **≥1 false "finding" somewhere across the 4 prompts** | **25.6%** |
+>
+> **Roughly one run in four will hand you a confident-looking finding that is pure noise.**
+>
+> Detection power is the mirror problem. For a genuine 40% → 60% improvement, the per-engine
+> ≥3/5 bar is cleared only 31.7% of the time before and 68.3% after — so the +2/5-on-two-engines
+> rule will **miss most real moderate gains**.
+>
+> **What it can and cannot do:** it detects *large* effects (absent → frequently named) and
+> tracks direction over time. It **cannot** reliably separate a moderate improvement from noise.
+> Reaching decision-grade power for a 40%→60% shift needs on the order of **~100 runs per cell**
+> — roughly 20× this design, and a different project.
+>
+> **Use it accordingly:** run the 60, treat every cell as an estimate with wide error bars,
+> require persistence across *two* consecutive waves before believing anything, and never fund a
+> decision on a single wave's movement. The verdict on the analysis as a whole was *"not fully
+> safe to act on — if E is treated strictly as directional telemetry, the rest is broadly safe."*
+>
+> This is the eighth correction in this document, and the first found by deliberately trying to
+> break it rather than by re-measuring. That was the cheapest correction of the whole audit.
 
 ### Should content work start before A and D are fixed?
 
@@ -610,6 +642,11 @@ Re-run the baseline only after that evidence exists.
 > *"Do not fund 'GEO' as a standalone growth programme yet. Treat answer-engine visibility as a
 > small measurement and packaging layer around product-market fit and customer proof — not as a
 > substitute for them."*
+
+**The economics were independently re-derived and are correct:** ₹899 × 5 × 12 = ₹53,940;
+₹10,00,000 ÷ ₹53,940 = **18.54 customer-years**. The falsification reviewer added that the
+figure is *optimistic*, since it uses **gross revenue** rather than gross margin, and ignores
+churn and acquisition cost. The real break-even is worse than 19 customer-years.
 
 **If travel agencies do not activate or retain, abandon this query target** and pursue the
 vertical where existing customers already show the strongest retention.
