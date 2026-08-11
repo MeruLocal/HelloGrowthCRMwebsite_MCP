@@ -886,47 +886,105 @@ R2 was asked: one dev, near-zero budget, only 3 things in 30 days.
 3.  O (pilot)  read-only authenticated CRM MCP — deferred, see gate below.
 ```
 
-### THE PLAN — what actually needs doing, in order
+### ⚠️ Plan review — five errors found, corrected below
 
-**Week 0 — one hour, no developer, do first**
+A reviewer was asked to judge the plan's *executability*, not its strategy. It found five things
+that would have cost real time. The plan below is the corrected version; the errors are recorded
+because three of them are mine repeating a pattern.
+
+**1. "Shipped" was the wrong word.** The PRs are **open, not merged** — so none of it is
+actually live, including the credential-exposure fix and the rate-limit bypass. **Day 0 is
+merge → deploy → smoke-test**, not more analysis.
+
+**2. The baseline would have been contaminated.** Running H across weeks 1–2 while A ships mixes
+pre- and post-change observations. **Run H in a short frozen window *before* A**, or call it a
+post-A snapshot — but never delay the security fixes to protect a measurement.
+
+**3. Caching before cache policy.** B (Cloudflare Cache Rules) must come **after** C, F and E.
+Enabling CDN caching while `/blog`, `/in/pricing` and the five `llms.txt` sources are unresolved
+risks **caching a wrong response for up to a year**.
+
+**4. A's last-resort approach conflicts with a constraint I documented myself.** Serving
+non-streamed HTML to AI-bot UAs collides with Cloudflare's **URL-only cache key** — bot HTML
+could be cached and served to humans, or the reverse. If that fallback is used it **must** bypass
+shared caching or use a separate cache key.
+
+**5. "In parallel" is not ownership.** For one developer, none of the research work is parallel.
+Every non-engineering item needs a named owner or it will not happen.
+
+Also: **split D** — verify Bing ownership now, but run URL Inspection *after* A deploys,
+otherwise it inspects known-bad HTML. And **move W into the first deployment batch**; it is small,
+and the live docs currently point agents at deprecated or nonexistent interfaces.
+
+### THE PLAN — corrected order
+
+**Day 0 — ship what is already written**
+
+Merge → deploy → **production smoke-test** the six open PRs (hcweb #1114; mcp #12–#16), plus
+**W** in the same batch. Confirm rollback works and that API keys never reach logs.
+Nothing below is meaningful until the credential-exposure fix is actually live.
+*Accept:* `mcp-monitor.sh` manifest-parity check goes green against production.
+
+**Day 0 — one hour, no developer, in parallel with the deploy**
 
 | | Task | Done when |
 |---|---|---|
-| **P** | Open GSC → check whether this property has the **Search Generative AI** report (launched 2026-06-03) | The AI Overviews / AI Mode impression numbers are written into this doc |
-| **Q** | GA4 → segment sessions on `utm_source=chatgpt.com`, and on `perplexity`/`gemini`/`copilot` referrers | We know whether AI referral traffic is zero or non-zero |
+| **P** | GSC → does this property have the **Search Generative AI** report? | Numbers written into this doc — **or `unavailable`** if the property is not in the rollout. Do **not** record "0 impressions" for "report absent." |
+| **Q** | GA4 → segment on `utm_source=chatgpt.com` and `perplexity`/`gemini`/`copilot` referrers | We know whether AI referral traffic is zero or non-zero |
 
-*Why first: both are free, neither needs a developer, and either could change what else is worth
-doing. If Q shows real ChatGPT traffic already, the priority order changes.*
+**Decision branch, pre-declared:** if **Q** shows non-trivial AI referral traffic already,
+the technical work is validated and continues. If it is zero *and* **H** returns zero mentions,
+that is evidence for R6's argument that this programme is premature — escalate before spending
+Week 2–3.
 
-**Week 1 — the only P0 engineering item**
+**Week 1 — baseline FIRST, in a frozen window**
+
+**H. Run the 60-run citation baseline before A ships.** Freeze the protocol: exact prompts,
+engine and visible model, account state, geography, date, citation URLs, scoring rules. Score
+**cited / mentioned / recommended separately.**
+⚠️ Directional telemetry, **not evidence** — ~26% chance of a false "finding" across the four
+prompts, and it misses most real moderate gains.
+**This is ~60 manual fresh chats, several hours, and may hit free-tier limits. It needs a named
+owner and is not parallel work for the developer.** Re-run the identical frozen protocol after
+A deploys plus a crawl interval, with a **pre-declared decision date**.
+
+**Week 1–2 — the only P0 engineering item**
 
 **A. Put real content inside `<main>`** on the top ~20 commercial pages.
 Approach in order: render primary content outside Suspense on marketing routes → force SSR on
-those routes → *last resort* non-streamed HTML for AI-bot UAs (cloaking risk, needs SEO
-sign-off; `BOT_UA` already exists in `src/middleware.ts`).
-**Accept:** `<main>` ≥ 2,000 chars on all five reference pages as GPTBot; `geo-audit.sh` C1
-reports `mainEmptyCount: 0`.
+those routes → *last resort* non-streamed HTML for AI-bot UAs.
+⚠️ **If the last resort is used it must bypass shared caching or use a separate cache key** —
+Cloudflare's cache key is URL-only, so bot HTML would otherwise be served to humans. That
+constraint is documented in `next.config.js:292-323`; the fallback collides with it directly.
+**Accept:** `<main>` ≥ 2,000 chars on all five reference pages as GPTBot, **and the expected H1
+and body text are present** (not just a character count), verified **both at origin and through
+Cloudflare**. `geo-audit.sh` C1 reports `mainEmptyCount: 0`.
 
-**Week 1–2 — measurement, in parallel with A**
+**Week 2 — settle cache policy at the ORIGIN, before touching the CDN**
 
-**H. Run the 60-run citation baseline.** 4 prompts × 5 fresh chats × 3 engines. Full spec in §3.
-Score **cited / mentioned / recommended separately.**
-⚠️ **Read it as directional telemetry, not evidence** — ~26% chance of at least one false
-"finding" across the four prompts, and it misses most real moderate gains.
-**Accept:** the baseline table is committed; re-run identical at week 4 and week 8.
-
-**Week 2–3 — crawl efficiency and hygiene**
-
-| | Task | Owner |
+| | Task | Accept |
 |---|---|---|
-| **B** | Cloudflare Cache Rule so HTML is eligible. **Do not edit `next.config.js`** — origin headers are already correct. Leave `/` + `/pricing` on `no-store`. | ops |
-| **C** | Justify or remove `private, no-store` on `/blog` | web |
-| **D** | Verify Bing Webmaster, then URL-Inspect the comparison + top industry pages | human → web |
-| **W** | Rewrite `/agentic-ai/mcp` to lead with `POST /mcp` | web |
-| **E** | Resolve the five `llms.txt` sources, then wire `generate_llms_txt` (91 KB vs the live 10 KB) | web |
-| **F** | Fix `/in/pricing` 1-year `s-maxage` | web |
+| **C** | `/blog` sends `private, no-store` and is not in the middleware matcher | Either a `public` policy, **or** a recorded reason tied to genuinely request-dependent output. "Justify" alone is not a completion criterion. |
+| **F** | `/in/pricing` sends `s-maxage=31536000` (one year), no `CDN-Cache-Control` sibling | A **named replacement policy** matching the `/contact` pattern, plus a purge. Removing the year is not enough. |
+| **E** | Five sources serve `llms.txt` / `llms-full.txt` | **One** named source of truth; the rest deleted or redirected; generator wired (91 KB vs the live 10 KB); a size/checksum check that fails CI on drift. |
 
-**Starting now, in parallel, no engineering dependency — and per §7 this decides the outcome**
+**Week 3 — only now enable CDN caching**
+
+**B.** Cloudflare Cache Rules so HTML is eligible. **Do not edit `next.config.js`** — origin
+headers are already correct.
+⚠️ **Must come after C, F and E.** Caching before origin policy is settled risks pinning a wrong
+response for up to a year.
+**Accept:** a route matrix — cold request `MISS`, repeat `HIT`, and **never** a hit on redirects,
+`no-store` pages, authenticated responses or the per-visitor `/` and `/pricing`. Purge verified.
+
+**D — split in two.** Verify Bing ownership **now** (needs a human to paste the code). Run URL
+Inspection **after A deploys**, or it inspects known-bad HTML.
+
+**Needs a named owner who is NOT the developer — "in parallel" is not ownership**
+
+⚠️ For a one-developer team none of the following is parallel work. Each item below needs an
+owner, a timebox and an evidence format, or it will not happen. Per §7 this is also the work
+that decides the outcome.
 
 - **U3.** Audit real presence on G2, Capterra/GetApp/Software Advice, Techjockey,
   SoftwareSuggest, SaaSworthy. Presence without reviews is worthless; the reviews are the asset.
@@ -942,11 +1000,14 @@ Score **cited / mentioned / recommended separately.**
 
 **Gated, not scheduled**
 
-| Gate | Unlocks |
-|---|---|
-| MCP telemetry shows ≥1 real AI client in 7 days | W3.4 registry listing + directory claims |
-| 2 named implementation partners **or** 3 committed adopters | Any canonical artefact / open spec |
-| Travel agencies activate and retain | Continuing to target this query at all |
+> **A gate that can never open is a polite cancellation.** The reviewer found one of these and
+> flagged that a second had no workstream capable of satisfying it. Both are corrected.
+
+| Gate | Threshold | Unlocks |
+|---|---|---|
+| ~~MCP telemetry shows ≥1 AI client~~ | **CIRCULAR — corrected.** Registry listing is *how* a client would find the endpoint, so requiring pre-listing usage means the gate never opens. **New rule:** list on the official registry once #1114 is deployed (safe now the manifest is truthful), *then* measure. Directory claims stay gated on: **one non-team client completing a valid MCP session and a successful tool call within a 30-day window** — a user-agent string does not count. | registry listing now; directories later |
+| Canonical artefact / open spec | 2 named implementation partners **or** 3 committed adopters. ⚠️ **No workstream currently exists that could produce these** — so as written this gate is closed by construction. Either assign partner outreach with a named owner and date, or **drop the artefact track honestly** rather than leaving it as theatre. | any spec/taxonomy work |
+| Continuing to target this query | **Was undefined.** Now: **3 non-team travel agencies complete the core workflow, with ≥2 still actively using or paying after 30 days.** Design-partner accounts count; team accounts do not. | continuing at all |
 
 **Explicitly not doing:** 26-directory submission campaign · Product Hunt · press syndication ·
 Wikipedia · buying Ahrefs units now · more AI bot names in `robots.txt` · publishing any new
