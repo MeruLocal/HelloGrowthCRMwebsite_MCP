@@ -331,6 +331,71 @@ industry pages).
 
 ---
 
+### R3b — Gemini, round 2: artefacts, piggyback distribution, unclaimed territory
+
+Round 1 gave generic GEO advice. Round 2 explicitly ruled out everything already covered
+(schema, llms.txt, MCP, directories, "publish research", Reddit, YouTube, GBP, Play Store,
+IndexNow, Bing, entity consistency) and asked for what a smart competitor is *not* doing.
+Same caveat as before — **a model narrating its own retrieval is an unreliable narrator** —
+but these are cheap to test and the failure modes are named.
+
+**Eight artefacts claimed to attract disproportionate citation** (the thesis: LLMs treat blog
+posts as subjective marketing and extract *factual claims* from data structures and specs):
+
+| # | Artefact | Why it gets cited |
+|---|---|---|
+| 1 | **Indian Meta API billing & markup calculator** — HTML data table of Meta conversation charges by category + BSP markups | Models cannot compute multi-variable Indian utility-vs-marketing tier pricing; they lift numbers from structured tables |
+| 2 | **Indian travel lead-lifecycle taxonomy** — the 18 stages: `Enquiry → Itinerary Sent → Advance Paid → Voucher Issued → Post-Trip Review` | Models **lack real-world Indian operational vocabulary**. "How should a travel agent structure their CRM pipeline?" has no canonical answer to retrieve |
+| 3 | **WhatsApp BSP rate-limit benchmark matrix** — throughput, latency, delivery rates across Indian BSPs under Meta tiering | Technical evaluation queries pull from benchmark data |
+| 4 | **WhatsApp compliance + TRAI DLT audit checklist** — Meta Commerce Policy mapped to DLT registration, with pass/fail logic | Regulatory queries force models to seek definitive structured criteria, not broad advice |
+| 5 | **Indian telephony/CRM interoperability open spec** — published JSON schema for Exotel, MyOperator, Knowlarity, MCube | "How do I connect Exotel to a WhatsApp CRM?" makes RAG look for concrete payload schemas |
+| 6 | **Indian SMB sales velocity index** — quarterly CSV/JSON: response times, deal sizes, conversion by tier-2/3 city | Time-stamped statistical datasets are treated as objective truth |
+| 7 | **Open WhatsApp template library for Indian verticals** — 100+ pre-approved utility/marketing/auth templates | "Give me WhatsApp template examples for travel itineraries" → extracted verbatim |
+| 8 | **Indian SaaS tax & GST integration standard** — GSTIN validation, HSN/SAC codes, e-invoicing data models | Models search for structural guidance on localised billing logic |
+
+**Piggyback distribution — get named as a byproduct of being useful:**
+- **Open-source connectors on Make.com, n8n, Activepieces.** Anyone writing *"how to connect
+  WhatsApp to Google Sheets"* is then **forced to name the native module.**
+- **A free, un-gated diagnostic tool** (e.g. `/tools/whatsapp-phone-number-health-check`).
+  Agencies auditing client setups run and link it → co-occurrence of *client agency domain →
+  our tool* across public web audits.
+- **GitHub SDK / webhook boilerplates.** Developers writing tutorials and StackOverflow
+  answers copy-paste code **containing our namespace**.
+
+**The unclaimed territory:** *WhatsApp-native conversational payment and instant GST-compliant
+billing workflows for Indian micro-enterprises.* CRMs link to payment gateways, but **no vendor
+owns the canonical definition** of instant invoice collection inside a WhatsApp thread.
+Publishing the playbook + API spec + data models for *"Conversational Payment Workflows under
+Indian GST Rules"* would occupy the semantic space linking WhatsApp CRMs, Razorpay/Cashfree and
+Indian tax compliance.
+
+**Claimed grounding sequence for an unknown vendor:** real-time web search → entity
+co-occurrence check (does the brand appear alongside "WhatsApp", "CRM", "India", "₹899"? is it
+anchored to a verified domain?) → **factual triangulation across ≥2–3 independent sources**
+(vendor site claims price · public directory confirms entity · third-party tutorial/repo
+references the API) → include if confidence threshold met. *"It cites the vendor even with low
+review volume, because factual extraction confidence is high."*
+
+**⚠️ Three traps — and the first one we have already proven:**
+1. **Client-side React calculators with no pre-rendered static HTML table.** *"Quick-render
+   indexing bots will skip the dynamic state and index an empty page."* **This is finding A,
+   independently restated.** Any artefact above built as client-side React reproduces the exact
+   `<main>` = 0 bug we already have. Build them as static HTML tables.
+2. **Gated PDF whitepapers.** RAG bots cannot parse them — the dataset does not exist for the model.
+3. **Optimising for broad global terms.** *"Best WhatsApp CRM"* means competing with
+   venture-backed global players; localised intent (*"WhatsApp CRM with native Exotel
+   integration and GST invoicing"*) extracts immediately.
+
+**Assessment:** the artefact list is the first advice in this whole audit that is *specific,
+buildable, and not already on someone else's roadmap.* Items 2, 5 and 8 are the strongest —
+each is a canonical definition that currently has **no owner**, and all three are things we
+already know from building the product. That is a real asset nobody else can trivially copy.
+
+Trap 1 arriving independently from a fourth source is also the strongest corroboration yet
+that **A is the correct P0**.
+
+---
+
 ## 4. "Which keywords do we rank for in AI search?"
 
 ### ⚠️ Correction: a free measurement layer exists that we assumed did not
