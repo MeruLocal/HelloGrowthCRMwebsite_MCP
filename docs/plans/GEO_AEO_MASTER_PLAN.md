@@ -442,11 +442,11 @@ done
 curl -sI -A "GPTBot/1.2" https://hellogrowthcrm.com/pricing | grep -iE 'cache|set-cookie|vary'
 
 # F10 - deployed MCP extraction (expect wordCount:0)
-SID=$(curl -s -D- -o /dev/null -X POST https://mcp.hellogrowthcrm.com/mcp \
+SID=$(curl -s -D- -o /dev/null -X POST https://mcp.hellogrowthcrm.com/sse \
   -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"p","version":"1"}}}' \
   | tr -d '\r' | grep -i '^mcp-session-id:' | cut -d' ' -f2)
-curl -s -X POST https://mcp.hellogrowthcrm.com/mcp \
+curl -s -X POST https://mcp.hellogrowthcrm.com/sse \
   -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
   -H "mcp-session-id: $SID" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"fetch_page_content","arguments":{"url":"https://hellogrowthcrm.com/pricing"}}}'

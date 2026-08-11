@@ -29,7 +29,7 @@
 # Exit codes: 0 = no regressions, 1 = at least one FAIL.
 
 BASE_URL="${BASE_URL:-https://hellogrowthcrm.com}"
-MCP_URL="${MCP_URL:-https://mcp.hellogrowthcrm.com/mcp}"
+MCP_URL="${MCP_URL:-https://mcp.hellogrowthcrm.com/sse}"
 SITEMAP_ROUNDS="${SITEMAP_ROUNDS:-3}"
 CURL_TIMEOUT="${CURL_TIMEOUT:-60}"
 SKIP_LOCAL="${SKIP_LOCAL:-0}"

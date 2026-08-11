@@ -118,7 +118,11 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
 ### Or use the hosted server (no clone, no build)
 
 A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
-`/mcp`, SSE at `/sse`. Manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`.
+`/sse`. Manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`.
+
+> **Endpoint change:** the Streamable HTTP endpoint moved from `/mcp` to `/sse`,
+> and the legacy SSE transport (`GET /sse` + `POST /message`) has been removed.
+> Point clients at `https://mcp.hellogrowthcrm.com/sse`.
 
 > ⚠️ **The hosted deployment can lag `main`.** Verified 2026-08-05: local `main`
 > and production both exposed the same 83 tools, but `fetch_page_content` on

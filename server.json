@@ -72,10 +72,6 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://mcp.hellogrowthcrm.com/mcp"
-    },
-    {
-      "type": "sse",
       "url": "https://mcp.hellogrowthcrm.com/sse"
     }
   ]
