@@ -44,11 +44,25 @@ import {
   SYNCED_AT,
 } from "./data/website-mirror.js";
 
+const SERVER_VERSION = "1.0.0";
+
+const MCP_RESOURCES = [
+  { uri: "hellocrmwebsite://blog/recent", name: "Recent Blog Posts", description: "Last 20 blog posts from hellogrowthcrm.com", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://help/categories", name: "Help Center Categories", description: "All help center categories", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://site/seo-rules", name: "SEO Rules & Guidelines", description: "SEO guardrails for hellogrowthcrm.com content", mimeType: "text/markdown" },
+  { uri: "hellocrmwebsite://site/comparisons", name: "Competitor Comparisons", description: "All competitor comparison page slugs and names", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://site/case-studies", name: "Case Studies", description: "All case study scenarios grouped by industry", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://site/industries", name: "Industry Pages", description: "All industry vertical page slugs", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://site/countries", name: "Country Markets", description: "8 country-specific market hubs with currency, locale, and pricing summary", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://site/company", name: "Company Profile", description: "Legal entities, registered address, social profiles, and brand info", mimeType: "application/json" },
+  { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
+];
+
 export function buildServer(): Server { // NOSONAR — advanced low-level Server (see import note)
   const server = new Server( // NOSONAR
     {
       name: "hellogrowthcrm-bot-crawler",
-      version: "1.0.0",
+      version: SERVER_VERSION,
       description:
         "Bot detection & governance MCP server for hellogrowthcrm.com — scans, analyzes, and reports on every crawler interacting with the site.",
     },
@@ -109,17 +123,7 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
 
   // ── MCP Resources ────────────────────────────────────────────────────────────
 
-  const RESOURCES = [
-    { uri: "hellocrmwebsite://blog/recent", name: "Recent Blog Posts", description: "Last 20 blog posts from hellogrowthcrm.com", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://help/categories", name: "Help Center Categories", description: "All help center categories", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://site/seo-rules", name: "SEO Rules & Guidelines", description: "SEO guardrails for hellogrowthcrm.com content", mimeType: "text/markdown" },
-    { uri: "hellocrmwebsite://site/comparisons", name: "Competitor Comparisons", description: "All competitor comparison page slugs and names", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://site/case-studies", name: "Case Studies", description: "All case study scenarios grouped by industry", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://site/industries", name: "Industry Pages", description: "All industry vertical page slugs", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://site/countries", name: "Country Markets", description: "8 country-specific market hubs with currency, locale, and pricing summary", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://site/company", name: "Company Profile", description: "Legal entities, registered address, social profiles, and brand info", mimeType: "application/json" },
-    { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
-  ];
+  const RESOURCES = MCP_RESOURCES;
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: RESOURCES,
@@ -227,6 +231,12 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
 
 const GOOGLE_SITE_VERIFICATION_PATH = "/google7c8140a495901343.html";
 const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a495901343.html";
+// Counts shown on the landing page. Derived from the registries, never
+// hand-maintained — a hard-coded tool count is exactly how the README came to
+// claim 81 while the server served 83.
+const TOOL_COUNT = toolsByName.size;
+const RESOURCE_COUNT = MCP_RESOURCES.length;
+
 const GOOGLE_TAG_ID = "G-TRJT49XKH5";
 const AHREFS_ANALYTICS_KEY = "typKHgOUagJygUMAlJyQKA";
 const HOME_PAGE_HTML = `<!doctype html>
@@ -250,11 +260,73 @@ const HOME_PAGE_HTML = `<!doctype html>
     ahrefs_analytics_script.setAttribute('data-key', '${AHREFS_ANALYTICS_KEY}');
     document.getElementsByTagName('head')[0].appendChild(ahrefs_analytics_script);
   </script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+           max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre { padding: .85rem 1rem; overflow-x: auto; border-radius: 6px;
+          background: rgba(127,127,127,.12); }
+    code { font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: .5rem 0 1.5rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid rgba(127,127,127,.25);
+             vertical-align: top; }
+    th { font-weight: 600; }
+    .muted { opacity: .72; font-size: .93em; }
+    h2 { margin-top: 2.25rem; font-size: 1.15rem; }
+    h1 { margin-bottom: .25rem; }
+  </style>
 </head>
 <body>
   <main>
     <h1>HelloGrowthCRM MCP Server</h1>
-    <p>MCP Bot Crawler - connect via the Streamable HTTP endpoint at <code>/mcp</code>.</p>
+    <p class="muted">Read-only Model Context Protocol server exposing hellogrowthcrm.com —
+      product, pricing, features, integrations, comparisons and industry content — plus
+      bot-governance tooling. Version ${SERVER_VERSION}.</p>
+
+    <h2>Connect</h2>
+    <p>Streamable HTTP, no authentication required:</p>
+    <pre><code>https://mcp.hellogrowthcrm.com/mcp</code></pre>
+
+    <p>Claude Desktop / Claude Code / Cursor — add to your MCP client config:</p>
+    <pre><code>{
+  "mcpServers": {
+    "hellogrowthcrm": {
+      "type": "http",
+      "url": "https://mcp.hellogrowthcrm.com/mcp"
+    }
+  }
+}</code></pre>
+
+    <p>Verify the connection from a shell:</p>
+    <pre><code>curl -sN https://mcp.hellogrowthcrm.com/mcp \\
+  -H 'Content-Type: application/json' \\
+  -H 'Accept: application/json, text/event-stream' \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+       "protocolVersion":"2025-06-18","capabilities":{},
+       "clientInfo":{"name":"curl","version":"1"}}}'</code></pre>
+
+    <h2>What is exposed</h2>
+    <table>
+      <tr><th>Tools</th><td>${TOOL_COUNT} — see <code>tools/list</code></td></tr>
+      <tr><th>Resources</th><td>${RESOURCE_COUNT} — see <code>resources/list</code></td></tr>
+      <tr><th>Transport</th><td>Streamable HTTP at <code>/mcp</code></td></tr>
+      <tr><th>Rate limit</th><td>Per-IP; exceeding it returns <code>429</code> with <code>Retry-After</code></td></tr>
+    </table>
+    <p class="muted">The tool and resource lists are authoritative at the endpoint, not here —
+      query them rather than trusting a copy on this page.</p>
+
+    <h2>Other endpoints</h2>
+    <table>
+      <tr><th><code>/healthz</code></th><td>Liveness JSON: version, uptime, tool and resource counts</td></tr>
+      <tr><th><code>/openapi.json</code></th><td>OpenAPI document for the REST-style integration</td></tr>
+      <tr><th><code>/sse</code></th><td class="muted"><strong>Deprecated.</strong> Legacy HTTP+SSE transport, kept only for
+        already-connected clients. New clients must use <code>/mcp</code>.</td></tr>
+    </table>
+
+    <h2>Source</h2>
+    <p><a href="https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP">github.com/MeruLocal/HelloGrowthCRMwebsite_MCP</a>
+      — MIT licensed. Issues and pull requests welcome.</p>
   </main>
 </body>
 </html>
@@ -483,14 +555,18 @@ export async function runServer(): Promise<void> {
     // Actions. Served as a static document (not rate-limited) with permissive
     // CORS so browser-based importers can fetch it.
     if (url.pathname === GOOGLE_SITE_VERIFICATION_PATH) {
-      if (req.method === "GET") {
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = `${GOOGLE_SITE_VERIFICATION_BODY}\n`;
         res.writeHead(200, {
           "Content-Type": "text/html; charset=utf-8",
+          "Content-Length": String(Buffer.byteLength(body)),
           "Cache-Control": "public, max-age=300",
-        }).end(`${GOOGLE_SITE_VERIFICATION_BODY}\n`);
+        });
+        if (req.method === "HEAD") res.end();
+        else res.end(body);
         return;
       }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET" }).end("Method not allowed");
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
       return;
     }
 
@@ -504,24 +580,91 @@ export async function runServer(): Promise<void> {
         }).end();
         return;
       }
-      if (req.method === "GET") {
+      if (req.method === "GET" || req.method === "HEAD") {
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": String(Buffer.byteLength(openApiSpecJson)),
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "public, max-age=300",
-        }).end(openApiSpecJson);
+        });
+        if (req.method === "HEAD") res.end();
+        else res.end(openApiSpecJson);
         return;
       }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, OPTIONS" }).end("Method not allowed");
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
       return;
     }
 
-    if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=300",
-      }).end(HOME_PAGE_HTML);
-      return;
+    // HEAD must be served wherever GET is: same status and headers, no body.
+    // Previously only GET was matched here, so `HEAD /` fell through to the 404
+    // below — uptime monitors, link checkers and registry validators that
+    // preflight with HEAD saw the homepage as dead.
+    if (req.method === "GET" || req.method === "HEAD") {
+      const send = (
+        status: number,
+        contentType: string,
+        body: string,
+        cache = "public, max-age=300",
+      ): void => {
+        res.writeHead(status, {
+          "Content-Type": contentType,
+          "Content-Length": String(Buffer.byteLength(body)),
+          "Cache-Control": cache,
+        });
+        // A HEAD response carries the headers a GET would, and no body.
+        if (req.method === "HEAD") res.end();
+        else res.end(body);
+      };
+
+      if (url.pathname === "/") {
+        send(200, "text/html; charset=utf-8", HOME_PAGE_HTML);
+        return;
+      }
+
+      // Liveness probe. Deliberately cheap and uncached: it must reflect the
+      // process answering right now, not a CDN copy of a healthy past.
+      if (url.pathname === "/healthz" || url.pathname === "/health") {
+        send(
+          200,
+          "application/json; charset=utf-8",
+          `${JSON.stringify({
+            status: "ok",
+            version: SERVER_VERSION,
+            uptimeSeconds: Math.floor(process.uptime()),
+            tools: TOOL_COUNT,
+            resources: RESOURCE_COUNT,
+            transport: "streamable-http",
+            endpoint: "/mcp",
+          })}\n`,
+          "no-store",
+        );
+        return;
+      }
+
+      if (url.pathname === "/robots.txt") {
+        // This host serves a protocol endpoint, not indexable content. The
+        // landing page is the only thing worth crawling.
+        send(
+          200,
+          "text/plain; charset=utf-8",
+          [
+            "User-agent: *",
+            "Allow: /$",
+            "Disallow: /mcp",
+            "Disallow: /sse",
+            "Disallow: /message",
+            "",
+          ].join("\n"),
+        );
+        return;
+      }
+
+      if (url.pathname === "/favicon.ico") {
+        // 204 rather than a binary asset: browsers and directory cards stop
+        // asking, and we avoid shipping an icon that would drift from the brand.
+        res.writeHead(204, { "Cache-Control": "public, max-age=86400" }).end();
+        return;
+      }
     }
 
     res.writeHead(404).end("Not found");
