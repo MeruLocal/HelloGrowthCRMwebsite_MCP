@@ -63,6 +63,49 @@ Re-measured live 2026-08-10, after all 8 GEO PRs merged.
 | **J** | MCP origin 404s: `/health`, `/robots.txt`, `/favicon.ico`, `/.well-known/mcp.json` | P3 | mcp |
 | **K** | **Three** GA4 properties: `G-TRJT49XKH5` (MCP), `G-ZLRF73DCXS` + `G-4QS17WFH8R` (site) | P2 | web+mcp |
 | **L** | Public MCP endpoint has no documented rate limiting / abuse controls | P1 | mcp |
+| **V** | **`.well-known/mcp.json` advertises 14 CRM tools. The live server serves 0 of them.** | **P0** | mcp+web |
+
+### V — the manifest promises a product that is not there
+
+Found by R4 (framed as a branding issue), verified 2026-08-10 as a **functional** one.
+
+`https://hellogrowthcrm.com/.well-known/mcp.json` — our documented discovery path — advertises:
+
+```
+create_contact · create_task · get_analytics · get_call_recording · get_lead_score
+get_meeting_notes · get_pipeline · get_sequence_status · get_whatsapp_thread
+log_activity · search_contacts · send_whatsapp · trigger_sequence · update_deal
+```
+
+…and points at `https://mcp.hellogrowthcrm.com/mcp`, with `auth: bearer` and *"Generate your
+API key at app.hellogrowthcrm.com → Settings → API Keys"*.
+
+**That endpoint serves 88 tools. Zero of the 14 are among them.** It identifies itself as:
+
+```json
+"serverInfo": { "name": "hellogrowthcrm-bot-crawler",
+  "description": "Bot detection & governance MCP server for hellogrowthcrm.com" }
+```
+
+So any AI client following our own published discovery path connects successfully, asks for
+the advertised CRM tools, and finds **none of them**. This is worse than a missing feature —
+we are publishing a machine-readable promise that the server cannot keep. It will be read by
+exactly the automated clients we are trying to attract.
+
+Four of the fourteen (`send_whatsapp`, `get_whatsapp_thread`, `get_call_recording`,
+`get_sequence_status`) exist in the repo under `crm-mcp-tools/` but are **not registered in
+`src/tools/index.ts`**, so they are never served.
+
+**Two honest options — pick one, do not leave it as-is:**
+
+1. **Correct the manifest** to describe what actually runs (website-mirror + bot governance),
+   and move the CRM tool list to a `"planned"` block or remove it. ~1 hour. **Do this now
+   regardless**, because the current state is a false statement to machines.
+2. **Build the CRM MCP** the manifest describes — which is R1's authenticated-CRM-MCP
+   recommendation and R4's *"separate the CRM MCP identity from the bot-governance project"*.
+   That is a product decision, not a bug fix.
+
+**Do (1) this week. Decide (2) separately.**
 
 **Fixed since Rev 1 — no action:** deploy drift (prod `wordCount` 2916 = local 2916), all 9
 sitemaps passing, `.env.example`, registry manifests, GA4 `debug_mode` + `GA4_VALIDATE`.
