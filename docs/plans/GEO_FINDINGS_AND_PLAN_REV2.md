@@ -62,7 +62,31 @@ Re-measured live 2026-08-10, after all 8 GEO PRs merged.
 | **I** | `HEAD /` on the MCP server returns **404** (GET returns 200) | P2 | mcp |
 | **J** | MCP origin 404s: `/health`, `/robots.txt`, `/favicon.ico`, `/.well-known/mcp.json` | P3 | mcp |
 | **K** | **Three** GA4 properties: `G-TRJT49XKH5` (MCP), `G-ZLRF73DCXS` + `G-4QS17WFH8R` (site) | P2 | web+mcp |
-| **L** | Public MCP endpoint has no documented rate limiting / abuse controls | P1 | mcp |
+| ~~**L**~~ | ~~Public MCP endpoint has no rate limiting~~ — **CORRECTED, see below** | — | mcp |
+| **L′** | **Rate limiting exists but was bypassable** via a spoofed `X-Forwarded-For` | P1 | mcp |
+
+### L → L′ — a correction to this document
+
+**L as originally written was wrong.** It said the public `/mcp` endpoint has no rate limiting,
+taken from R2's assessment without checking the source. `IpRateLimiter` exists at
+`server.ts:263`, is configured from `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX_REQUESTS`
+(default 60 req/min), returns `429` with `Retry-After`, and is enforced on `/mcp`, `/sse`
+and `/message`.
+
+**The real defect was worse than a missing limiter**, because it read as working protection.
+`clientIp` used `x-forwarded-for.split(",")[0]` — and this server sits behind Cloudflare, which
+**appends** the real client IP rather than replacing it. So `X-Forwarded-For: 1.2.3.4` arrives
+as `1.2.3.4, <real IP>` and `[0]` is caller-controlled. Rotating that header mints a fresh
+bucket per request.
+
+Fixed in **PR #13**: `resolveClientIp()` prefers `CF-Connecting-IP`, then the *last* XFF hop,
+then the socket address; adds `TRUST_PROXY_HEADERS` for the no-proxy case.
+
+**Still open under L′:** the buckets are in-memory and per-process, so a horizontally-scaled
+deployment has an effective limit of N× the configured one. Needs a shared store.
+
+*This is the sixth Rev 1/Rev 2 finding to change under verification. The pattern is unchanged:
+a claim accepted without reading the writer.*
 | **V** | **`.well-known/mcp.json` advertises 14 CRM tools. The live server serves 0 of them.** | **P0** | mcp+web |
 
 ### V — the manifest promises a product that is not there
