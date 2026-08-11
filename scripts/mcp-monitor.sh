@@ -24,13 +24,16 @@
 #
 # Usage:
 #   ./scripts/mcp-monitor.sh                  # check production
-#   MCP_URL=http://localhost:3008/mcp ./scripts/mcp-monitor.sh
+#   MCP_URL=http://localhost:3008/sse ./scripts/mcp-monitor.sh
 #   MANIFEST_URL='' ./scripts/mcp-monitor.sh  # skip the manifest parity check
 #   ./scripts/mcp-monitor.sh --json           # one JSON line, for monitoring
 #
 # Exit codes: 0 = healthy, 1 = at least one check failed, 2 = missing dependency.
 
-MCP_URL="${MCP_URL:-https://mcp.hellogrowthcrm.com/mcp}"
+# The Streamable HTTP endpoint is /sse, NOT /mcp. The server migrated in commit
+# 00a15a2 and removed the legacy HTTP+SSE transport; /mcp now returns 404. The path
+# name is historical -- what is served at /sse is Streamable HTTP.
+MCP_URL="${MCP_URL:-https://mcp.hellogrowthcrm.com/sse}"
 MANIFEST_URL="${MANIFEST_URL-https://hellogrowthcrm.com/.well-known/mcp.json}"
 PROBE_TOOL="${PROBE_TOOL:-company_get_profile}"
 TIMEOUT="${TIMEOUT:-30}"
