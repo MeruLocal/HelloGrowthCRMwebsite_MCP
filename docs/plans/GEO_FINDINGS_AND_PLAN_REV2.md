@@ -483,6 +483,139 @@ parts I wrote.
 
 ---
 
+### R6 — GPT-5.6-sol adjudicating all five. The most important review in this document.
+
+Briefed with the full verified state and all four prior reviews, asked to adjudicate rather
+than add another strategy list. It corrects my verdict, corrects **two things I have been
+overstating**, and makes the strongest case that this whole programme is misallocated.
+
+**On my sequencing verdict — "partly right, but too generous to R3b."**
+Artefacts are not a later phase; they are a **contingent branch that should be killed unless
+external distribution is secured first**. The gate it proposes: *two named implementation
+partners or three external adopters committed **before** any spec is written.* No adoption
+commitment, no spec.
+
+It also lands a hit neither Gemini nor Grok did: **we already have 50+ industry pages, so a
+travel page may already exist.** Publishing another could worsen duplication rather than help —
+which folds directly into the unresolved U4 question about the 513 industry pages.
+
+And it notes Grok over-claimed: Grok gathered evidence about **X**, concluded X is irrelevant,
+and that supports *"don't waste time on X"* — it does **not** prove one landing page changes
+what ChatGPT recommends.
+
+### ⚠️ Two corrections to my own framing
+
+**1. "AI extractors see nothing" was overstated.** An empty `<main>` means extractors that
+*prefer* `<main>` get nothing. It does **not** prove every engine sees zero — Google and others
+can render and index text elsewhere in the body. Finding **A** is a high-priority defect, **not
+proof of total invisibility.** I have been stating it too strongly throughout this document.
+
+**2. Bing verification is not a publication blocker.** Verification provides *diagnostics and
+control*; it is **not** required for Bing to crawl or index. Since IndexNow already works, the
+crawl path exists. Item **D** is about gaining visibility into what Bing did — valuable, but I
+framed it as a gate on ChatGPT citations, which overstates it.
+
+### What all five of us missed
+
+**(a) Nobody established that HelloGrowthCRM deserves to win this query.** Everyone treated it
+as an information-retrieval problem. It may be a **product/category-fit** problem. A buyer
+asking for the best CRM for travel agents plausibly expects: itinerary and quotation workflows ·
+traveller/booking/passenger records · visa and document tracking · supplier and agent management ·
+package and departure management · payment schedules · GST invoices and credit notes · telephony
+and call attribution · WhatsApp consent/template/opt-out controls · multi-branch lead assignment.
+
+> **"If there are no successful travel customers, stop calling the product 'best for travel
+> agents.'"**
+
+A query-matched page cannot repair a capability gap — and a comparison page claiming superiority
+would *expose* it. Required test: run HelloGrowthCRM and the five most-named competitors through
+three real travel-agency workflows; interview ≥10 agencies including any current customers.
+
+**(b) Claim integrity across the 1,822-URL corpus.** The broken MCP manifest is a *warning sign
+of a pattern*, not an isolated bug. With 630 integration pages the question is not how many are
+indexed but **how many advertised integrations a buyer can actually activate today.** If many
+describe Zapier-only, planned or nonexistent integrations as native, that is a factual trust
+problem, and models can encounter the contradictions. Audit ≥50 integration pages plus every
+page mentioning travel, WhatsApp, GST, payments and AI.
+
+**(c) No crawler-level observability.** A browser showing 30,000 body chars does not establish
+what Googlebot, Bingbot, OAI-SearchBot or PerplexityBot receives. Test the 5 key URLs under each
+bot UA — status, body size, `<main>` text, canonical, robots, JS dependency — then check CDN
+logs for whether those bots crawl at all. (This is U5, still unstarted.)
+
+**(d) Everyone blurred three different outcomes:** **cited** (answer links to us) vs
+**mentioned** (answer knows we exist) vs **recommended** (we make the shortlist). A page can
+become a citation source without the product ever being recommended. **Score all three
+separately.**
+
+### The citation baseline, fully specified — executable tomorrow
+
+This closes finding **H**, the gap that makes everything else untestable.
+
+**60 runs:** 4 prompts × 5 fresh chats × 3 engines (ChatGPT, Gemini, Perplexity). Default answer
+mode, not Deep Research. Fresh conversation each time, memory/personalisation off, same
+India connection, English/India, no follow-ups, no regenerations, one time window, engines
+round-robin.
+
+| | Prompt | Measures |
+|---|---|---|
+| **P1** | *"What is the best CRM for travel agents in India?"* | spontaneous discovery |
+| **P2** | *"Recommend the five best CRM software options for a travel agency in India. Rank them and explain the main trade-offs."* | ranked inclusion |
+| **P3** | *"I run a 10-person travel agency in India. Most leads and follow-ups happen on WhatsApp, and my budget is under ₹1,000 per user per month. Which CRM should I choose?"* | high-fit scenario |
+| **P4** | *"Is HelloGrowthCRM a good choice for a travel agency in India? Compare it with the strongest alternatives…"* | **branded** — entity understanding and factual accuracy, **not** discovery |
+
+**Record per run:** wave · run ID · IST timestamp · engine · visible model · account plan · mode ·
+search invoked? · location/language · prompt ID · full response (text + screenshot) · mentioned
+Y/N · **rank** · **polarity** (recommended/considered/rejected/neutral) · verbatim wording ·
+official-domain citation · third-party citation · all cited domains · competitors and ranks ·
+pricing claim stated · feature claims · **factual errors** · does the citation support the claim ·
+notes.
+
+**Metrics over the 45 unbranded runs:** mention rate · top-three rate · **selection rate** ·
+official citation rate · **independent** citation rate · median rank · claim error rate ·
+competitor frequency.
+
+**Signal vs nondeterminism:** 0/5 none · 1–2/5 noise · 3–4/5 probable · 5/5 stable. Treat as a
+real cross-model finding only at **≥3/5 on ≥2 engines for the same unbranded prompt.** For later
+waves, require **+2/5 in the same prompt-engine cell, on ≥2 engines, persisting into the next
+wave.** Re-run the identical 60 at week 4 and week 8. **Do not change prompt wording between
+waves.**
+
+### Should content work start before A and D are fixed?
+
+**Yes — but publish nothing new until `<main>` is fixed.**
+
+Start now: customer interviews · product-fit testing · evidence collection · case-study
+permissions · comparison research · the claim audit · drafting · review acquisition.
+Do **not**: launch another travel page · publish eight artefacts · expand comparison templates ·
+scale anything that inherits the broken rendering.
+
+### The strongest argument that this programme is misallocated
+
+> **The company may be trying to manufacture an answer-engine reputation before building the
+> market evidence that answer engines reflect.**
+
+The arithmetic: ₹899/user/month × ~5 seats ≈ **₹53,940/year gross per travel customer**. A
+₹10 lakh GEO/content programme needs roughly **19 customer-years just to match its cost in gross
+revenue** — with no citation baseline, no AI-attributed pipeline, and no proof this query
+produces qualified buyers. **LLM visibility is a lagging indicator** of customers, reviews,
+partner adoption and category fit.
+
+**What to do instead:** keep only the cheap hygiene — fix `<main>`, verify Bing, **remove the
+false MCP manifest**, instrument attribution. Then spend the cycle on direct vertical proof:
+recruit 20–30 travel agencies, close 5–10 design partners, observe real retention, build the
+capabilities that block purchases, produce three quantified outcomes, get independent reviews.
+Re-run the baseline only after that evidence exists.
+
+> *"Do not fund 'GEO' as a standalone growth programme yet. Treat answer-engine visibility as a
+> small measurement and packaging layer around product-market fit and customer proof — not as a
+> substitute for them."*
+
+**If travel agencies do not activate or retain, abandon this query target** and pursue the
+vertical where existing customers already show the strongest retention.
+
+---
+
 ## 4. "Which keywords do we rank for in AI search?"
 
 ### ⚠️ Correction: a free measurement layer exists that we assumed did not
