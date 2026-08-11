@@ -314,6 +314,73 @@ GA4 can already segment ChatGPT-referred traffic. Nobody has checked whether it 
 
 ---
 
+## 4a. MCP server fix plan
+
+Everything below is verified live 2026-08-10. Ordered by consequence, not effort.
+
+### P0 — the server does not match what we publish about it
+
+| ID | Defect | Evidence |
+|---|---|---|
+| **V** | Manifest advertises 14 CRM tools; server serves **0** of them | see §1 |
+| **W** | **The public MCP page never mentions the canonical endpoint.** `/agentic-ai/mcp` references `mcp.hellogrowthcrm.com/sse` ×3 and `/openapi` ×2 — and `/mcp` **zero times** | grep of the live page |
+| **X** | Server self-identifies as `hellogrowthcrm-bot-crawler`, *"Bot detection & governance MCP server"* — while the manifest sells it as a CRM integration | `initialize` response |
+
+**W is worse than reported.** A reviewer said the page "still teaches `/sse` in several
+places". In fact it teaches **only** the deprecated transport plus an OpenAPI/Custom-GPT path,
+and never gives the Streamable HTTP endpoint our own `.well-known/mcp.json` calls canonical.
+A developer following our public documentation cannot reach the endpoint we tell machines to use.
+
+**Fix together, in one change, or the inconsistency just moves:**
+1. Correct `.well-known/mcp.json` to describe what actually runs (item **V**).
+2. Rewrite `/agentic-ai/mcp` to lead with `POST /mcp` (Streamable HTTP); demote `/sse` to a
+   "Legacy clients" note; keep OpenAPI as an *alternative*, not the headline.
+3. Rename `serverInfo` to match whatever the manifest ends up claiming.
+
+### P1 — the tools are not agent-safe
+
+**Y — zero of 88 tools carry MCP annotations.** Verified: `readOnlyHint`, `destructiveHint`,
+`idempotentHint`, `openWorldHint` are absent on **every** tool; each carries only
+`name`, `description`, `inputSchema`.
+
+This matters more than it sounds. Annotations are how a client decides what needs human
+approval. Today an agent cannot distinguish `pricing_get_plans` (read-only, safe) from
+`blog_create`, `blog_update`, `help_create_article`, `newsletter_subscribe` or `forms_submit`
+— **all of which write**, some to production Supabase. A cautious client must treat all 88 as
+potentially destructive; a careless one treats all 88 as safe.
+
+*Fix:* add annotations to the `defineTool` signature and populate every tool. Mechanical, ~half
+a day, and it is a prerequisite for any write-capable tool ever being safe to expose.
+
+**Z — no OAuth 2.1.** The manifest already advertises `oauth-protected-resource` and
+`oauth-authorization-server` well-known URLs (both 200). If the CRM tools are ever built,
+bearer API keys pasted into a chat client are not an acceptable auth model — scoped OAuth
+(`crm.contacts.read`, `crm.deals.write`, `crm.whatsapp.send`) is, and it lets a consent screen
+say *"✓ view deals ✕ send WhatsApp"*.
+
+### P2 — developer experience
+
+- **AA** — `/docs` is predominantly REST API documentation; there is no dedicated MCP
+  quickstart, per-client setup (ChatGPT / Claude / Cursor / Gemini), tools reference,
+  permissions page or troubleshooting.
+- **BB** — no version, status or changelog surface. Once third parties depend on this, silent
+  tool changes break them with no signal.
+- **CC** — MCP Inspector / playground instructions, so a developer can verify the connection
+  before wiring a client.
+
+### Deliberately NOT adopted
+
+- **"Rename the repo / split CRM MCP from bot-governance MCP."** Sound long-term, but it
+  breaks the GitHub identity the registry manifests, README and five merged PRs already point
+  at. Do the manifest correction (**V**) first — that removes the actual confusion. Revisit the
+  split only if the CRM MCP is genuinely built.
+- **"~15 well-designed CRM tools."** Agreed in principle, but those tools do not exist yet;
+  this is a design constraint for the CRM MCP, not a fix to the current server.
+- **Registry listing.** Still gated on telemetry showing real clients connect — and now also on
+  **V**, since listing a server whose manifest misdescribes it publishes the error more widely.
+
+---
+
 ## 5. Work items
 
 | ID | Task | Repo | Effort |
@@ -339,6 +406,14 @@ GA4 can already segment ChatGPT-referred traffic. Nobody has checked whether it 
 | **S** | Expose MCP **Resources** (currently 88 Tools, **zero Resources**) | mcp | 1 d |
 | **T** | Deprecate `/sse`; stop advertising it in `.well-known/mcp.json` | mcp+web | 2 h |
 | **U** | *Bigger bet:* private Search Intelligence MCP (GSC + Bing + Ahrefs + AI monitoring) | mcp | 2 w |
+| **V** | **Correct `.well-known/mcp.json`** — it advertises 14 CRM tools the server lacks | **P0** web | 1 h |
+| **W** | **Rewrite `/agentic-ai/mcp`** — it teaches only `/sse` + OpenAPI, never the canonical `/mcp` | **P0** web | ½ d |
+| **X** | Align `serverInfo` name/description with the corrected manifest | P0 mcp | 30 m |
+| **Y** | **Add annotations to all 88 tools** (`readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint`) | P1 mcp | ½ d |
+| **Z** | OAuth 2.1 + scopes — only if the CRM MCP is built | P1 mcp | 1 w |
+| **AA** | Dedicated MCP docs: quickstart, per-client setup, tools ref, permissions, troubleshooting | P2 web | 1 d |
+| **BB** | Version / status / changelog surface | P2 mcp | ½ d |
+| **CC** | MCP Inspector / playground instructions | P2 web | 2 h |
 
 **E note — found while planning:** there are **five** llms.txt sources on `origin/master`
 (`public/llms.txt`, `public/llms-full.txt`, `src/content/llms-full.txt`,
