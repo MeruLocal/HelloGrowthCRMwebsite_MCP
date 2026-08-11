@@ -29,6 +29,7 @@ import {
 import { toolsByName } from "./tools/index.js";
 import { openApiSpecJson } from "./openapi.js";
 import { logger } from "./utils/logger.js";
+import { resolveClientIp } from "./utils/client-ip.js";
 import { getSupabase } from "./lib/supabase.js";
 import {
   buildSafeMeta,
@@ -310,10 +311,12 @@ export async function runServer(): Promise<void> {
   const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
   const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax);
 
+  // See src/utils/client-ip.ts. Do NOT go back to x-forwarded-for[0]: it is
+  // client-controlled, and Cloudflare appends rather than replaces, so the
+  // first entry is whatever the caller sent. That made the limiter bypassable
+  // by rotating a spoofed header.
   const clientIp = (req: http.IncomingMessage): string =>
-    (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim()
-      ?? req.socket.remoteAddress
-      ?? "unknown";
+    resolveClientIp(req.headers, req.socket.remoteAddress);
 
   const sendRateLimited = (res: http.ServerResponse, ip: string): void => {
     res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": String(Math.ceil(rateLimitWindow / 1000)) })
