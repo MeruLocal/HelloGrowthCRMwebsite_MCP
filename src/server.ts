@@ -2,9 +2,7 @@
  * MCP server setup.
  *
  * Supports two transports selected by the TRANSPORT env var:
- *   http  (default) — Streamable HTTP on PORT (default 3008), endpoint POST/GET/DELETE /mcp.
- *                     The legacy SSE endpoint (/sse + /message) is kept for backward
- *                     compatibility with already-connected clients.
+ *   http  (default) — Streamable HTTP on PORT (default 3008), endpoint POST/GET/DELETE /sse.
  *   stdio           — stdin/stdout for MCP host processes
  */
 
@@ -12,12 +10,10 @@ import http from "http";
 import { randomUUID } from "node:crypto";
 // NOSONAR — the low-level `Server` is intentionally used for this advanced,
 // resource-heavy MCP setup (the SDK explicitly supports `Server` for advanced
-// use cases). `SSEServerTransport` is retained for backward compatibility with
-// already-connected /sse clients; new clients should use the StreamableHTTP /mcp endpoint.
+// use cases).
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"; // NOSONAR
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"; // NOSONAR
 import {
   isInitializeRequest,
   CallToolRequestSchema,
@@ -33,8 +29,6 @@ import { getSupabase } from "./lib/supabase.js";
 import {
   buildSafeMeta,
   trackMcpMessage,
-  trackSseConnectionOpen,
-  trackSseConnectionClose,
 } from "./middleware/mcpSseAnalytics.js";
 import {
   COMPANY,
@@ -254,7 +248,7 @@ const HOME_PAGE_HTML = `<!doctype html>
 <body>
   <main>
     <h1>HelloGrowthCRM MCP Server</h1>
-    <p>MCP Bot Crawler - connect via the Streamable HTTP endpoint at <code>/mcp</code>.</p>
+    <p>MCP Bot Crawler - connect via the Streamable HTTP endpoint at <code>/sse</code>.</p>
   </main>
 </body>
 </html>
@@ -304,7 +298,7 @@ export async function runServer(): Promise<void> {
     return;
   }
 
-  // Streamable HTTP transport (with legacy SSE kept for backward compatibility)
+  // Streamable HTTP transport, served at /sse
   const port = Number.parseInt(process.env.PORT ?? "3008", 10);
   const rateLimitWindow = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
   const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
@@ -336,8 +330,6 @@ export async function runServer(): Promise<void> {
 
   // StreamableHTTP sessions, keyed by mcp-session-id
   const httpTransports = new Map<string, StreamableHTTPServerTransport>();
-  // Legacy SSE sessions, keyed by sessionId
-  const sseTransports = new Map<string, SSEServerTransport>(); // NOSONAR — see import note
 
   const handleStreamableHttp = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
@@ -389,7 +381,7 @@ export async function runServer(): Promise<void> {
     // already-parsed body (method/tool name only — never arguments).
     try {
       const meta = buildSafeMeta(req, {
-        endpoint: "/mcp",
+        endpoint: "/sse",
         transport: "streamable-http",
         sessionId: req.headers["mcp-session-id"] as string | undefined,
       });
@@ -409,73 +401,13 @@ export async function runServer(): Promise<void> {
     await transport.handleRequest(req, res, body);
   };
 
-  const handleLegacySse = async (req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> => {
-    if (req.method === "GET" && url.pathname === "/sse") {
-      const sseTransport = new SSEServerTransport("/message", res); // NOSONAR — see import note
-      sseTransports.set(sseTransport.sessionId, sseTransport);
-
-      // Non-blocking SSE connection analytics. Tracking is fully guarded and
-      // must never affect the stream itself.
-      const analytics = trackSseConnectionOpen(req, { sessionId: sseTransport.sessionId });
-      let streamErrored = false;
-      res.on("error", () => { streamErrored = true; });
-      res.on("close", () => {
-        sseTransports.delete(sseTransport.sessionId);
-        trackSseConnectionClose(analytics, { errored: streamErrored });
-      });
-
-      const server = buildServer();
-      await server.connect(sseTransport);
-      return;
-    }
-
-    // req.method === "POST" && url.pathname === "/message"
-    const sessionId = url.searchParams.get("sessionId") ?? "";
-    const sseTransport = sseTransports.get(sessionId);
-    if (!sseTransport) {
-      res.writeHead(404).end("No SSE session found");
-      return;
-    }
-
-    // Parse the body once so we can both feed it to the transport (avoiding a
-    // double stream read) and derive safe analytics (method/tool name only).
-    const body = await readJsonBody(req);
-    try {
-      const meta = buildSafeMeta(req, {
-        endpoint: "/message",
-        transport: "sse",
-        sessionId,
-      });
-      const startedAt = Date.now();
-      res.on("finish", () => {
-        trackMcpMessage({
-          meta,
-          body,
-          statusCode: res.statusCode,
-          responseTimeMs: Date.now() - startedAt,
-        });
-      });
-    } catch (err) {
-      logger.debug("sse message analytics setup failed", { err: (err as Error).message });
-    }
-
-    await sseTransport.handlePostMessage(req, res, body);
-  };
-
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", `http://localhost:${port}`);
     const ip = clientIp(req);
 
-    if (url.pathname === "/mcp") {
+    if (url.pathname === "/sse") {
       if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
       await handleStreamableHttp(req, res);
-      return;
-    }
-
-    if ((req.method === "GET" && url.pathname === "/sse")
-      || (req.method === "POST" && url.pathname === "/message")) {
-      if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
-      await handleLegacySse(req, res, url);
       return;
     }
 
@@ -530,7 +462,7 @@ export async function runServer(): Promise<void> {
   await new Promise<void>((resolve) => httpServer.listen(port, resolve));
   logger.info("hellogrowthcrm-bot-crawler ready (http)", {
     url: `http://localhost:${port}`,
-    mcp: `http://localhost:${port}/mcp`,
+    mcp: `http://localhost:${port}/sse`,
     site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
     tools: [...toolsByName.keys()],
   });

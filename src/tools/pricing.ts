@@ -17,6 +17,8 @@ import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirr
 //     Managed RevOps service retainers — Growth lists the service as an add-on
 //     and Enterprise bundles it. They are exposed by pricing_get_managed_revops
 //     below, at their current prices ($1,499 / $3,999, not $1,500 / $4,000).
+//     The prices themselves were close to right; listing them as per-seat CRM
+//     tiers is what made them misleading.
 //   • "Enterprise" (custom pricing) was missing entirely from the global ladder.
 //
 // The live ladder in every market is: Free Forever → Growth → Enterprise.
@@ -464,8 +466,8 @@ export const pricingGetCountryPlans = defineTool({
 // ── pricing_get_managed_revops ─────────────────────────────────────────────────
 // Managed RevOps is a SERVICE, not a CRM plan tier. It is sold as a flat monthly
 // retainer alongside the CRM: available as an add-on on Growth, bundled with
-// Enterprise. These figures used to be stored in the per-user CRM pricing field,
-// which made the MCP quote a ~$1,500/user/month CRM. Keep them here.
+// Enterprise. These figures used to sit in a COUNTRY_PRICING field labelled
+// "per user/mo", which invited exactly the wrong reading. Keep them here.
 
 export const pricingGetManagedRevOps = defineTool({
   schema: z.object({

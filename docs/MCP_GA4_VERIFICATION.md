@@ -1,7 +1,16 @@
 # MCP / SSE GA4 Telemetry — Verification Report
 
-**Endpoint:** `https://mcp.hellogrowthcrm.com` (SSE: `/sse` + `/message`; Streamable HTTP: `/mcp`)
+**Endpoint:** `https://mcp.hellogrowthcrm.com` (Streamable HTTP: `/sse`)
 **Date:** 2026-06-08
+
+> **Superseded in part.** This report was written when the server exposed the
+> Streamable HTTP endpoint at `/mcp` alongside a legacy SSE transport
+> (`GET /sse` + `POST /message`). The Streamable HTTP endpoint has since moved
+> to `/sse` and the legacy SSE transport was removed, so
+> `mcp_sse_connection_open` / `mcp_sse_connection_close` (checks 1, 2, 8 and the
+> `totalConnections` / `connectionDurationMs` params) no longer fire. Everything
+> below about `mcp_request`, `mcp_tool_call`, `mcp_bot_visit`, `mcp_error` and
+> the privacy guarantees still holds — read `/mcp` and `/message` as `/sse`.
 **Method:** Source-level verification of the telemetry implementation, plus a ready-to-run smoke-test script (`scripts/verify-mcp-ga4.sh`). The live GA4 portion must be run from a machine that can reach the endpoint — it was not executed here (the sandbox is network-restricted).
 
 ---
