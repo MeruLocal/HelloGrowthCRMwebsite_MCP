@@ -87,6 +87,38 @@ deployment has an effective limit of N× the configured one. Needs a shared stor
 
 *This is the sixth Rev 1/Rev 2 finding to change under verification. The pattern is unchanged:
 a claim accepted without reading the writer.*
+
+### S — WITHDRAWN. Resources already exist.
+
+**S claimed "88 Tools and zero Resources". That is wrong.** Verified live 2026-08-11 —
+`resources/list` against production returns **9 resources**:
+
+```
+hellocrmwebsite://blog/recent          hellocrmwebsite://help/categories
+hellocrmwebsite://site/seo-rules       hellocrmwebsite://site/comparisons
+hellocrmwebsite://site/case-studies    hellocrmwebsite://site/industries
+hellocrmwebsite://site/countries       hellocrmwebsite://site/company
+hellocrmwebsite://site/contacts
+```
+
+`server.ts` registers `ListResourcesRequestSchema` and `ReadResourceRequestSchema`, and
+declares `capabilities: { tools: {}, resources: {} }`.
+
+**This one is entirely my error.** I read the `tools/list` response and asserted "zero
+Resources" without ever calling `resources/list` — even though the very first `initialize`
+probe of this session returned `"capabilities":{"tools":{},"resources":{}}`, which says the
+resources capability is present. I had the disconfirming evidence in hand and did not read it.
+
+Both R1 and R4 recommended "expose Resources, not just Tools" — advice given on my brief, and
+I passed them a false premise. **Where their reasoning depended on it, discount accordingly.**
+
+*Seventh finding to change. This is now the dominant failure mode of this whole audit, and it
+is not the reviewers' — it is mine: asserting absence from a probe that could not have shown
+presence.*
+
+**Residual, and genuinely open:** the 9 resources are all *website-content* mirrors. R1's
+argument was that the ~73 marketing **tools** should be resources so tool-selection is not
+polluted. That reshaping is still unaddressed — but it is a redesign, not a gap.
 | **V** | **`.well-known/mcp.json` advertises 14 CRM tools. The live server serves 0 of them.** | **P0** | mcp+web |
 
 ### V — the manifest promises a product that is not there
@@ -427,7 +459,7 @@ say *"✓ view deals ✕ send WhatsApp"*.
 | **P** | **Check GSC for the Search Generative AI report** — free AI Overviews/AI Mode impressions | ops | **30 m** |
 | **Q** | Segment GA4 on `utm_source=chatgpt.com` — is ChatGPT referral traffic non-zero? | ops | 30 m |
 | **R** | Entity consistency pass: Meru Technosoft ↔ Soor LLC stated identically everywhere | web+ops | 1 d |
-| **S** | Expose MCP **Resources** (currently 88 Tools, **zero Resources**) | mcp | 1 d |
+| ~~**S**~~ | ~~Expose MCP Resources (88 Tools, zero Resources)~~ — **WRONG, see below** | — | — |
 | **T** | Deprecate `/sse`; stop advertising it in `.well-known/mcp.json` | mcp+web | 2 h |
 | **U** | *Bigger bet:* private Search Intelligence MCP (GSC + Bing + Ahrefs + AI monitoring) | mcp | 2 w |
 | **V** | **Correct `.well-known/mcp.json`** — it advertises 14 CRM tools the server lacks | **P0** web | 1 h |
