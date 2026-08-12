@@ -165,6 +165,7 @@ import {
 } from "./solutions.js";
 
 import type { RegisteredTool } from "./tool-types.js";
+import { applyToolAnnotations } from "./annotations.js";
 
 export const tools: RegisteredTool[] = [
   // Bot detection
@@ -309,6 +310,11 @@ export const tools: RegisteredTool[] = [
   solutionsListWhatsappUseCases,
   solutionsGetManagedRevops,
 ];
+
+// Attach MCP annotations (readOnlyHint / destructiveHint / idempotentHint /
+// openWorldHint) to every definition. Throws at startup if a tool is missing
+// an entry, so an unannotated tool can never be served.
+applyToolAnnotations(tools);
 
 export const toolsByName: Map<string, RegisteredTool> = new Map(
   tools.map((t) => [t.definition.name, t]),

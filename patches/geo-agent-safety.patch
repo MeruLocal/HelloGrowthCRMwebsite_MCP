@@ -1,0 +1,1148 @@
+From 57b2fdf1dd58149a59a163502c1f75d47a5f928a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 12 Aug 2026 06:32:44 +0000
+Subject: [PATCH] Agent-safety release 1.1.0: annotate all 88 tools, truthful
+ serverInfo, /version surface, shared rate-limit store
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+X  — serverInfo now describes what actually runs (website mirror + bot
+     governance, explicitly NOT a CRM API and no credentials accepted);
+     identity centralised in src/server-info.ts, parity enforced by
+     check-versions.mjs.
+Y  — MCP annotations (readOnlyHint/destructiveHint/idempotentHint/
+     openWorldHint) on every tool; 80 read-only, 8 write, 9 open-world.
+     Startup guard + tests make an unannotated tool unshippable.
+BB — GET /version + CHANGELOG.md so tool-set changes are no longer silent.
+L' — rate-limit buckets optionally shared via Upstash Redis REST
+     (UPSTASH_REDIS_REST_URL/_TOKEN); in-memory default unchanged;
+     store failure fails open to LOCAL limiting, never unlimited.
+
+235 tests pass; typecheck clean; verified live: initialize shows the new
+serverInfo, tools/list carries annotations on all 88 tools, /version 200s
+for GET and HEAD.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_019qa4VUqNRif5r3HX1skYXk
+---
+ .env.example                                 |   8 +
+ CHANGELOG.md                                 |  48 ++++
+ README.md                                    |  20 ++
+ package.json                                 |   2 +-
+ scripts/check-versions.mjs                   |  15 ++
+ server.json                                  |   6 +-
+ src/server-info.ts                           |  27 +++
+ src/server.ts                                | 133 ++++++-----
+ src/tools/__tests__/annotations.test.ts      | 109 +++++++++
+ src/tools/annotations.ts                     | 219 +++++++++++++++++++
+ src/tools/index.ts                           |   6 +
+ src/tools/tool-types.ts                      |  14 ++
+ src/utils/__tests__/rate-limit-store.test.ts | 128 +++++++++++
+ src/utils/rate-limit-store.ts                | 139 ++++++++++++
+ 14 files changed, 821 insertions(+), 53 deletions(-)
+ create mode 100644 CHANGELOG.md
+ create mode 100644 src/server-info.ts
+ create mode 100644 src/tools/__tests__/annotations.test.ts
+ create mode 100644 src/tools/annotations.ts
+ create mode 100644 src/utils/__tests__/rate-limit-store.test.ts
+ create mode 100644 src/utils/rate-limit-store.ts
+
+diff --git a/.env.example b/.env.example
+index a0e2d27..0193022 100644
+--- a/.env.example
++++ b/.env.example
+@@ -22,6 +22,14 @@ PORT=3008
+ RATE_LIMIT_WINDOW_MS=60000
+ RATE_LIMIT_MAX_REQUESTS=120
+ 
++# Optional shared rate-limit store (Upstash Redis, REST API). Set BOTH to share
++# buckets across horizontally scaled instances — otherwise buckets are
++# in-memory and per-process, so N instances enforce N× the configured limit.
++# On store failure the limiter falls back to in-memory (local limiting, never
++# unlimited).
++# UPSTASH_REDIS_REST_URL=https://<db>.upstash.io
++# UPSTASH_REDIS_REST_TOKEN=<token>
++
+ # ---------------------------------------------------------------------------
+ # Crawl targets and politeness
+ # ---------------------------------------------------------------------------
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+index 0000000..3522135
+--- /dev/null
++++ b/CHANGELOG.md
+@@ -0,0 +1,48 @@
++# Changelog
++
++All notable changes to this MCP server. Third-party clients that depend on the
++tool surface should watch this file — and `GET /version` on the live server —
++for signals that something changed. Versions follow semver: a **major** bump
++means a breaking change to a tool's name, arguments or output shape; a
++**minor** bump adds tools/annotations/endpoints without breaking existing
++callers; a **patch** is internal.
++
++Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
++
++## [1.1.0] — 2026-08-12
++
++### Added
++- **MCP annotations on all 88 tools** (`readOnlyHint`, `destructiveHint`,
++  `idempotentHint`, `openWorldHint`). Clients can now distinguish the 80
++  read-only tools from the 8 write-capable ones (`blog_create`, `blog_update`,
++  `blog_revalidate`, `help_create_article`, `help_update_article`,
++  `newsletter_subscribe`, `newsletter_unsubscribe`, `forms_submit`) instead of
++  falling back to the spec's dangerous defaults. A startup guard and a test
++  make an unannotated tool unshippable. *(Finding Y.)*
++- **`GET /version`** — machine-readable status surface: server name, version,
++  MCP endpoint, tool and resource counts, changelog link. *(Finding BB.)*
++- **Shared rate-limit store.** Set `UPSTASH_REDIS_REST_URL` and
++  `UPSTASH_REDIS_REST_TOKEN` to share rate-limit buckets across horizontally
++  scaled instances (fixed-window `INCR`+`PEXPIRE` over the Upstash REST API —
++  no new npm dependency). Without them, behaviour is unchanged (in-memory,
++  per-process). On store failure the limiter fails open to *local* limiting,
++  never to unlimited. *(Finding L′, residual.)*
++- This changelog.
++
++### Changed
++- **`serverInfo` now tells the truth** about what runs here: name
++  `hellogrowthcrm-website`, described as the read-only website mirror + bot
++  governance server. It previously identified as a pure bot-detection server
++  while also serving the full website mirror, and the published manifest sold
++  it as a CRM API. The description states explicitly that the server holds no
++  customer data, performs no CRM actions and requires no API key. Identity is
++  centralised in `src/server-info.ts` and version parity is enforced by
++  `scripts/check-versions.mjs`. *(Finding X.)*
++- Landing page rewritten to match the corrected identity, and links `/version`.
++- `server.json` (registry manifest) description aligned with the same identity.
++
++## [1.0.0] — earlier
++
++Initial public history: 88 website-mirror + bot-governance tools, 9 resources,
++Streamable HTTP at `/sse` (plus stdio), spoof-resistant client-IP resolution
++(PR #13), GEO audit tooling (PR #12), protocol monitor (PR #15).
+diff --git a/README.md b/README.md
+index caacbd9..0dd8c48 100644
+--- a/README.md
++++ b/README.md
+@@ -119,6 +119,9 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
+ 
+ A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
+ `/sse`. Manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`.
++Version/status surface: `GET /version` returns the server name, version, tool
++and resource counts, and a changelog link — see [`CHANGELOG.md`](CHANGELOG.md)
++for what changed between versions.
+ 
+ > **Endpoint change:** the Streamable HTTP endpoint moved from `/mcp` to `/sse`,
+ > and the legacy SSE transport (`GET /sse` + `POST /message`) has been removed.
+@@ -154,6 +157,18 @@ A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
+ 
+ Full payload examples live in [`examples/usage.md`](examples/usage.md).
+ 
++## Tool annotations
++
++Every one of the 88 tools carries explicit MCP annotations (`readOnlyHint`,
++`destructiveHint`, `idempotentHint`, `openWorldHint`) so clients can decide
++what needs human approval. 80 tools are read-only. Exactly eight can write —
++`blog_create`, `blog_update`, `blog_revalidate`, `help_create_article`,
++`help_update_article`, `newsletter_subscribe`, `newsletter_unsubscribe`,
++`forms_submit` — and nine reach the open world (live crawls, DNS verification,
++site revalidation). The classification lives in
++[`src/tools/annotations.ts`](src/tools/annotations.ts); a startup guard and a
++test fail the build if a tool is ever registered without an entry.
++
+ ## Full MCP tool catalog (88 tools)
+ 
+ Beyond the original eight bot-governance tools, this server exposes the entire
+@@ -254,6 +269,11 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
+ | `CRAWLER_USER_AGENT` | `mcp-bot-crawler/1.0 (+...)` | Outbound UA. |
+ | `REPORT_OUTPUT_DIR` | `./reports` | Where exports land. |
+ | `LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug`. |
++| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window for the HTTP transport. |
++| `RATE_LIMIT_MAX_REQUESTS` | `60` | Max requests per window per client IP. |
++| `UPSTASH_REDIS_REST_URL` | — | Optional: shared rate-limit store (set with the token) so buckets are shared across scaled instances instead of per-process. |
++| `UPSTASH_REDIS_REST_TOKEN` | — | Optional: token for the shared rate-limit store. |
++| `TRUST_PROXY_HEADERS` | `true` | Honour `CF-Connecting-IP`/last `X-Forwarded-For` hop for the rate-limit key. Set `false` only when exposed with no proxy in front. |
+ | `ENABLE_MCP_ANALYTICS` | `false` | Master switch for MCP/SSE analytics — must be `true` to send. |
+ | `GA4_MEASUREMENT_ID` | — | GA4 stream id for MCP/SSE analytics (optional). |
+ | `GA4_API_SECRET` | — | GA4 Measurement Protocol API secret (optional). |
+diff --git a/package.json b/package.json
+index ea51bc6..dc64361 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "mcp-bot-crawler",
+-  "version": "1.0.0",
++  "version": "1.1.0",
+   "description": "MCP server that crawls, discovers, and analyzes bots (search engines, AI crawlers, scrapers) interacting with your website.",
+   "license": "MIT",
+   "author": "Meru Technosoft Private Limited",
+diff --git a/scripts/check-versions.mjs b/scripts/check-versions.mjs
+index e88f54c..1096270 100644
+--- a/scripts/check-versions.mjs
++++ b/scripts/check-versions.mjs
+@@ -46,6 +46,21 @@ if (!pkg) {
+ const expected = pkg.version;
+ const found = [{ where: "package.json → version", value: expected }];
+ 
++// serverInfo (the MCP wire identity) reads its version from src/server-info.ts —
++// a fourth copy, but one clients actually see in `initialize`, so it is checked
++// here rather than trusted.
++{
++  const serverInfoPath = join(root, "src", "server-info.ts");
++  if (existsSync(serverInfoPath)) {
++    const src = readFileSync(serverInfoPath, "utf8");
++    const m = src.match(/SERVER_VERSION\s*=\s*"([^"]+)"/);
++    found.push({
++      where: "src/server-info.ts → SERVER_VERSION",
++      value: m ? m[1] : "(missing)",
++    });
++  }
++}
++
+ const server = read("server.json");
+ if (!server) {
+   // Not an error: server.json arrives with the registry-manifest change. Say so
+diff --git a/server.json b/server.json
+index 81f06e0..3ef009a 100644
+--- a/server.json
++++ b/server.json
+@@ -1,9 +1,9 @@
+ {
+   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+   "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
+-  "description": "Discover, identify and govern every bot hitting your website - search engines, AI crawlers, SEO tools and scrapers - with reverse-DNS identity verification and policy-driven robots.txt generation.",
++  "description": "Read-only HelloGrowthCRM website mirror (pricing, features, integrations, comparisons, guides) plus bot governance: discover, identify and govern every bot hitting your website with reverse-DNS identity verification and policy-driven robots.txt generation. No customer data, no CRM actions, no API key required.",
+   "status": "active",
+-  "version": "1.0.0",
++  "version": "1.1.0",
+   "repository": {
+     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
+     "source": "github"
+@@ -14,7 +14,7 @@
+       "registryType": "npm",
+       "registryBaseUrl": "https://registry.npmjs.org",
+       "identifier": "mcp-bot-crawler",
+-      "version": "1.0.0",
++      "version": "1.1.0",
+       "transport": {
+         "type": "stdio"
+       },
+diff --git a/src/server-info.ts b/src/server-info.ts
+new file mode 100644
+index 0000000..714e2b3
+--- /dev/null
++++ b/src/server-info.ts
+@@ -0,0 +1,27 @@
++/**
++ * Single source of truth for this server's wire identity (finding X).
++ *
++ * The server previously self-identified as a pure "Bot detection & governance"
++ * server while the published manifest sold it as a CRM integration — and the
++ * server actually mirrors the whole hellogrowthcrm.com website (88 tools,
++ * 9 resources) on top of the bot-governance tools. serverInfo, the landing
++ * page, the /version endpoint and the logs all read from here so the identity
++ * cannot drift again.
++ *
++ * SERVER_VERSION must match package.json / server.json — enforced by
++ * scripts/check-versions.mjs (see RELEASING.md).
++ */
++
++export const SERVER_NAME = "hellogrowthcrm-website";
++
++export const SERVER_TITLE = "HelloGrowthCRM Website & Bot Governance MCP";
++
++export const SERVER_VERSION = "1.1.0";
++
++export const SERVER_DESCRIPTION =
++  "Read-only website mirror + bot governance MCP server for hellogrowthcrm.com. " +
++  "Serves HelloGrowthCRM product knowledge (pricing, features, integrations, " +
++  "comparisons, guides) as tools and resources, plus bot detection, crawler " +
++  "verification and robots.txt governance tools. This is NOT a CRM API: it " +
++  "holds no customer data, performs no CRM actions, and requires no API key — " +
++  "never send CRM credentials to this server.";
+diff --git a/src/server.ts b/src/server.ts
+index 925afc6..be13ef0 100644
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -26,6 +26,16 @@ import { toolsByName } from "./tools/index.js";
+ import { openApiSpecJson } from "./openapi.js";
+ import { logger } from "./utils/logger.js";
+ import { resolveClientIp } from "./utils/client-ip.js";
++import {
++  SERVER_NAME,
++  SERVER_TITLE,
++  SERVER_VERSION,
++  SERVER_DESCRIPTION,
++} from "./server-info.js";
++import {
++  createRateLimitStore,
++  type RateLimitStore,
++} from "./utils/rate-limit-store.js";
+ import { getSupabase } from "./lib/supabase.js";
+ import {
+   buildSafeMeta,
+@@ -39,13 +49,28 @@ import {
+   SYNCED_AT,
+ } from "./data/website-mirror.js";
+ 
++// Module scope (not inside buildServer) so /version can report the count.
++const RESOURCES = [
++  { uri: "hellocrmwebsite://blog/recent", name: "Recent Blog Posts", description: "Last 20 blog posts from hellogrowthcrm.com", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://help/categories", name: "Help Center Categories", description: "All help center categories", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://site/seo-rules", name: "SEO Rules & Guidelines", description: "SEO guardrails for hellogrowthcrm.com content", mimeType: "text/markdown" },
++  { uri: "hellocrmwebsite://site/comparisons", name: "Competitor Comparisons", description: "All competitor comparison page slugs and names", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://site/case-studies", name: "Case Studies", description: "All case study scenarios grouped by industry", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://site/industries", name: "Industry Pages", description: "All industry vertical page slugs", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://site/countries", name: "Country Markets", description: "8 country-specific market hubs with currency, locale, and pricing summary", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://site/company", name: "Company Profile", description: "Legal entities, registered address, social profiles, and brand info", mimeType: "application/json" },
++  { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
++];
++
+ export function buildServer(): Server { // NOSONAR — advanced low-level Server (see import note)
+   const server = new Server( // NOSONAR
+     {
+-      name: "hellogrowthcrm-bot-crawler",
+-      version: "1.0.0",
+-      description:
+-        "Bot detection & governance MCP server for hellogrowthcrm.com — scans, analyzes, and reports on every crawler interacting with the site.",
++      // Finding X: this identity must describe what the server actually runs —
++      // website mirror + bot governance. Edit src/server-info.ts, not here.
++      name: SERVER_NAME,
++      title: SERVER_TITLE,
++      version: SERVER_VERSION,
++      description: SERVER_DESCRIPTION,
+     },
+     { capabilities: { tools: {}, resources: {} } },
+   );
+@@ -104,20 +129,8 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
+ 
+   // ── MCP Resources ────────────────────────────────────────────────────────────
+ 
+-  const RESOURCES = [
+-    { uri: "hellocrmwebsite://blog/recent", name: "Recent Blog Posts", description: "Last 20 blog posts from hellogrowthcrm.com", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://help/categories", name: "Help Center Categories", description: "All help center categories", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://site/seo-rules", name: "SEO Rules & Guidelines", description: "SEO guardrails for hellogrowthcrm.com content", mimeType: "text/markdown" },
+-    { uri: "hellocrmwebsite://site/comparisons", name: "Competitor Comparisons", description: "All competitor comparison page slugs and names", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://site/case-studies", name: "Case Studies", description: "All case study scenarios grouped by industry", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://site/industries", name: "Industry Pages", description: "All industry vertical page slugs", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://site/countries", name: "Country Markets", description: "8 country-specific market hubs with currency, locale, and pricing summary", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://site/company", name: "Company Profile", description: "Legal entities, registered address, social profiles, and brand info", mimeType: "application/json" },
+-    { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
+-  ];
+-
+   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+-    resources: RESOURCES,
++    resources: [...RESOURCES],
+   }));
+ 
+   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
+@@ -248,40 +261,30 @@ const HOME_PAGE_HTML = `<!doctype html>
+ </head>
+ <body>
+   <main>
+-    <h1>HelloGrowthCRM MCP Server</h1>
+-    <p>MCP Bot Crawler - connect via the Streamable HTTP endpoint at <code>/sse</code>.</p>
++    <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
++    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
++    <p>Status: <a href="/version">/version</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
+   </main>
+ </body>
+ </html>
+ `;
+ 
++/**
++ * Finding L′ (residual): buckets used to live in a private in-process Map, so
++ * a horizontally-scaled deployment enforced N× the configured limit. The
++ * storage is now behind RateLimitStore — in-memory by default, shared
++ * (Upstash Redis) when UPSTASH_REDIS_REST_URL/_TOKEN are set. See
++ * src/utils/rate-limit-store.ts.
++ */
+ class IpRateLimiter {
+-  private readonly windowMs: number;
+-  private readonly maxRequests: number;
+-  // ip → [request timestamps]
+-  private readonly buckets = new Map<string, number[]>();
+-
+-  constructor(windowMs: number, maxRequests: number) {
+-    this.windowMs = windowMs;
+-    this.maxRequests = maxRequests;
+-    // Prune stale buckets every window to prevent unbounded memory growth
+-    setInterval(() => this.prune(), windowMs).unref();
+-  }
+-
+-  allow(ip: string): boolean {
+-    const now = Date.now();
+-    const cutoff = now - this.windowMs;
+-    const hits = (this.buckets.get(ip) ?? []).filter((t) => t > cutoff);
+-    hits.push(now);
+-    this.buckets.set(ip, hits);
+-    return hits.length <= this.maxRequests;
+-  }
+-
+-  private prune(): void {
+-    const cutoff = Date.now() - this.windowMs;
+-    for (const [ip, hits] of this.buckets) {
+-      if (hits.at(-1)! <= cutoff) this.buckets.delete(ip);
+-    }
++  constructor(
++    private readonly windowMs: number,
++    private readonly maxRequests: number,
++    private readonly store: RateLimitStore,
++  ) {}
++
++  allow(ip: string): Promise<boolean> {
++    return this.store.hit(ip, this.windowMs, this.maxRequests);
+   }
+ }
+ 
+@@ -292,7 +295,7 @@ export async function runServer(): Promise<void> {
+     const server = buildServer();
+     const stdioTransport = new StdioServerTransport();
+     await server.connect(stdioTransport);
+-    logger.info("hellogrowthcrm-bot-crawler ready (stdio)", {
++    logger.info(`${SERVER_NAME} ready (stdio)`, {
+       site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
+       tools: [...toolsByName.keys()],
+     });
+@@ -303,7 +306,7 @@ export async function runServer(): Promise<void> {
+   const port = Number.parseInt(process.env.PORT ?? "3008", 10);
+   const rateLimitWindow = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
+   const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
+-  const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax);
++  const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax, createRateLimitStore());
+ 
+   // See src/utils/client-ip.ts. Do NOT go back to x-forwarded-for[0]: it is
+   // client-controlled, and Cloudflare appends rather than replaces, so the
+@@ -409,11 +412,43 @@ export async function runServer(): Promise<void> {
+     const ip = clientIp(req);
+ 
+     if (url.pathname === "/sse") {
+-      if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
++      if (!(await limiter.allow(ip))) { sendRateLimited(res, ip); return; }
+       await handleStreamableHttp(req, res);
+       return;
+     }
+ 
++    // Version / status surface (finding BB): a machine-readable signal for
++    // third parties that depend on this server, so tool-set changes are
++    // discoverable instead of silent. See CHANGELOG.md for the human version.
++    if (url.pathname === "/version") {
++      if (req.method === "GET" || req.method === "HEAD") {
++        const body = JSON.stringify(
++          {
++            name: SERVER_NAME,
++            title: SERVER_TITLE,
++            version: SERVER_VERSION,
++            mcp_endpoint: "/sse",
++            transport: "streamable-http",
++            tools: toolsByName.size,
++            resources: RESOURCES.length,
++            changelog:
++              "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/blob/main/CHANGELOG.md",
++          },
++          null,
++          2,
++        );
++        res.writeHead(200, {
++          "Content-Type": "application/json; charset=utf-8",
++          "Cache-Control": "public, max-age=300",
++          "Content-Length": Buffer.byteLength(body),
++        });
++        res.end(req.method === "HEAD" ? undefined : body);
++        return;
++      }
++      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
++      return;
++    }
++
+     // OpenAPI spec for the HelloGrowthCRM CRM tools — importable as ChatGPT GPT
+     // Actions. Served as a static document (not rate-limited) with permissive
+     // CORS so browser-based importers can fetch it.
+@@ -463,7 +498,7 @@ export async function runServer(): Promise<void> {
+   });
+ 
+   await new Promise<void>((resolve) => httpServer.listen(port, resolve));
+-  logger.info("hellogrowthcrm-bot-crawler ready (http)", {
++  logger.info(`${SERVER_NAME} ready (http)`, {
+     url: `http://localhost:${port}`,
+     mcp: `http://localhost:${port}/sse`,
+     site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
+diff --git a/src/tools/__tests__/annotations.test.ts b/src/tools/__tests__/annotations.test.ts
+new file mode 100644
+index 0000000..f415d3e
+--- /dev/null
++++ b/src/tools/__tests__/annotations.test.ts
+@@ -0,0 +1,109 @@
++import { describe, expect, it } from "vitest";
++
++import { tools, toolsByName } from "../index.js";
++import { TOOL_ANNOTATIONS } from "../annotations.js";
++
++/**
++ * Finding Y: annotations are how an MCP client decides what needs human
++ * approval. The spec defaults are the dangerous direction (readOnlyHint:
++ * false, destructiveHint: true, openWorldHint: true), so every tool must
++ * carry an explicit, complete set — and the write-capable list must be
++ * exact, because a write tool mislabelled read-only is worse than no
++ * annotation at all.
++ */
++
++// The complete list of tools allowed to write. Adding a write tool means
++// consciously extending this list — that is the point of the test.
++const EXPECTED_WRITE_TOOLS = [
++  "blog_create",
++  "blog_update",
++  "blog_revalidate",
++  "help_create_article",
++  "help_update_article",
++  "newsletter_subscribe",
++  "newsletter_unsubscribe",
++  "forms_submit",
++].sort();
++
++// Tools that reach beyond the server's own backend (live crawls, DNS,
++// revalidation calls). Everything else must be closed-world.
++const EXPECTED_OPEN_WORLD_TOOLS = [
++  "scan_website_bots",
++  "verify_bot_identity",
++  "fetch_page_content",
++  "crawl_pages",
++  "generate_llms_txt",
++  "check_llms_txt",
++  "check_ai_extractability",
++  "validate_sitemaps",
++  "blog_revalidate",
++].sort();
++
++describe("tool annotations", () => {
++  it("annotates every registered tool", () => {
++    const missing = tools
++      .filter((t) => t.definition.annotations === undefined)
++      .map((t) => t.definition.name);
++    expect(missing, "tools served without annotations").toEqual([]);
++  });
++
++  it("sets all four hints explicitly on every tool (no spec-default fallbacks)", () => {
++    for (const t of tools) {
++      const a = t.definition.annotations!;
++      for (const hint of [
++        "readOnlyHint",
++        "destructiveHint",
++        "idempotentHint",
++        "openWorldHint",
++      ] as const) {
++        expect(typeof a[hint], `${t.definition.name}.${hint}`).toBe("boolean");
++      }
++    }
++  });
++
++  it("has no annotation entries for tools that do not exist", () => {
++    const stale = Object.keys(TOOL_ANNOTATIONS).filter(
++      (name) => !toolsByName.has(name),
++    );
++    expect(stale, "annotation entries without a registered tool").toEqual([]);
++  });
++
++  it("flags exactly the known write-capable tools as non-read-only", () => {
++    const writeTools = tools
++      .filter((t) => t.definition.annotations!.readOnlyHint === false)
++      .map((t) => t.definition.name)
++      .sort();
++    expect(writeTools).toEqual(EXPECTED_WRITE_TOOLS);
++  });
++
++  it("never marks a read-only tool destructive", () => {
++    const contradictions = tools
++      .filter(
++        (t) =>
++          t.definition.annotations!.readOnlyHint === true &&
++          t.definition.annotations!.destructiveHint === true,
++      )
++      .map((t) => t.definition.name);
++    expect(contradictions).toEqual([]);
++  });
++
++  it("flags exactly the tools that reach the open world", () => {
++    const openWorld = tools
++      .filter((t) => t.definition.annotations!.openWorldHint === true)
++      .map((t) => t.definition.name)
++      .sort();
++    expect(openWorld).toEqual(EXPECTED_OPEN_WORLD_TOOLS);
++  });
++
++  it("keeps updates idempotent and creates non-idempotent", () => {
++    expect(
++      toolsByName.get("blog_update")!.definition.annotations!.idempotentHint,
++    ).toBe(true);
++    expect(
++      toolsByName.get("blog_create")!.definition.annotations!.idempotentHint,
++    ).toBe(false);
++    expect(
++      toolsByName.get("forms_submit")!.definition.annotations!.idempotentHint,
++    ).toBe(false);
++  });
++});
+diff --git a/src/tools/annotations.ts b/src/tools/annotations.ts
+new file mode 100644
+index 0000000..18aa24e
+--- /dev/null
++++ b/src/tools/annotations.ts
+@@ -0,0 +1,219 @@
++/**
++ * MCP tool annotations for every tool this server serves (finding Y).
++ *
++ * Why this file exists: annotations are how an MCP client decides what needs
++ * human approval. Without them the spec DEFAULTS are the dangerous direction —
++ * readOnlyHint: false, destructiveHint: true, openWorldHint: true — so a
++ * cautious client had to treat all 88 tools as potentially destructive, and a
++ * careless one treated all 88 as safe. Neither could tell `pricing_get_plans`
++ * (read-only, static) from `blog_create` (writes to production Supabase).
++ *
++ * Every registered tool MUST have an entry here, with all four hints set
++ * explicitly. A test (annotations.test.ts) fails the build when a tool is
++ * added without one, or an entry names a tool that no longer exists.
++ *
++ * Classification rules used:
++ *   readOnlyHint   — false only for tools that create, update or delete state
++ *                    (Supabase writes, site revalidation).
++ *   destructiveHint— true only for write tools that overwrite or remove
++ *                    existing data (updates, unsubscribe). Creates are
++ *                    additive → false.
++ *   idempotentHint — true when repeating the call with the same arguments has
++ *                    no additional effect (reads, updates, subscribe).
++ *                    Creates/submits mint a new record each call → false.
++ *   openWorldHint  — true only for tools that reach beyond this server's own
++ *                    backend: live crawls of arbitrary/site URLs, reverse-DNS
++ *                    lookups, revalidation calls to the website. Reads of the
++ *                    bundled website mirror or the server's own Supabase are
++ *                    a closed world → false.
++ */
++
++import type { McpToolAnnotations } from "./tool-types.js";
++import type { RegisteredTool } from "./tool-types.js";
++
++/** Read-only, closed-world (mirror data or the server's own Supabase). */
++const READ_ONLY_CLOSED: readonly string[] = [
++  // Bot detection & governance (no outbound calls)
++  "analyze_access_logs",
++  "list_allowed_bots",
++  "list_blocked_bots",
++  "generate_robots_txt", // generates text from policy input; fetches nothing
++  "suggest_bot_policy",
++  "export_bot_report",
++  // Blog / help / newsletter / forms — DB reads
++  "blog_list",
++  "blog_get",
++  "blog_search",
++  "blog_get_categories",
++  "help_list_categories",
++  "help_list_articles",
++  "help_get_article",
++  "help_search",
++  "newsletter_get_subscribers",
++  "newsletter_get_stats",
++  "forms_list_submissions",
++  "forms_get_submission",
++  "forms_export_csv",
++  // Website mirror — static content
++  "content_list_case_studies",
++  "content_get_comparison",
++  "content_list_comparisons",
++  "content_list_industries",
++  "content_list_tools",
++  "content_get_seo_rules",
++  "pricing_get_plans",
++  "pricing_get_addons",
++  "pricing_get_faq",
++  "pricing_compare_plans",
++  "pricing_get_country_plans",
++  "pricing_get_managed_revops",
++  "features_list",
++  "features_get",
++  "features_list_products",
++  "analytics_social_proof",
++  "countries_list",
++  "country_get",
++  "company_get_profile",
++  "company_get_contacts",
++  "seo_get_site_config",
++  "seo_get_hreflang",
++  "seo_get_canonical",
++  "seo_get_sitemaps",
++  "seo_get_schema",
++  "products_list",
++  "product_get",
++  "integrations_list",
++  "integrations_get",
++  "integrations_list_categories",
++  "agents_list",
++  "agents_get",
++  "agents_get_autonomy_levels",
++  "agents_list_comparisons",
++  "glossary_list_terms",
++  "glossary_get_term",
++  "templates_list",
++  "templates_get",
++  "guides_list",
++  "guides_get",
++  "alternatives_list",
++  "alternatives_get",
++  "switch_list_competitors",
++  "switch_get_guide",
++  "changelog_list_releases",
++  "changelog_get_release",
++  "faqs_get_site",
++  "media_list_videos",
++  "media_list_testimonials",
++  "partners_get_program",
++  "partners_get_application_schema",
++  "solutions_list_whatsapp_use_cases",
++  "solutions_get_managed_revops",
++];
++
++/** Read-only, open-world: live crawls, HTTP probes, reverse-DNS. */
++const READ_ONLY_OPEN: readonly string[] = [
++  "scan_website_bots",
++  "verify_bot_identity",
++  "fetch_page_content",
++  "crawl_pages",
++  "generate_llms_txt",
++  "check_llms_txt",
++  "check_ai_extractability",
++  "validate_sitemaps",
++];
++
++/** Write-capable tools, annotated individually. */
++const WRITE_TOOLS: Readonly<Record<string, McpToolAnnotations>> = {
++  // Additive create — a repeat call makes a second post.
++  blog_create: {
++    readOnlyHint: false,
++    destructiveHint: false,
++    idempotentHint: false,
++    openWorldHint: false,
++  },
++  // Overwrites an existing post.
++  blog_update: {
++    readOnlyHint: false,
++    destructiveHint: true,
++    idempotentHint: true,
++    openWorldHint: false,
++  },
++  // Calls the website's revalidate API — external, repeat-safe.
++  blog_revalidate: {
++    readOnlyHint: false,
++    destructiveHint: false,
++    idempotentHint: true,
++    openWorldHint: true,
++  },
++  help_create_article: {
++    readOnlyHint: false,
++    destructiveHint: false,
++    idempotentHint: false,
++    openWorldHint: false,
++  },
++  help_update_article: {
++    readOnlyHint: false,
++    destructiveHint: true,
++    idempotentHint: true,
++    openWorldHint: false,
++  },
++  // Subscribing an already-subscribed address is a no-op.
++  newsletter_subscribe: {
++    readOnlyHint: false,
++    destructiveHint: false,
++    idempotentHint: true,
++    openWorldHint: false,
++  },
++  // Removes an existing subscription.
++  newsletter_unsubscribe: {
++    readOnlyHint: false,
++    destructiveHint: true,
++    idempotentHint: true,
++    openWorldHint: false,
++  },
++  // Every call files a new submission.
++  forms_submit: {
++    readOnlyHint: false,
++    destructiveHint: false,
++    idempotentHint: false,
++    openWorldHint: false,
++  },
++};
++
++function readOnly(openWorld: boolean): McpToolAnnotations {
++  return {
++    readOnlyHint: true,
++    destructiveHint: false,
++    idempotentHint: true,
++    openWorldHint: openWorld,
++  };
++}
++
++export const TOOL_ANNOTATIONS: Readonly<Record<string, McpToolAnnotations>> = {
++  ...Object.fromEntries(READ_ONLY_CLOSED.map((n) => [n, readOnly(false)])),
++  ...Object.fromEntries(READ_ONLY_OPEN.map((n) => [n, readOnly(true)])),
++  ...WRITE_TOOLS,
++};
++
++/**
++ * Attach annotations to every registered tool definition. Throws at module
++ * load (i.e. at server start) when a tool has no entry — an unannotated tool
++ * must never be servable, because clients would fall back to the spec's
++ * dangerous defaults.
++ */
++export function applyToolAnnotations(tools: readonly RegisteredTool[]): void {
++  const missing: string[] = [];
++  for (const t of tools) {
++    const annotations = TOOL_ANNOTATIONS[t.definition.name];
++    if (!annotations) {
++      missing.push(t.definition.name);
++      continue;
++    }
++    t.definition.annotations = annotations;
++  }
++  if (missing.length > 0) {
++    throw new Error(
++      `Tools registered without annotations (add them to src/tools/annotations.ts): ${missing.join(", ")}`,
++    );
++  }
++}
+diff --git a/src/tools/index.ts b/src/tools/index.ts
+index cac6d10..d85d4d1 100644
+--- a/src/tools/index.ts
++++ b/src/tools/index.ts
+@@ -165,6 +165,7 @@ import {
+ } from "./solutions.js";
+ 
+ import type { RegisteredTool } from "./tool-types.js";
++import { applyToolAnnotations } from "./annotations.js";
+ 
+ export const tools: RegisteredTool[] = [
+   // Bot detection
+@@ -310,6 +311,11 @@ export const tools: RegisteredTool[] = [
+   solutionsGetManagedRevops,
+ ];
+ 
++// Attach MCP annotations (readOnlyHint / destructiveHint / idempotentHint /
++// openWorldHint) to every definition. Throws at startup if a tool is missing
++// an entry, so an unannotated tool can never be served.
++applyToolAnnotations(tools);
++
+ export const toolsByName: Map<string, RegisteredTool> = new Map(
+   tools.map((t) => [t.definition.name, t]),
+ );
+diff --git a/src/tools/tool-types.ts b/src/tools/tool-types.ts
+index 5c013b5..6b4740a 100644
+--- a/src/tools/tool-types.ts
++++ b/src/tools/tool-types.ts
+@@ -1,5 +1,18 @@
+ import type { z } from "zod";
+ 
++/**
++ * MCP tool annotations (spec: ToolAnnotations). These are how a client decides
++ * what needs human approval — see src/tools/annotations.ts, which assigns them
++ * to every registered tool and fails the build for any tool left without one.
++ */
++export interface McpToolAnnotations {
++  title?: string;
++  readOnlyHint?: boolean;
++  destructiveHint?: boolean;
++  idempotentHint?: boolean;
++  openWorldHint?: boolean;
++}
++
+ export interface McpToolDefinition {
+   name: string;
+   description: string;
+@@ -9,6 +22,7 @@ export interface McpToolDefinition {
+     required?: string[];
+     additionalProperties?: boolean;
+   };
++  annotations?: McpToolAnnotations;
+ }
+ 
+ export interface McpTextContent {
+diff --git a/src/utils/__tests__/rate-limit-store.test.ts b/src/utils/__tests__/rate-limit-store.test.ts
+new file mode 100644
+index 0000000..59cb72c
+--- /dev/null
++++ b/src/utils/__tests__/rate-limit-store.test.ts
+@@ -0,0 +1,128 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++
++import {
++  MemoryRateLimitStore,
++  UpstashRateLimitStore,
++  createRateLimitStore,
++} from "../rate-limit-store.js";
++
++const WINDOW = 60_000;
++const MAX = 3;
++
++describe("MemoryRateLimitStore", () => {
++  beforeEach(() => vi.useFakeTimers());
++  afterEach(() => vi.useRealTimers());
++
++  it("allows up to the limit and rejects beyond it", async () => {
++    const store = new MemoryRateLimitStore();
++    for (let i = 0; i < MAX; i++) {
++      expect(await store.hit("1.2.3.4", WINDOW, MAX)).toBe(true);
++    }
++    expect(await store.hit("1.2.3.4", WINDOW, MAX)).toBe(false);
++  });
++
++  it("tracks keys independently", async () => {
++    const store = new MemoryRateLimitStore();
++    for (let i = 0; i < MAX + 1; i++) await store.hit("a", WINDOW, MAX);
++    expect(await store.hit("b", WINDOW, MAX)).toBe(true);
++  });
++
++  it("frees the bucket after the window slides past", async () => {
++    const store = new MemoryRateLimitStore();
++    for (let i = 0; i < MAX + 1; i++) await store.hit("a", WINDOW, MAX);
++    expect(await store.hit("a", WINDOW, MAX)).toBe(false);
++    vi.advanceTimersByTime(WINDOW + 1);
++    expect(await store.hit("a", WINDOW, MAX)).toBe(true);
++  });
++});
++
++describe("UpstashRateLimitStore", () => {
++  const url = "https://fake.upstash.io";
++  const token = "tok";
++
++  afterEach(() => vi.unstubAllGlobals());
++
++  function stubPipeline(incrResult: number): ReturnType<typeof vi.fn> {
++    const mock = vi.fn(async () => ({
++      ok: true,
++      json: async () => [{ result: incrResult }, { result: 1 }],
++    }));
++    vi.stubGlobal("fetch", mock);
++    return mock;
++  }
++
++  it("allows when the shared counter is within the limit", async () => {
++    const mock = stubPipeline(MAX);
++    const store = new UpstashRateLimitStore(url, token);
++    expect(await store.hit("1.2.3.4", WINDOW, MAX)).toBe(true);
++    expect(mock).toHaveBeenCalledOnce();
++    const [calledUrl, init] = mock.mock.calls[0] as unknown as [string, RequestInit];
++    expect(calledUrl).toBe(`${url}/pipeline`);
++    const body = JSON.parse(init.body as string);
++    expect(body[0][0]).toBe("INCR");
++    expect(body[1][0]).toBe("PEXPIRE");
++  });
++
++  it("rejects when the shared counter exceeds the limit", async () => {
++    stubPipeline(MAX + 1);
++    const store = new UpstashRateLimitStore(url, token);
++    expect(await store.hit("1.2.3.4", WINDOW, MAX)).toBe(false);
++  });
++
++  it("falls back to the local store when Redis is unreachable — local limiting, not unlimited", async () => {
++    vi.stubGlobal("fetch", vi.fn(async () => {
++      throw new Error("connect ECONNREFUSED");
++    }));
++    const store = new UpstashRateLimitStore(url, token);
++    for (let i = 0; i < MAX; i++) {
++      expect(await store.hit("1.2.3.4", WINDOW, MAX)).toBe(true);
++    }
++    // The in-memory fallback still enforces the limit.
++    expect(await store.hit("1.2.3.4", WINDOW, MAX)).toBe(false);
++  });
++
++  it("treats a malformed Redis response as an error, not an allow", async () => {
++    vi.stubGlobal("fetch", vi.fn(async () => ({
++      ok: true,
++      json: async () => [{ error: "WRONGTYPE" }],
++    })));
++    const store = new UpstashRateLimitStore(url, token);
++    // Falls back to memory: first hit allowed there.
++    expect(await store.hit("k", WINDOW, MAX)).toBe(true);
++  });
++
++  it("encodes hostile keys so they cannot inject command segments", async () => {
++    const mock = stubPipeline(1);
++    const store = new UpstashRateLimitStore(url, token);
++    await store.hit("evil/../key with spaces", WINDOW, MAX);
++    const body = JSON.parse(
++      (mock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
++    );
++    const redisKey: string = body[0][1];
++    expect(redisKey).not.toContain(" ");
++    expect(redisKey).not.toContain("/");
++  });
++});
++
++describe("createRateLimitStore", () => {
++  it("uses memory when Upstash env vars are absent", () => {
++    expect(createRateLimitStore({} as NodeJS.ProcessEnv)).toBeInstanceOf(
++      MemoryRateLimitStore,
++    );
++  });
++
++  it("uses Upstash when both env vars are present", () => {
++    const store = createRateLimitStore({
++      UPSTASH_REDIS_REST_URL: "https://x.upstash.io",
++      UPSTASH_REDIS_REST_TOKEN: "t",
++    } as NodeJS.ProcessEnv);
++    expect(store).toBeInstanceOf(UpstashRateLimitStore);
++  });
++
++  it("ignores a URL without a token (misconfiguration must not half-enable)", () => {
++    const store = createRateLimitStore({
++      UPSTASH_REDIS_REST_URL: "https://x.upstash.io",
++    } as NodeJS.ProcessEnv);
++    expect(store).toBeInstanceOf(MemoryRateLimitStore);
++  });
++});
+diff --git a/src/utils/rate-limit-store.ts b/src/utils/rate-limit-store.ts
+new file mode 100644
+index 0000000..a8100fe
+--- /dev/null
++++ b/src/utils/rate-limit-store.ts
+@@ -0,0 +1,139 @@
++/**
++ * Rate-limit bucket storage (finding L′, residual).
++ *
++ * PR #13 fixed the spoofable client-IP resolution, but the buckets stayed
++ * in-memory and per-process — so a deployment scaled to N instances enforces
++ * an effective limit of N× the configured one, and every restart resets all
++ * buckets. This module adds an optional shared store while keeping the
++ * in-memory implementation as the default and as the fallback.
++ *
++ * Backend selection (createRateLimitStore):
++ *   UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN set → Upstash Redis via
++ *     its REST API (plain fetch — no new npm dependency), fixed-window
++ *     INCR + PEXPIRE in one pipelined request.
++ *   otherwise → in-memory sliding window (previous behaviour).
++ *
++ * Failure policy: if the shared store errors or times out, the decision falls
++ * back to the in-memory store for that request (fail-open to LOCAL limiting,
++ * not to unlimited) and a warning is logged once per minute. A Redis outage
++ * must never take the MCP endpoint down with it.
++ */
++
++import { logger } from "./logger.js";
++
++export interface RateLimitStore {
++  /**
++   * Record a hit for `key` and decide whether it is within `maxRequests` per
++   * `windowMs`. Returns true when the request is allowed.
++   */
++  hit(key: string, windowMs: number, maxRequests: number): Promise<boolean>;
++}
++
++/** Sliding-window, in-memory. Identical behaviour to the previous IpRateLimiter. */
++export class MemoryRateLimitStore implements RateLimitStore {
++  // key → [request timestamps]
++  private readonly buckets = new Map<string, number[]>();
++  private lastPrune = Date.now();
++
++  async hit(key: string, windowMs: number, maxRequests: number): Promise<boolean> {
++    const now = Date.now();
++    // Amortised pruning so stale buckets cannot grow memory without bound.
++    if (now - this.lastPrune > windowMs) this.prune(windowMs);
++
++    const cutoff = now - windowMs;
++    const hits = (this.buckets.get(key) ?? []).filter((t) => t > cutoff);
++    hits.push(now);
++    this.buckets.set(key, hits);
++    return hits.length <= maxRequests;
++  }
++
++  private prune(windowMs: number): void {
++    const cutoff = Date.now() - windowMs;
++    for (const [key, hits] of this.buckets) {
++      if ((hits.at(-1) ?? 0) <= cutoff) this.buckets.delete(key);
++    }
++    this.lastPrune = Date.now();
++  }
++}
++
++/**
++ * Fixed-window counter in Upstash Redis, shared across all instances.
++ *
++ * One pipelined REST call per request: INCR rl:{key}:{window} + PEXPIRE.
++ * Fixed-window admits at most 2× the limit across a window boundary in the
++ * worst case — acceptable for abuse control, and it keeps the store to a
++ * single round trip.
++ */
++export class UpstashRateLimitStore implements RateLimitStore {
++  private lastWarnAt = 0;
++
++  constructor(
++    private readonly restUrl: string,
++    private readonly restToken: string,
++    private readonly fallback: RateLimitStore = new MemoryRateLimitStore(),
++    private readonly timeoutMs = 2000,
++  ) {}
++
++  async hit(key: string, windowMs: number, maxRequests: number): Promise<boolean> {
++    const windowStart = Math.floor(Date.now() / windowMs) * windowMs;
++    // Encode the key so an IP (or a forged header that slipped through) cannot
++    // inject Redis command segments via the REST path.
++    const redisKey = `rl:${encodeURIComponent(key)}:${windowStart}`;
++
++    try {
++      const res = await fetch(`${this.restUrl.replace(/\/$/, "")}/pipeline`, {
++        method: "POST",
++        headers: {
++          Authorization: `Bearer ${this.restToken}`,
++          "Content-Type": "application/json",
++        },
++        body: JSON.stringify([
++          ["INCR", redisKey],
++          // Expire two windows out so boundary reads never race the TTL.
++          ["PEXPIRE", redisKey, String(windowMs * 2)],
++        ]),
++        signal: AbortSignal.timeout(this.timeoutMs),
++      });
++
++      if (!res.ok) throw new Error(`Upstash HTTP ${res.status}`);
++
++      const results = (await res.json()) as Array<{ result?: unknown; error?: string }>;
++      const incr = results?.[0];
++      if (!incr || incr.error !== undefined || typeof incr.result !== "number") {
++        throw new Error(`Upstash INCR failed: ${incr?.error ?? "malformed response"}`);
++      }
++      return incr.result <= maxRequests;
++    } catch (err) {
++      this.warnThrottled((err as Error).message);
++      // Fail open to LOCAL limiting, never to unlimited.
++      return this.fallback.hit(key, windowMs, maxRequests);
++    }
++  }
++
++  private warnThrottled(message: string): void {
++    const now = Date.now();
++    if (now - this.lastWarnAt > 60_000) {
++      this.lastWarnAt = now;
++      logger.warn("Shared rate-limit store unavailable — using in-memory fallback", {
++        err: message,
++      });
++    }
++  }
++}
++
++/** Pick the store from the environment. */
++export function createRateLimitStore(
++  env: NodeJS.ProcessEnv = process.env,
++): RateLimitStore {
++  const url = env.UPSTASH_REDIS_REST_URL;
++  const token = env.UPSTASH_REDIS_REST_TOKEN;
++  if (url && token) {
++    logger.info("Rate limiting: shared store (Upstash Redis)", { url });
++    return new UpstashRateLimitStore(url, token);
++  }
++  logger.info(
++    "Rate limiting: in-memory (per-process). Set UPSTASH_REDIS_REST_URL and " +
++      "UPSTASH_REDIS_REST_TOKEN for a shared store when scaling horizontally.",
++  );
++  return new MemoryRateLimitStore();
++}
+-- 
+2.43.0
+

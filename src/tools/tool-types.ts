@@ -1,5 +1,18 @@
 import type { z } from "zod";
 
+/**
+ * MCP tool annotations (spec: ToolAnnotations). These are how a client decides
+ * what needs human approval — see src/tools/annotations.ts, which assigns them
+ * to every registered tool and fails the build for any tool left without one.
+ */
+export interface McpToolAnnotations {
+  title?: string;
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
 export interface McpToolDefinition {
   name: string;
   description: string;
@@ -9,6 +22,7 @@ export interface McpToolDefinition {
     required?: string[];
     additionalProperties?: boolean;
   };
+  annotations?: McpToolAnnotations;
 }
 
 export interface McpTextContent {

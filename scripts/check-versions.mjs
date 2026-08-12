@@ -46,6 +46,21 @@ if (!pkg) {
 const expected = pkg.version;
 const found = [{ where: "package.json → version", value: expected }];
 
+// serverInfo (the MCP wire identity) reads its version from src/server-info.ts —
+// a fourth copy, but one clients actually see in `initialize`, so it is checked
+// here rather than trusted.
+{
+  const serverInfoPath = join(root, "src", "server-info.ts");
+  if (existsSync(serverInfoPath)) {
+    const src = readFileSync(serverInfoPath, "utf8");
+    const m = src.match(/SERVER_VERSION\s*=\s*"([^"]+)"/);
+    found.push({
+      where: "src/server-info.ts → SERVER_VERSION",
+      value: m ? m[1] : "(missing)",
+    });
+  }
+}
+
 const server = read("server.json");
 if (!server) {
   // Not an error: server.json arrives with the registry-manifest change. Say so

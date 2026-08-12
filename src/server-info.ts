@@ -1,0 +1,27 @@
+/**
+ * Single source of truth for this server's wire identity (finding X).
+ *
+ * The server previously self-identified as a pure "Bot detection & governance"
+ * server while the published manifest sold it as a CRM integration — and the
+ * server actually mirrors the whole hellogrowthcrm.com website (88 tools,
+ * 9 resources) on top of the bot-governance tools. serverInfo, the landing
+ * page, the /version endpoint and the logs all read from here so the identity
+ * cannot drift again.
+ *
+ * SERVER_VERSION must match package.json / server.json — enforced by
+ * scripts/check-versions.mjs (see RELEASING.md).
+ */
+
+export const SERVER_NAME = "hellogrowthcrm-website";
+
+export const SERVER_TITLE = "HelloGrowthCRM Website & Bot Governance MCP";
+
+export const SERVER_VERSION = "1.1.0";
+
+export const SERVER_DESCRIPTION =
+  "Read-only website mirror + bot governance MCP server for hellogrowthcrm.com. " +
+  "Serves HelloGrowthCRM product knowledge (pricing, features, integrations, " +
+  "comparisons, guides) as tools and resources, plus bot detection, crawler " +
+  "verification and robots.txt governance tools. This is NOT a CRM API: it " +
+  "holds no customer data, performs no CRM actions, and requires no API key — " +
+  "never send CRM credentials to this server.";

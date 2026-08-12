@@ -39,9 +39,8 @@ import {
   SYNCED_AT,
 } from "./data/website-mirror.js";
 
-const SERVER_VERSION = "1.0.0";
-
-const MCP_RESOURCES = [
+// Module scope (not inside buildServer) so /version can report the count.
+const RESOURCES = [
   { uri: "hellocrmwebsite://blog/recent", name: "Recent Blog Posts", description: "Last 20 blog posts from hellogrowthcrm.com", mimeType: "application/json" },
   { uri: "hellocrmwebsite://help/categories", name: "Help Center Categories", description: "All help center categories", mimeType: "application/json" },
   { uri: "hellocrmwebsite://site/seo-rules", name: "SEO Rules & Guidelines", description: "SEO guardrails for hellogrowthcrm.com content", mimeType: "text/markdown" },
@@ -56,10 +55,12 @@ const MCP_RESOURCES = [
 export function buildServer(): Server { // NOSONAR — advanced low-level Server (see import note)
   const server = new Server( // NOSONAR
     {
-      name: "hellogrowthcrm-bot-crawler",
+      // Finding X: this identity must describe what the server actually runs —
+      // website mirror + bot governance. Edit src/server-info.ts, not here.
+      name: SERVER_NAME,
+      title: SERVER_TITLE,
       version: SERVER_VERSION,
-      description:
-        "Bot detection & governance MCP server for hellogrowthcrm.com — scans, analyzes, and reports on every crawler interacting with the site.",
+      description: SERVER_DESCRIPTION,
     },
     { capabilities: { tools: {}, resources: {} } },
   );
@@ -118,10 +119,8 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
 
   // ── MCP Resources ────────────────────────────────────────────────────────────
 
-  const RESOURCES = MCP_RESOURCES;
-
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: RESOURCES,
+    resources: [...RESOURCES],
   }));
 
   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
@@ -274,40 +273,30 @@ const HOME_PAGE_HTML = `<!doctype html>
 </head>
 <body>
   <main>
-    <h1>HelloGrowthCRM MCP Server</h1>
-    <p>MCP Bot Crawler - connect via the Streamable HTTP endpoint at <code>/sse</code>.</p>
+    <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
+    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
+    <p>Status: <a href="/version">/version</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
   </main>
 </body>
 </html>
 `;
 
+/**
+ * Finding L′ (residual): buckets used to live in a private in-process Map, so
+ * a horizontally-scaled deployment enforced N× the configured limit. The
+ * storage is now behind RateLimitStore — in-memory by default, shared
+ * (Upstash Redis) when UPSTASH_REDIS_REST_URL/_TOKEN are set. See
+ * src/utils/rate-limit-store.ts.
+ */
 class IpRateLimiter {
-  private readonly windowMs: number;
-  private readonly maxRequests: number;
-  // ip → [request timestamps]
-  private readonly buckets = new Map<string, number[]>();
+  constructor(
+    private readonly windowMs: number,
+    private readonly maxRequests: number,
+    private readonly store: RateLimitStore,
+  ) {}
 
-  constructor(windowMs: number, maxRequests: number) {
-    this.windowMs = windowMs;
-    this.maxRequests = maxRequests;
-    // Prune stale buckets every window to prevent unbounded memory growth
-    setInterval(() => this.prune(), windowMs).unref();
-  }
-
-  allow(ip: string): boolean {
-    const now = Date.now();
-    const cutoff = now - this.windowMs;
-    const hits = (this.buckets.get(ip) ?? []).filter((t) => t > cutoff);
-    hits.push(now);
-    this.buckets.set(ip, hits);
-    return hits.length <= this.maxRequests;
-  }
-
-  private prune(): void {
-    const cutoff = Date.now() - this.windowMs;
-    for (const [ip, hits] of this.buckets) {
-      if (hits.at(-1)! <= cutoff) this.buckets.delete(ip);
-    }
+  allow(ip: string): Promise<boolean> {
+    return this.store.hit(ip, this.windowMs, this.maxRequests);
   }
 }
 
@@ -318,7 +307,7 @@ export async function runServer(): Promise<void> {
     const server = buildServer();
     const stdioTransport = new StdioServerTransport();
     await server.connect(stdioTransport);
-    logger.info("hellogrowthcrm-bot-crawler ready (stdio)", {
+    logger.info(`${SERVER_NAME} ready (stdio)`, {
       site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
       tools: [...toolsByName.keys()],
     });
@@ -329,7 +318,7 @@ export async function runServer(): Promise<void> {
   const port = Number.parseInt(process.env.PORT ?? "3008", 10);
   const rateLimitWindow = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
   const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
-  const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax);
+  const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax, createRateLimitStore());
 
   // See src/utils/client-ip.ts. Do NOT go back to x-forwarded-for[0]: it is
   // client-controlled, and Cloudflare appends rather than replaces, so the
@@ -435,8 +424,40 @@ export async function runServer(): Promise<void> {
     const ip = clientIp(req);
 
     if (url.pathname === "/sse") {
-      if (!limiter.allow(ip)) { sendRateLimited(res, ip); return; }
+      if (!(await limiter.allow(ip))) { sendRateLimited(res, ip); return; }
       await handleStreamableHttp(req, res);
+      return;
+    }
+
+    // Version / status surface (finding BB): a machine-readable signal for
+    // third parties that depend on this server, so tool-set changes are
+    // discoverable instead of silent. See CHANGELOG.md for the human version.
+    if (url.pathname === "/version") {
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = JSON.stringify(
+          {
+            name: SERVER_NAME,
+            title: SERVER_TITLE,
+            version: SERVER_VERSION,
+            mcp_endpoint: "/sse",
+            transport: "streamable-http",
+            tools: toolsByName.size,
+            resources: RESOURCES.length,
+            changelog:
+              "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/blob/main/CHANGELOG.md",
+          },
+          null,
+          2,
+        );
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "public, max-age=300",
+          "Content-Length": Buffer.byteLength(body),
+        });
+        res.end(req.method === "HEAD" ? undefined : body);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
       return;
     }
 
@@ -560,7 +581,7 @@ export async function runServer(): Promise<void> {
   });
 
   await new Promise<void>((resolve) => httpServer.listen(port, resolve));
-  logger.info("hellogrowthcrm-bot-crawler ready (http)", {
+  logger.info(`${SERVER_NAME} ready (http)`, {
     url: `http://localhost:${port}`,
     mcp: `http://localhost:${port}/sse`,
     site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
