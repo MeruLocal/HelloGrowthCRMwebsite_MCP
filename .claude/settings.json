@@ -9,7 +9,11 @@
       "PowerShell(git --git-dir='C:\\\\Users\\\\Ghanshyam\\\\Documents\\\\GitHub\\\\hellocrmwebsite\\\\.git' rev-parse --abbrev-ref HEAD)",
       "PowerShell(\"--- branch:\")",
       "PowerShell(Get-ChildItem 'C:\\\\Users\\\\Ghanshyam\\\\Documents\\\\GitHub' -Directory | ForEach-Object { $p = $_.FullName; if \\(Test-Path \\(Join-Path $p '.git'\\)\\) { $r = git -C $p remote get-url origin 2>$null; \"$\\($_.Name\\) -> $r\" } else { \"$\\($_.Name\\) -> \\(no .git\\)\" } })",
-      "PowerShell($repos = @\\('hellobooks-videos','Owner-Suite','Tasks-Merufintech','Web-Fire-hellobooks.ai'\\); foreach \\($r in $repos\\) { $p = \"C:\\\\Users\\\\Ghanshyam\\\\Documents\\\\GitHub\\\\$r\"; $out = git -C $p ls-remote origin 'refs/pull/1106/head' 2>&1 | Out-String; \"$r => $\\($out.Trim\\(\\)\\)\" })"
+      "PowerShell($repos = @\\('hellobooks-videos','Owner-Suite','Tasks-Merufintech','Web-Fire-hellobooks.ai'\\); foreach \\($r in $repos\\) { $p = \"C:\\\\Users\\\\Ghanshyam\\\\Documents\\\\GitHub\\\\$r\"; $out = git -C $p ls-remote origin 'refs/pull/1106/head' 2>&1 | Out-String; \"$r => $\\($out.Trim\\(\\)\\)\" })",
+      "Bash(git status *)",
+      "Read(//c/Users/Ghanshyam/**)",
+      "Bash(ls -la /git-error-1786517080705)",
+      "Read(//c//**)"
     ]
   }
 }
