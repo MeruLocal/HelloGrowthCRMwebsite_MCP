@@ -23,9 +23,9 @@ Only **derived, low-cardinality, non-PII** metadata:
 
 | Field | Source | Notes |
 |-------|--------|-------|
-| `endpoint` | request path | `/sse`, `/message`, or `/mcp` |
+| `endpoint` | request path | `/sse` |
 | `http_method` | request method | `GET` / `POST` / `DELETE` |
-| `transport` | derived | `sse` or `streamable-http` |
+| `transport` | derived | `streamable-http` |
 | `clientName` | derived from UA | e.g. `ChatGPT`, `Claude`, `Cursor`, `Browser` |
 | `clientType` | derived | `ai` / `browser` / `tool` / `bot` / `unknown` |
 | `isBot` | derived | crawler vs. non-crawler |
@@ -37,10 +37,8 @@ Only **derived, low-cardinality, non-PII** metadata:
 | `statusCode` | HTTP response | for message/tool requests |
 | `success` | derived | `true` unless status ≥ 400 or stream errored |
 | `responseTimeMs` | measured | request→response time (message/tool endpoints) |
-| `connectionDurationMs` | measured | open→close time (SSE close) |
 | `mcpMethod` | JSON-RPC `method` | e.g. `tools/list`, `tools/call` |
 | `toolName` | `params.name` | **only** when method is `tools/call` |
-| `totalConnections` | in-process counter | running total of SSE opens |
 
 ## 2. What is **not** tracked
 
@@ -60,23 +58,18 @@ These guarantees are enforced in code (the raw UA never leaves
 `params.name`) and asserted by tests in
 [`src/middleware/__tests__/mcpSseAnalytics.test.ts`](../src/middleware/__tests__/mcpSseAnalytics.test.ts).
 
-## 3. SSE-specific tracking
+## 3. Endpoint-specific tracking
 
-This endpoint uses the **SSE transport** (`GET /sse` to open the event stream,
-`POST /message?sessionId=…` to send MCP messages). It is *not* a single
-`POST /mcp` endpoint, so tracking is split accordingly:
+The server exposes a single **Streamable HTTP** endpoint at
+`POST/GET/DELETE /sse` (session-keyed via the `mcp-session-id` header). The
+legacy SSE transport (`GET /sse` stream + `POST /message`) has been removed.
 
-- **`GET /sse`** — opens a long-lived stream. On open we emit
-  `mcp_sse_connection_open` (and `mcp_bot_visit` for crawlers). The connection
-  start time is recorded; when the response `close`s we emit
-  `mcp_sse_connection_close` with `connectionDurationMs`.
-- **`POST /message`** — the separate message route. The body is parsed once,
-  fed to the transport (no double stream read), and used only to derive
-  `mcpMethod` / `toolName`. On response `finish` we emit `mcp_request`
-  (+ `mcp_tool_call`, + `mcp_error`) with `statusCode` and `responseTimeMs`.
-
-The modern `/mcp` Streamable HTTP endpoint is instrumented the same way for
-message-level events (`transport: "streamable-http"`).
+- **`POST /sse`** — carries the MCP messages. The body is parsed once, fed to
+  the transport (no double stream read), and used only to derive `mcpMethod` /
+  `toolName`. On response `finish` we emit `mcp_request` (+ `mcp_tool_call`,
+  + `mcp_error`) with `statusCode` and `responseTimeMs`.
+- **`GET` / `DELETE /sse`** — the server→client notification stream and session
+  teardown for an existing session. Routed to the session's transport.
 
 Connection/stream behaviour is untouched: tracking runs on `finish`/`close`
 events and is wrapped in `try/catch`, so it can neither delay nor break the
@@ -86,8 +79,6 @@ stream.
 
 | Event | When |
 |-------|------|
-| `mcp_sse_connection_open` | a client connects to `/sse` |
-| `mcp_sse_connection_close` | the SSE stream closes (includes duration) |
 | `mcp_request` | any MCP message/request completes |
 | `mcp_tool_call` | the message method is `tools/call` |
 | `mcp_bot_visit` | a detected crawler connects |
@@ -174,26 +165,26 @@ GA4_ENDPOINT=https://www.google-analytics.com/debug/mp/collect \
 LOG_LEVEL=debug \
 npm run dev
 
-# 1. Open an SSE connection (emits mcp_sse_connection_open; Ctrl-C closes it)
-curl -N http://localhost:3008/sse
-
-# 2. Streamable HTTP — initialize, then list tools (emits mcp_request)
-curl -i http://localhost:3008/mcp \
+# 1. Streamable HTTP — initialize, then list tools (emits mcp_request)
+curl -i http://localhost:3008/sse \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
 
-# 3. tools/list and tools/call (emits mcp_request / mcp_tool_call). Reuse the
+# 2. tools/list and tools/call (emits mcp_request / mcp_tool_call). Reuse the
 #    mcp-session-id returned by the initialize response:
-curl -i http://localhost:3008/mcp \
+curl -i http://localhost:3008/sse \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
-  -H "mcp-session-id: <SESSION_ID_FROM_STEP_2>" \
+  -H "mcp-session-id: <SESSION_ID_FROM_STEP_1>" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
 
-# Simulate a crawler (emits mcp_bot_visit on /sse)
-curl -N -A "Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)" \
-  http://localhost:3008/sse
+# 3. Simulate a crawler (emits mcp_bot_visit on /sse)
+curl -i -A "Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)" \
+  http://localhost:3008/sse \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
 ```
 
 ## 9. GA4 verification steps
@@ -207,7 +198,7 @@ curl -N -A "Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)" \
    `validationMessages` — an empty array means the event is valid.
 4. **Live view:** with the production endpoint configured, open
    **GA4 → Reports → Realtime** (or **Admin → DebugView**) and watch
-   `mcp_sse_connection_open`, `mcp_request`, `mcp_tool_call`, etc. appear.
+   `mcp_request`, `mcp_tool_call`, etc. appear.
 5. Build exploration reports keyed on `clientName`, `clientType`, `isBot`,
    `botName`, `mcpMethod`, and `toolName` to see usage breakdowns.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# geo-audit.sh — Reproduce every GEO/AEO measurement in docs/plans/GEO_AEO_MASTER_PLAN.md
+# geo-audit.sh — Reproduce every GEO/AEO measurement in docs/plans/GEO_FINDINGS_AND_PLAN_REV2.md
 #
 # The plan's findings are only worth anything if anyone can re-derive them. This
 # runs all of them in one pass and exits non-zero when a regression is present,
@@ -14,8 +14,9 @@
 #     run — green or red — tells you nothing. Hence SITEMAP_ROUNDS.
 #
 #   * The deploy-drift check exists because tool COUNT does not reveal build
-#     version. Production and local main both advertise 83 identical tool names
-#     while running different code. The only reliable signal is behaviour.
+#     version. On 2026-08-05, production and local main both advertised 83
+#     identical tool names while running different code — prod extracted 0 words
+#     where local extracted 3194. The only reliable signal is behaviour.
 #
 # Requirements: bash, curl, node. No npm install needed for the remote checks;
 # the local half of the drift check needs `npm run build` to have been run.
@@ -29,10 +30,19 @@
 # Exit codes: 0 = no regressions, 1 = at least one FAIL.
 
 BASE_URL="${BASE_URL:-https://hellogrowthcrm.com}"
-MCP_URL="${MCP_URL:-https://mcp.hellogrowthcrm.com/mcp}"
+MCP_URL="${MCP_URL:-https://mcp.hellogrowthcrm.com/sse}"
 SITEMAP_ROUNDS="${SITEMAP_ROUNDS:-3}"
 CURL_TIMEOUT="${CURL_TIMEOUT:-60}"
 SKIP_LOCAL="${SKIP_LOCAL:-0}"
+
+# IndexNow key. The key file is /<key>.txt — there is no fixed "indexnow.txt"
+# path, which is what this script wrongly assumed. Mirrors INDEXNOW_KEY in
+# hellocrmwebsite's src/lib/server/indexnow.ts.
+INDEXNOW_KEY="${INDEXNOW_KEY:-bdfd433fe13b4062a8a11f2a12586be9}"
+
+# A page OUTSIDE the middleware matcher, for cacheability checks. `/` and
+# `/pricing` are deliberately uncacheable — see C3.
+CACHEABLE_PATH="${CACHEABLE_PATH:-/compare/hubspot}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -158,30 +168,57 @@ fi
 # ── C3. CDN cacheability (plan F5) ───────────────────────────────────────────
 head2 "C3  CDN cacheability"
 
-curl -sI --max-time "$CURL_TIMEOUT" "$BASE_URL/pricing" | tr -d '\r' > "$TMP/hdr.txt"
+# This check previously sampled /pricing and failed it for `no-store` and for
+# setting a cookie. Both are DELIBERATE there. next.config.js:292-323 explains:
+# `/` and `/pricing` return per-visitor 307s decided by middleware AT THE ORIGIN
+# (matcher is exactly ["/", "/pricing"]), and Cloudflare's cache key is URL-only
+# with Vary ignored on non-Enterprise plans. Caching them would either kill the
+# geo redirect or replay one country's 307 to everyone.
+#
+# So we now sample a normal page, and separately ASSERT that the two special
+# paths stay uncacheable — "fixing" them would be a production regression.
+
+curl -sI --max-time "$CURL_TIMEOUT" "$BASE_URL$CACHEABLE_PATH" | tr -d '\r' > "$TMP/hdr.txt"
+info "sampling $CACHEABLE_PATH (outside the middleware matcher)"
 cfs=$(grep -i '^cf-cache-status:' "$TMP/hdr.txt" | head -1 | cut -d' ' -f2-)
 [ -n "$cfs" ] && info "CF-Cache-Status: $cfs"
 
 if grep -iq '^cdn-cache-control:.*no-store' "$TMP/hdr.txt"; then
-  fail "cdn-cache-control says no-store — the CDN is forbidden from caching prerendered HTML"
+  fail "$CACHEABLE_PATH sends cdn-cache-control: no-store — this page is not geo-routed and should be cacheable"
 else
-  pass "no cdn-cache-control: no-store"
+  pass "$CACHEABLE_PATH allows CDN caching"
 fi
 
 if grep -iq '^set-cookie:' "$TMP/hdr.txt"; then
   ck=$(grep -i '^set-cookie:' "$TMP/hdr.txt" | head -1 | cut -d' ' -f2- | cut -d';' -f1)
-  fail "Set-Cookie on an HTML document ($ck) — most CDNs refuse to cache these"
+  fail "Set-Cookie on $CACHEABLE_PATH ($ck) — most CDNs refuse to cache these"
 else
-  pass "no Set-Cookie on the HTML document"
+  pass "no Set-Cookie on $CACHEABLE_PATH"
 fi
 
+# The genuine finding: headers say cacheable, Cloudflare still says DYNAMIC.
+# That is a CDN-side configuration issue, not an origin-header one.
+if [ -n "$cfs" ] && [ "${cfs%% *}" = "DYNAMIC" ] && ! grep -iq '^cdn-cache-control:.*no-store' "$TMP/hdr.txt"; then
+  fail "Cloudflare returns DYNAMIC on $CACHEABLE_PATH despite public cdn-cache-control — check CF Cache Rules, not next.config.js"
+fi
+
+# Regression guard: these two MUST stay uncacheable.
+for special in / /pricing; do
+  curl -sI --max-time "$CURL_TIMEOUT" "$BASE_URL$special" | tr -d '\r' > "$TMP/sp.txt"
+  if grep -iq '^cdn-cache-control:.*no-store' "$TMP/sp.txt"; then
+    pass "$special correctly stays no-store (geo-routing depends on it)"
+  else
+    fail "$special is NO LONGER no-store — geo redirect will break. See next.config.js:292-323"
+  fi
+done
+
 ttfb=$(curl -s -o /dev/null -w '%{time_starttransfer}' --compressed \
-  --max-time "$CURL_TIMEOUT" "$BASE_URL/pricing")
+  --max-time "$CURL_TIMEOUT" "$BASE_URL$CACHEABLE_PATH")
 over=$(node -e "process.stdout.write(String(Number(process.argv[1])>1?1:0))" "$ttfb")
 if [ "$over" = "1" ]; then
-  warn "TTFB ${ttfb}s on /pricing (>1s — origin is being hit on every request)"
+  warn "TTFB ${ttfb}s on $CACHEABLE_PATH (>1s — origin is being hit on every request)"
 else
-  pass "TTFB ${ttfb}s on /pricing"
+  pass "TTFB ${ttfb}s on $CACHEABLE_PATH"
 fi
 
 # ── C4. Deploy drift (plan F10) ──────────────────────────────────────────────
@@ -243,11 +280,24 @@ else
   fail "no msvalidate.01 tag — Bing Webmaster Tools unverified, and Bing indexing gates ChatGPT citations"
 fi
 
-inow=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$CURL_TIMEOUT" "$BASE_URL/indexnow.txt")
-if [ "$inow" = "200" ]; then
-  pass "IndexNow key file present"
+# IndexNow has no fixed filename: the key file is /<key>.txt and its BODY must
+# equal the key. This check previously probed /indexnow.txt — a path that never
+# existed — and so reported a working feature as missing for as long as it ran.
+if [ -z "$INDEXNOW_KEY" ]; then
+  info "INDEXNOW_KEY not set — skipping the key-file check"
 else
-  fail "no /indexnow.txt (HTTP $inow) — no fast path into Bing's index"
+  keyfile="$BASE_URL/$INDEXNOW_KEY.txt"
+  body=$(curl -s --max-time "$CURL_TIMEOUT" -w '\n%{http_code}' "$keyfile")
+  code=$(printf '%s' "$body" | tail -1)
+  content=$(printf '%s' "$body" | sed '$d' | tr -d '[:space:]')
+  if [ "$code" != "200" ]; then
+    fail "IndexNow key file $INDEXNOW_KEY.txt returned HTTP $code — no fast path into Bing's index"
+  elif [ "$content" != "$INDEXNOW_KEY" ]; then
+    # A mismatched body makes every submission fail with 403, silently.
+    fail "IndexNow key file body ('$content') does not match the key ('$INDEXNOW_KEY') — submissions will be rejected"
+  else
+    pass "IndexNow key file present and body matches the key"
+  fi
 fi
 
 # ── C6. AI access + corpus files (plan F9) ───────────────────────────────────
@@ -311,7 +361,7 @@ printf "%sPASS %d%s   %sWARN %d%s   %sFAIL %d%s\n" \
   "$c_grn" "$PASSES" "$c_off" "$c_yel" "$WARNS" "$c_off" "$c_red" "$FAILS" "$c_off"
 
 if [ "$FAILS" -gt 0 ]; then
-  printf "\nRegressions present. See docs/plans/GEO_AEO_MASTER_PLAN.md for the fix order.\n"
+  printf "\nRegressions present. See docs/plans/GEO_FINDINGS_AND_PLAN_REV2.md for the fix order.\n"
   exit 1
 fi
 printf "\nNo regressions.\n"
