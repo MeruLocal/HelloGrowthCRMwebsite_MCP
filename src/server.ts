@@ -26,16 +26,6 @@ import { toolsByName } from "./tools/index.js";
 import { openApiSpecJson } from "./openapi.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
-import {
-  SERVER_NAME,
-  SERVER_TITLE,
-  SERVER_VERSION,
-  SERVER_DESCRIPTION,
-} from "./server-info.js";
-import {
-  createRateLimitStore,
-  type RateLimitStore,
-} from "./utils/rate-limit-store.js";
 import { getSupabase } from "./lib/supabase.js";
 import {
   buildSafeMeta,
