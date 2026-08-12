@@ -1,6 +1,6 @@
 {
   "name": "mcp-bot-crawler",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server that crawls, discovers, and analyzes bots (search engines, AI crawlers, scrapers) interacting with your website.",
   "license": "MIT",
   "author": "Meru Technosoft Private Limited",
