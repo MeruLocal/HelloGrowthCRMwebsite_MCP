@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
-  "description": "Discover, identify and govern every bot hitting your website - search engines, AI crawlers, SEO tools and scrapers - with reverse-DNS identity verification and policy-driven robots.txt generation.",
+  "description": "Read-only HelloGrowthCRM website mirror (pricing, features, integrations, comparisons, guides) plus bot governance: discover, identify and govern every bot hitting your website with reverse-DNS identity verification and policy-driven robots.txt generation. No customer data, no CRM actions, no API key required.",
   "status": "active",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "repository": {
     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
     "source": "github"
@@ -14,7 +14,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "mcp-bot-crawler",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "transport": {
         "type": "stdio"
       },

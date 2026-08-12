@@ -119,19 +119,28 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
 
 A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
 `/sse`. Manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`.
+Version/status surface: `GET /version` returns the server name, version, tool
+and resource counts, and a changelog link — see [`CHANGELOG.md`](CHANGELOG.md)
+for what changed between versions.
 
 > **Endpoint change:** the Streamable HTTP endpoint moved from `/mcp` to `/sse`,
 > and the legacy SSE transport (`GET /sse` + `POST /message`) has been removed.
 > Point clients at `https://mcp.hellogrowthcrm.com/sse`.
 
-> ⚠️ **The hosted deployment can lag `main`.** Verified 2026-08-05: local `main`
-> and production both exposed the same 83 tools, but `fetch_page_content` on
-> `/pricing` returned `wordCount: 3194` locally and `wordCount: 0` in production
-> — production is running a build that predates the 2026-07-13 extraction fix.
-> **A matching tool count does not mean a matching build.** If a tool behaves
-> unexpectedly against the hosted endpoint, reproduce it locally before
-> filing a bug. As of 2026-08-06 `main` is at **88** tools, so a hosted server
-> still reporting 83 has not picked this branch up either.
+> ⚠️ **The hosted deployment can lag `main`, and the tool count will not tell
+> you.** On 2026-08-05 local `main` and production both advertised the same
+> **83 tools with identical names** — while `fetch_page_content` on `/pricing`
+> returned `wordCount: 3194` locally and `wordCount: 0` in production, because
+> production predated the 2026-07-13 extraction fix.
+>
+> **A matching tool count does not mean a matching build. Only behaviour does.**
+>
+> As of **2026-08-11** they agree: production and `main` are both at 88 tools.
+> Rather than trust that line — it goes stale every release — re-derive it:
+>
+> ```bash
+> ./scripts/geo-audit.sh     # check C4 calls the same tool through both and fails on divergence
+> ```
 
 ## The eight MCP tools
 
@@ -147,6 +156,18 @@ A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
 | `export_bot_report` | Writes a Markdown / JSON / CSV report under `REPORT_OUTPUT_DIR`. |
 
 Full payload examples live in [`examples/usage.md`](examples/usage.md).
+
+## Tool annotations
+
+Every one of the 88 tools carries explicit MCP annotations (`readOnlyHint`,
+`destructiveHint`, `idempotentHint`, `openWorldHint`) so clients can decide
+what needs human approval. 80 tools are read-only. Exactly eight can write —
+`blog_create`, `blog_update`, `blog_revalidate`, `help_create_article`,
+`help_update_article`, `newsletter_subscribe`, `newsletter_unsubscribe`,
+`forms_submit` — and nine reach the open world (live crawls, DNS verification,
+site revalidation). The classification lives in
+[`src/tools/annotations.ts`](src/tools/annotations.ts); a startup guard and a
+test fail the build if a tool is ever registered without an entry.
 
 ## Full MCP tool catalog (88 tools)
 
@@ -248,6 +269,11 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 | `CRAWLER_USER_AGENT` | `mcp-bot-crawler/1.0 (+...)` | Outbound UA. |
 | `REPORT_OUTPUT_DIR` | `./reports` | Where exports land. |
 | `LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug`. |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window for the HTTP transport. |
+| `RATE_LIMIT_MAX_REQUESTS` | `60` | Max requests per window per client IP. |
+| `UPSTASH_REDIS_REST_URL` | — | Optional: shared rate-limit store (set with the token) so buckets are shared across scaled instances instead of per-process. |
+| `UPSTASH_REDIS_REST_TOKEN` | — | Optional: token for the shared rate-limit store. |
+| `TRUST_PROXY_HEADERS` | `true` | Honour `CF-Connecting-IP`/last `X-Forwarded-For` hop for the rate-limit key. Set `false` only when exposed with no proxy in front. |
 | `ENABLE_MCP_ANALYTICS` | `false` | Master switch for MCP/SSE analytics — must be `true` to send. |
 | `GA4_MEASUREMENT_ID` | — | GA4 stream id for MCP/SSE analytics (optional). |
 | `GA4_API_SECRET` | — | GA4 Measurement Protocol API secret (optional). |
