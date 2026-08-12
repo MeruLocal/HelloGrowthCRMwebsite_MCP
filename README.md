@@ -124,14 +124,20 @@ A deployment is live at `https://mcp.hellogrowthcrm.com` — Streamable HTTP at
 > and the legacy SSE transport (`GET /sse` + `POST /message`) has been removed.
 > Point clients at `https://mcp.hellogrowthcrm.com/sse`.
 
-> ⚠️ **The hosted deployment can lag `main`.** Verified 2026-08-05: local `main`
-> and production both exposed the same 83 tools, but `fetch_page_content` on
-> `/pricing` returned `wordCount: 3194` locally and `wordCount: 0` in production
-> — production is running a build that predates the 2026-07-13 extraction fix.
-> **A matching tool count does not mean a matching build.** If a tool behaves
-> unexpectedly against the hosted endpoint, reproduce it locally before
-> filing a bug. As of 2026-08-06 `main` is at **88** tools, so a hosted server
-> still reporting 83 has not picked this branch up either.
+> ⚠️ **The hosted deployment can lag `main`, and the tool count will not tell
+> you.** On 2026-08-05 local `main` and production both advertised the same
+> **83 tools with identical names** — while `fetch_page_content` on `/pricing`
+> returned `wordCount: 3194` locally and `wordCount: 0` in production, because
+> production predated the 2026-07-13 extraction fix.
+>
+> **A matching tool count does not mean a matching build. Only behaviour does.**
+>
+> As of **2026-08-11** they agree: production and `main` are both at 88 tools.
+> Rather than trust that line — it goes stale every release — re-derive it:
+>
+> ```bash
+> ./scripts/geo-audit.sh     # check C4 calls the same tool through both and fails on divergence
+> ```
 
 ## The eight MCP tools
 
