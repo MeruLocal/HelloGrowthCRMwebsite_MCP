@@ -13,8 +13,8 @@ Handler **scaffolds** for the 4 differentiator tools from
 ## Where these belong
 
 These target the **authenticated CRM product MCP server**
-(`mcp.hellogrowthcrm.com`), the same server documented by the repo-root
-`openapi.json`. They are deliberately **not** placed in `src/tools/` and **not**
+(`mcp.hellogrowthcrm.com`), the same server described by
+`openapi.planned.json` in this directory (not served anywhere — see below). They are deliberately **not** placed in `src/tools/` and **not**
 registered in `src/tools/index.ts`, because that directory powers the *public,
 unauthenticated* bot-crawler / website-data MCP server. Exposing a WhatsApp
 send tool there would be a security hole.
@@ -66,7 +66,7 @@ npx tsc --noEmit -p crm-mcp-tools/tsconfig.json
 1. `get_whatsapp_thread`, `get_sequence_status` (read-only, zero risk)
 2. `get_call_recording` (read-only)
 3. `send_whatsapp` (write — full QA: 24h window, opt-out, audit log, scope)
-4. Spec already updated: see repo-root `openapi.json` + `src/openapi.ts`.
+4. Spec already updated: see `crm-mcp-tools/openapi.planned.json`.
 5. Flip website status from "beta" to "live" once confirmed (`MCPPage.tsx`,
    `.well-known/mcp.json`).
 

@@ -262,7 +262,7 @@ const HOME_PAGE_HTML = `<!doctype html>
   <main>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
     <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Discovery: <a href="/.well-known/mcp.json">/.well-known/mcp.json</a> &middot; Tools: <code>POST /sse</code> &rarr; <code>tools/list</code></p>
+    <p>Status: <a href="/version">/version</a> &middot; Tools: <code>POST /sse</code> &rarr; <code>tools/list</code></p>
     <p><small>This is not a customer CRM API. It holds no customer data, performs no CRM actions, and needs no API key &mdash; never send one here.</small></p>
   </main>
 </body>
@@ -449,9 +449,6 @@ export async function runServer(): Promise<void> {
       return;
     }
 
-    // OpenAPI spec for the HelloGrowthCRM CRM tools — importable as ChatGPT GPT
-    // Actions. Served as a static document (not rate-limited) with permissive
-    // CORS so browser-based importers can fetch it.
     if (url.pathname === GOOGLE_SITE_VERIFICATION_PATH) {
       if (req.method === "GET") {
         res.writeHead(200, {
@@ -499,7 +496,6 @@ export async function runServer(): Promise<void> {
               "then 'tools/list'.",
             mcp_endpoint: "/sse",
             transport: "streamable-http",
-            discovery: "/.well-known/mcp.json",
             status: "/version",
             note:
               "The document previously served here described a planned authenticated CRM MCP " +
