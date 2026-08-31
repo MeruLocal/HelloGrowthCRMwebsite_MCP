@@ -68,7 +68,14 @@ export const COMPANY = {
   sameAs: [
     "https://www.linkedin.com/company/hellogrowthcrm/",
     "https://x.com/hellogrowthcrm",
-    "https://github.com/hellogrowthcrm",
+    // 2026-08-31: was "https://github.com/hellogrowthcrm", which 404s. A dead URL in
+    // sameAs is worse than an absent one — it is the signal search engines and AI
+    // answer engines use to consolidate an entity, and a 404 breaks that link.
+    // brand.github already carried the account that resolves; the two disagreed.
+    "https://github.com/hellocrmmerufintech-star",
+    // YouTube was present in brand but missing from sameAs, so the 28 videos the
+    // MCP already mirrors were not attached to the entity.
+    "https://www.youtube.com/@HelloGrowthCRM",
     "https://www.instagram.com/hellogrowthcrm",
     "https://www.facebook.com/profile.php?id=61588263746188",
     "https://www.g2.com/products/hellogrowthcrm/reviews",
