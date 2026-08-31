@@ -75,7 +75,10 @@ export const COMPANY = {
     "https://github.com/hellocrmmerufintech-star",
     // YouTube was present in brand but missing from sameAs, so the 28 videos the
     // MCP already mirrors were not attached to the entity.
-    "https://www.youtube.com/@HelloGrowthCRM",
+    // Channel-ID form, matching StructuredData.tsx on the website exactly. The
+    // @handle resolves too, but sameAs is a consolidation signal: two spellings
+    // of the same channel across surfaces is the thing it is meant to prevent.
+    "https://www.youtube.com/channel/UCpYkLyZFgFn3V958VhlJ-4Q",
     "https://www.instagram.com/hellogrowthcrm",
     "https://www.facebook.com/profile.php?id=61588263746188",
     "https://www.g2.com/products/hellogrowthcrm/reviews",
