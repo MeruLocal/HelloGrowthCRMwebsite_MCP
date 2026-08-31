@@ -4,6 +4,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildWellKnownManifest } from "../well-known.js";
 import { SERVER_NAME, SERVER_TITLE, SERVER_VERSION, SERVER_DESCRIPTION } from "../server-info.js";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
 describe("/.well-known/mcp.json manifest", () => {
   const doc = JSON.parse(buildWellKnownManifest({ tools: 88, resources: 9 }));
@@ -23,6 +26,17 @@ describe("/.well-known/mcp.json manifest", () => {
     // different version points clients at a package that may not exist.
     const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
     const registry = JSON.parse(readFileSync(join(root, "server.json"), "utf8"));
+    expect(doc.version).toBe(registry.version);
+  });
+
+  it("agrees with server.json about what this server is called", () => {
+    // Version parity alone would not have caught this: `name` was the field that
+    // actually diverged (hellogrowthcrm-website vs the reverse-DNS registry name),
+    // and two manifests disagreeing about the server's own name is the same class
+    // of defect that made openapi.json unshippable.
+    const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    const registry = JSON.parse(readFileSync(join(root, "server.json"), "utf8"));
+    expect(doc.registry_name).toBe(registry.name);
     expect(doc.version).toBe(registry.version);
   });
 
