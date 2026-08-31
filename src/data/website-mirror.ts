@@ -101,7 +101,8 @@ export const COMPANY = {
     x: "https://x.com/hellogrowthcrm",
     github: "https://github.com/hellocrmmerufintech-star",
     linkedin: "https://www.linkedin.com/company/hellogrowthcrm/",
-    youtube: "https://www.youtube.com/@HelloGrowthCRM",
+    /** Channel-ID form, matching sameAs — two spellings of one channel is the rot this prevents. */
+    youtube: "https://www.youtube.com/channel/UCpYkLyZFgFn3V958VhlJ-4Q",
     instagram: "https://www.instagram.com/hellogrowthcrm",
     facebook: "https://www.facebook.com/profile.php?id=61588263746188",
     productHunt: "https://www.producthunt.com/products/hellogrowthcrm",
