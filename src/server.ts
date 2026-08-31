@@ -23,7 +23,6 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { toolsByName } from "./tools/index.js";
-import { openApiSpecJson } from "./openapi.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
 import {
@@ -263,7 +262,8 @@ const HOME_PAGE_HTML = `<!doctype html>
   <main>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
     <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
+    <p>Status: <a href="/version">/version</a> &middot; Discovery: <a href="/.well-known/mcp.json">/.well-known/mcp.json</a> &middot; Tools: <code>POST /sse</code> &rarr; <code>tools/list</code></p>
+    <p><small>This is not a customer CRM API. It holds no customer data, performs no CRM actions, and needs no API key &mdash; never send one here.</small></p>
   </main>
 </body>
 </html>
@@ -464,25 +464,60 @@ export async function runServer(): Promise<void> {
       return;
     }
 
+    // /openapi.json — RETIRED (bug: the served spec described a different product).
+    //
+    // Until 2026-08-31 this path served an OpenAPI document titled
+    // "HelloGrowthCRM MCP" v1.0.0 describing 14 authenticated CRM operations
+    // (create_contact, update_deal, send_whatsapp, trigger_sequence, …) behind a
+    // bearer API key from app.hellogrowthcrm.com. None of those endpoints exist
+    // here — every POST /tools/<name> returned 404 — and the document directly
+    // contradicted this server's own stated identity: no customer data, no CRM
+    // actions, no API key. Anyone importing it into ChatGPT Actions was being
+    // told to send a live CRM credential to a host that must never receive one.
+    //
+    // An MCP server is enumerated over the protocol, not over OpenAPI, so the
+    // honest answer is a 410 that points at the real surface. The planned
+    // authenticated CRM spec now lives with the package it describes, at
+    // crm-mcp-tools/openapi.planned.json, and must not be served from this host.
     if (url.pathname === "/openapi.json") {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Access-Control-Allow-Headers": "Content-Type",
           "Access-Control-Max-Age": "86400",
         }).end();
         return;
       }
-      if (req.method === "GET") {
-        res.writeHead(200, {
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = JSON.stringify(
+          {
+            error: "gone",
+            message:
+              "This host is an MCP server, not a REST API. It exposes no OpenAPI surface. " +
+              "Enumerate it over the protocol instead: POST /sse with a JSON-RPC 'initialize', " +
+              "then 'tools/list'.",
+            mcp_endpoint: "/sse",
+            transport: "streamable-http",
+            discovery: "/.well-known/mcp.json",
+            status: "/version",
+            note:
+              "The document previously served here described a planned authenticated CRM MCP " +
+              "that is not deployed on this host. Never send a HelloGrowthCRM API key to this server.",
+          },
+          null,
+          2,
+        );
+        res.writeHead(410, {
           "Content-Type": "application/json; charset=utf-8",
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "public, max-age=300",
-        }).end(openApiSpecJson);
+          "Content-Length": Buffer.byteLength(body),
+        });
+        res.end(req.method === "HEAD" ? undefined : body);
         return;
       }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, OPTIONS" }).end("Method not allowed");
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
       return;
     }
 
