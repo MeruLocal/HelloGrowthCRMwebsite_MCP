@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildWellKnownManifest } from "../well-known.js";
 import { SERVER_NAME, SERVER_TITLE, SERVER_VERSION, SERVER_DESCRIPTION } from "../server-info.js";
 
@@ -13,6 +16,14 @@ describe("/.well-known/mcp.json manifest", () => {
     expect(doc.title).toBe(SERVER_TITLE);
     expect(doc.version).toBe(SERVER_VERSION);
     expect(doc.description).toBe(SERVER_DESCRIPTION);
+  });
+
+  it("agrees with the registry manifest on version", () => {
+    // server.json is what registries install from; a manifest that advertises a
+    // different version points clients at a package that may not exist.
+    const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
+    const registry = JSON.parse(readFileSync(join(root, "server.json"), "utf8"));
+    expect(doc.version).toBe(registry.version);
   });
 
   it("declares the transport this server actually speaks", () => {
