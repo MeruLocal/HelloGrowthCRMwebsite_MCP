@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getSupabase } from "../lib/supabase.js";
+import { logger } from "../utils/logger.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 // ── newsletter_subscribe ──────────────────────────────────────────────────────
@@ -149,31 +150,55 @@ export const newsletterGetStats = defineTool({
         db.from("newsletter_subscribers").select("*", { count: "exact", head: true }).eq("status", "unsubscribed"),
       ]);
 
-      // A failed count comes back as { count: null, error }, and `?? 0` turned
-      // that into a confident "0 confirmed subscribers" — a wrong answer an AI
-      // client will happily repeat, which is worse than an error it can report.
-      // Every one of the three status queries currently fails this way in
-      // production ("column newsletter_subscribers.status does not exist"), and
-      // the tool still returned 200 with zeros. Surface it instead.
-      const failed = [
-        ["total", all],
-        ["confirmed", confirmed],
-        ["pending", pending],
-        ["unsubscribed", unsubscribed],
-      ].filter(([, r]) => (r as { error: unknown }).error);
+      // A failed count comes back as { count: null, error }, and `?? 0` turned that
+      // into a confident "0 confirmed subscribers" — a wrong answer an AI client will
+      // happily repeat, which is worse than an error it can report.
+      //
+      // Partial rather than all-or-nothing: under the condition this was written for
+      // (the three .eq("status", …) counts fail because the column is missing, while
+      // the unfiltered total succeeds) a hard error would throw away the one number
+      // that IS correct and leave the tool returning an error 100% of the time. The
+      // total is reported when it is real; the rest come back null, never zero.
+      const results = [
+        { label: "total", r: all },
+        { label: "confirmed", r: confirmed },
+        { label: "pending", r: pending },
+        { label: "unsubscribed", r: unsubscribed },
+      ] as const;
+      const failed = results.filter((x) => x.r.error);
 
       if (failed.length) {
-        const detail = failed
-          .map(([label, r]) => `${label}: ${((r as { error: { message?: string } }).error.message ?? "unknown error")}`)
-          .join("; ");
-        return fail(`Error counting newsletter subscribers — ${detail}`);
+        // The message text stays server-side. This is a PUBLIC unauthenticated
+        // endpoint holding a service-role key, and a Postgres error like
+        // "column newsletter_subscribers.status does not exist" hands an anonymous
+        // caller free schema enumeration of the production database. The caller is
+        // told WHICH counts failed — enough to know the answer is incomplete — and
+        // never why.
+        logger.warn("newsletter_get_stats: count query failed", {
+          failures: failed.map((x) => ({ label: x.label, message: x.r.error?.message })),
+        });
       }
 
+      if (all.error) {
+        return fail(
+          "Could not count newsletter subscribers — every count failed. " +
+            "The server log has the reason.",
+        );
+      }
+
+      const partial = failed.map((x) => x.label);
       return ok({
         total: all.count ?? 0,
-        confirmed: confirmed.count ?? 0,
-        pending: pending.count ?? 0,
-        unsubscribed: unsubscribed.count ?? 0,
+        confirmed: confirmed.error ? null : (confirmed.count ?? 0),
+        pending: pending.error ? null : (pending.count ?? 0),
+        unsubscribed: unsubscribed.error ? null : (unsubscribed.count ?? 0),
+        ...(partial.length
+          ? {
+              partial: true,
+              unavailable: partial,
+              note: "null means the count could not be read, not zero. See the server log.",
+            }
+          : {}),
       });
     } catch (e) {
       return fail((e as Error).message);
