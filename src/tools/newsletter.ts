@@ -148,6 +148,27 @@ export const newsletterGetStats = defineTool({
         db.from("newsletter_subscribers").select("*", { count: "exact", head: true }).eq("status", "pending"),
         db.from("newsletter_subscribers").select("*", { count: "exact", head: true }).eq("status", "unsubscribed"),
       ]);
+
+      // A failed count comes back as { count: null, error }, and `?? 0` turned
+      // that into a confident "0 confirmed subscribers" — a wrong answer an AI
+      // client will happily repeat, which is worse than an error it can report.
+      // Every one of the three status queries currently fails this way in
+      // production ("column newsletter_subscribers.status does not exist"), and
+      // the tool still returned 200 with zeros. Surface it instead.
+      const failed = [
+        ["total", all],
+        ["confirmed", confirmed],
+        ["pending", pending],
+        ["unsubscribed", unsubscribed],
+      ].filter(([, r]) => (r as { error: unknown }).error);
+
+      if (failed.length) {
+        const detail = failed
+          .map(([label, r]) => `${label}: ${((r as { error: { message?: string } }).error.message ?? "unknown error")}`)
+          .join("; ");
+        return fail(`Error counting newsletter subscribers — ${detail}`);
+      }
+
       return ok({
         total: all.count ?? 0,
         confirmed: confirmed.count ?? 0,
