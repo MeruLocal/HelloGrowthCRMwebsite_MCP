@@ -23,6 +23,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { toolsByName } from "./tools/index.js";
+import { buildWellKnownManifest } from "./well-known.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
 import {
@@ -420,6 +421,70 @@ export async function runServer(): Promise<void> {
     // Version / status surface (finding BB): a machine-readable signal for
     // third parties that depend on this server, so tool-set changes are
     // discoverable instead of silent. See CHANGELOG.md for the human version.
+    // Discovery manifest. Agents and registries probe this path before they will
+    // talk to a remote server; it returned 404, so automated discovery saw
+    // nothing at all. Built from server-info.ts so it cannot drift from the
+    // identity reported by initialize / the landing page / /version.
+    if (url.pathname === "/.well-known/mcp.json") {
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
+        }).end();
+        return;
+      }
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = buildWellKnownManifest({
+          tools: toolsByName.size,
+          resources: RESOURCES.length,
+        });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=300",
+          "Content-Length": Buffer.byteLength(body),
+        });
+        res.end(req.method === "HEAD" ? undefined : body);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
+      return;
+    }
+
+    // Discovery manifest. Agents and registries probe this path before they will
+    // talk to a remote server; it returned 404, so automated discovery saw
+    // nothing at all. Built from server-info.ts so it cannot drift from the
+    // identity reported by initialize / the landing page / /version.
+    if (url.pathname === "/.well-known/mcp.json") {
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
+        }).end();
+        return;
+      }
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = buildWellKnownManifest({
+          tools: toolsByName.size,
+          resources: RESOURCES.length,
+        });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=300",
+          "Content-Length": Buffer.byteLength(body),
+        });
+        res.end(req.method === "HEAD" ? undefined : body);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
+      return;
+    }
+
     if (url.pathname === "/version") {
       if (req.method === "GET" || req.method === "HEAD") {
         const body = JSON.stringify(
