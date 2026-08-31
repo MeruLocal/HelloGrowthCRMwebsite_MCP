@@ -27,6 +27,7 @@
     "access": "public"
   },
   "scripts": {
+    "audit:live": "node scripts/audit-live-mcp.mjs",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
