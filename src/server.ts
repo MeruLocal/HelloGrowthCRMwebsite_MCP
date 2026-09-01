@@ -635,8 +635,22 @@ export async function runServer(): Promise<void> {
         // Finding C5: CSP is scoped to this HTML route only. Applying it
         // globally would attach a document policy to JSON-RPC responses, which
         // is meaningless at best and breaks strict clients at worst.
-        "Content-Security-Policy":
-          "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        //
+        // script-src/connect-src/img-src must keep the two analytics tags in
+        // HOME_PAGE_HTML working (gtag loaded from googletagmanager, the Ahrefs
+        // script injected at runtime from analytics.ahrefs.com, both with
+        // inline bootstrap blocks). Tightening these without also editing
+        // HOME_PAGE_HTML silently breaks landing-page analytics.
+        "Content-Security-Policy": [
+          "default-src 'none'",
+          "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://analytics.ahrefs.com",
+          "connect-src https://www.google-analytics.com https://analytics.google.com https://analytics.ahrefs.com",
+          "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com",
+          "style-src 'unsafe-inline'",
+          "base-uri 'none'",
+          "form-action 'none'",
+          "frame-ancestors 'none'",
+        ].join("; "),
       }).end(HOME_PAGE_HTML);
       return;
     }
