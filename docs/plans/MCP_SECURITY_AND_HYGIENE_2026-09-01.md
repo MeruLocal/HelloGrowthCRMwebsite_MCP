@@ -140,7 +140,8 @@ a CRM API and still performs no CRM actions.
 | **New: C0** | Outranks C1. Not in the original doc at all. |
 | **F5** ("current spec is 2026-07-28") | Whatever the published revision, *this build speaks 2025-11-25* (SDK 1.29.0). Conformance work targets what the SDK implements; `/health` now reports it rather than asserting a number. |
 | **F3** (`/sse` "broken") | Now settled, not merely doubted. A real JSON-RPC handshake against this build returns a full tool list, and this session's own MCP connector enumerates all 88 tools. Kimi's browser GET was the wrong probe. |
-| **C2** (`@hellogrowthcrm/mcp-server` does not exist) | Unchanged, and worth stating positively: the real package is **`mcp-bot-crawler`** (`package.json`), published for stdio use. The marketing page invented a different name. |
+| **C2** (`@hellogrowthcrm/mcp-server` does not exist) | Confirmed 404 again today — **and my own 2026-09-01 first draft of this table was wrong** in saying the real package is "`mcp-bot-crawler`, published for stdio use". `mcp-bot-crawler` is the name in `package.json`, but the npm registry returns **404 for it too**. Neither package exists. See C8. |
+| **New: C8** | `server.json` advertises an npm package (`packages[0]`: `mcp-bot-crawler` @ 1.1.0, registry `https://registry.npmjs.org`) that **has never been published**. This is the C1 failure mode a third time, in the manifest we hold up as the honest one — a machine-readable install path that 404s, fed to the official MCP registry. Fix: either publish the package or drop the `packages` block and keep only `remotes` (the endpoint, which is real). Not changed on this branch: which of the two is right is a release decision, not a code one. |
 | **C7 / R4** (registry listings) | Audited. `mcp.so` lists the **correct 88 tools** but its meta-description still says *"secure AI access to CRM data… deal tracking"*. That text is **not** in this repo — `server.json` and `server-info.ts` are already honest — so it was scraped from the website marketing page. This is direct evidence for C1: our own fiction is what the registry is repeating. glama.ai and mcpmarket.com have no listing; pulsemcp.com was unreachable. Submit the mcp.so correction **after** R1 ships, so the corrected listing points at a truthful page. |
 | **Landing page (C6/G1)** | Already live and already honest — it now carries the corrected copy plus links to `/version`, `/health` and `/openapi.json`. |
 
@@ -175,7 +176,8 @@ delete them manually. They exist because git could not unlink its own
 
 1. **Deploy C0 with `MCP_ADMIN_TOKEN` set.** Production is exposed until then.
 2. Push the branch and open the PR.
-3. R1 + R2 in the website repo, once it is reachable.
-4. mcp.so listing correction, after R1 is live.
-5. R5 backlog: scoped keys, audit log, and a narrower DB credential than the
+3. Resolve C8 — publish `mcp-bot-crawler`, or drop `packages` from `server.json`.
+4. R1 + R2 in the website repo, once it is reachable.
+5. mcp.so listing correction, after R1 is live.
+6. R5 backlog: scoped keys, audit log, and a narrower DB credential than the
    service-role key.
