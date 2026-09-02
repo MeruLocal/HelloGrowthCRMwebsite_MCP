@@ -20,8 +20,11 @@ export const SERVER_VERSION = "1.1.0";
 
 export const SERVER_DESCRIPTION =
   "Read-only website mirror + bot governance MCP server for hellogrowthcrm.com. " +
-  "Serves HelloGrowthCRM product knowledge (pricing, features, integrations, " +
-  "comparisons, guides) as tools and resources, plus bot detection, crawler " +
-  "verification and robots.txt governance tools. This is NOT a CRM API: it " +
-  "holds no customer data, performs no CRM actions, and requires no API key — " +
-  "never send CRM credentials to this server.";
+  "The public endpoint serves HelloGrowthCRM product knowledge (pricing, " +
+  "features, integrations, comparisons, guides) as tools and resources, plus " +
+  "bot detection, crawler verification and robots.txt governance tools. It " +
+  "requires no API key and returns no personal data. This is NOT a CRM API and " +
+  "performs no CRM actions — never send CRM credentials to this server. " +
+  "Content-management tools that write to the website, and the tools that read " +
+  "newsletter subscribers or contact-form submissions, are not served on the " +
+  "public endpoint; they require an authenticated session (see MCP_ADMIN_TOKEN).";
