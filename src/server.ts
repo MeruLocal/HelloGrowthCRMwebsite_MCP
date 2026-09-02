@@ -295,6 +295,12 @@ Hiring: https://hellogrowthcrm.com/careers
 
 const GOOGLE_SITE_VERIFICATION_PATH = "/google7c8140a495901343.html";
 const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a495901343.html";
+// Counts shown on the landing page. Derived from the registries, never
+// hand-maintained — a hard-coded tool count is exactly how the README came to
+// claim 81 while the server served 83.
+const TOOL_COUNT = toolsByName.size;
+const RESOURCE_COUNT = MCP_RESOURCES.length;
+
 const GOOGLE_TAG_ID = "G-TRJT49XKH5";
 const AHREFS_ANALYTICS_KEY = "typKHgOUagJygUMAlJyQKA";
 const HOME_PAGE_HTML = `<!doctype html>
@@ -318,6 +324,22 @@ const HOME_PAGE_HTML = `<!doctype html>
     ahrefs_analytics_script.setAttribute('data-key', '${AHREFS_ANALYTICS_KEY}');
     document.getElementsByTagName('head')[0].appendChild(ahrefs_analytics_script);
   </script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+           max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre { padding: .85rem 1rem; overflow-x: auto; border-radius: 6px;
+          background: rgba(127,127,127,.12); }
+    code { font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: .5rem 0 1.5rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid rgba(127,127,127,.25);
+             vertical-align: top; }
+    th { font-weight: 600; }
+    .muted { opacity: .72; font-size: .93em; }
+    h2 { margin-top: 2.25rem; font-size: 1.15rem; }
+    h1 { margin-bottom: .25rem; }
+  </style>
 </head>
 <body>
   <main>
@@ -591,43 +613,132 @@ export async function runServer(): Promise<void> {
       return;
     }
 
-    // OpenAPI spec for the HelloGrowthCRM CRM tools — importable as ChatGPT GPT
-    // Actions. Served as a static document (not rate-limited) with permissive
-    // CORS so browser-based importers can fetch it.
     if (url.pathname === GOOGLE_SITE_VERIFICATION_PATH) {
-      if (req.method === "GET") {
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = `${GOOGLE_SITE_VERIFICATION_BODY}\n`;
         res.writeHead(200, {
           "Content-Type": "text/html; charset=utf-8",
+          "Content-Length": String(Buffer.byteLength(body)),
           "Cache-Control": "public, max-age=300",
-        }).end(`${GOOGLE_SITE_VERIFICATION_BODY}\n`);
+        });
+        if (req.method === "HEAD") res.end();
+        else res.end(body);
         return;
       }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET" }).end("Method not allowed");
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
       return;
     }
 
+    // /openapi.json — RETIRED (bug: the served spec described a different product).
+    //
+    // Until 2026-08-31 this path served an OpenAPI document titled
+    // "HelloGrowthCRM MCP" v1.0.0 describing 14 authenticated CRM operations
+    // (create_contact, update_deal, send_whatsapp, trigger_sequence, …) behind a
+    // bearer API key from app.hellogrowthcrm.com. None of those endpoints exist
+    // here — every POST /tools/<name> returned 404 — and the document directly
+    // contradicted this server's own stated identity: no customer data, no CRM
+    // actions, no API key. Anyone importing it into ChatGPT Actions was being
+    // told to send a live CRM credential to a host that must never receive one.
+    //
+    // An MCP server is enumerated over the protocol, not over OpenAPI, so the
+    // honest answer is a 410 that points at the real surface. The planned
+    // authenticated CRM spec now lives with the package it describes, at
+    // crm-mcp-tools/openapi.planned.json, and must not be served from this host.
     if (url.pathname === "/openapi.json") {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Access-Control-Allow-Headers": "Content-Type",
           "Access-Control-Max-Age": "86400",
         }).end();
         return;
       }
-      if (req.method === "GET") {
+      if (req.method === "GET" || req.method === "HEAD") {
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": String(Buffer.byteLength(openApiSpecJson)),
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "public, max-age=300",
-        }).end(openApiSpecJson);
+        });
+        if (req.method === "HEAD") res.end();
+        else res.end(openApiSpecJson);
         return;
       }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, OPTIONS" }).end("Method not allowed");
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
       return;
     }
 
+    // HEAD must be served wherever GET is: same status and headers, no body.
+    // Previously only GET was matched here, so `HEAD /` fell through to the 404
+    // below — uptime monitors, link checkers and registry validators that
+    // preflight with HEAD saw the homepage as dead.
+    if (req.method === "GET" || req.method === "HEAD") {
+      const send = (
+        status: number,
+        contentType: string,
+        body: string,
+        cache = "public, max-age=300",
+      ): void => {
+        res.writeHead(status, {
+          "Content-Type": contentType,
+          "Content-Length": String(Buffer.byteLength(body)),
+          "Cache-Control": cache,
+        });
+        // A HEAD response carries the headers a GET would, and no body.
+        if (req.method === "HEAD") res.end();
+        else res.end(body);
+      };
+
+      if (url.pathname === "/") {
+        send(200, "text/html; charset=utf-8", HOME_PAGE_HTML);
+        return;
+      }
+
+      // Liveness probe. Deliberately cheap and uncached: it must reflect the
+      // process answering right now, not a CDN copy of a healthy past.
+      if (url.pathname === "/healthz" || url.pathname === "/health") {
+        send(
+          200,
+          "application/json; charset=utf-8",
+          `${JSON.stringify({
+            status: "ok",
+            version: SERVER_VERSION,
+            uptimeSeconds: Math.floor(process.uptime()),
+            tools: TOOL_COUNT,
+            resources: RESOURCE_COUNT,
+            transport: "streamable-http",
+            endpoint: "/mcp",
+          })}\n`,
+          "no-store",
+        );
+        return;
+      }
+
+      if (url.pathname === "/robots.txt") {
+        // This host serves a protocol endpoint, not indexable content. The
+        // landing page is the only thing worth crawling.
+        send(
+          200,
+          "text/plain; charset=utf-8",
+          [
+            "User-agent: *",
+            "Allow: /$",
+            "Disallow: /mcp",
+            "Disallow: /sse",
+            "Disallow: /message",
+            "",
+          ].join("\n"),
+        );
+        return;
+      }
+
+      if (url.pathname === "/favicon.ico") {
+        // 204 rather than a binary asset: browsers and directory cards stop
+        // asking, and we avoid shipping an icon that would drift from the brand.
+        res.writeHead(204, { "Cache-Control": "public, max-age=86400" }).end();
+        return;
+      }
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",

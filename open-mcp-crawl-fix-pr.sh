@@ -10,12 +10,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-# 0. Sanity: warn if openapi.ts looks truncated vs the last commit (pre-existing issue)
-if [ "$(wc -c < src/openapi.ts)" -lt "$(git show HEAD:src/openapi.ts | wc -c)" ]; then
-  echo "⚠️  src/openapi.ts is smaller than HEAD — it may be truncated."
-  echo "    If that change is unintended, run: git checkout -- src/openapi.ts"
-  echo
-fi
+# 0. (removed 2026-08-31) This checked src/openapi.ts for truncation. That file is
+#    gone — the spec it served described a product this host does not run — so the
+#    check read a missing path and aborted the script under `set -euo pipefail`.
 
 BRANCH="fix/mcp-content-tools"
 git checkout main && git pull origin main

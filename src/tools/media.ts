@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fetchYouTubeFeed, YOUTUBE_CHANNEL_ID } from "../lib/youtube-feed.js";
 import { defineTool, ok } from "./tool-types.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -366,23 +367,69 @@ export const mediaListVideos = defineTool({
   definition: {
     name: "media_list_videos",
     description:
-      "List HelloGrowthCRM product / YouTube videos featured on hellogrowthcrm.com (home page video section + /videos page): 28 videos covering product demos & walkthroughs, feature explainers (AI lead scoring, dialer, task boards), competitor comparisons, and CRM education. Returns video id, watch URL, title, description, upload date, and badge.",
+      "List HelloGrowthCRM YouTube videos: product demos and walkthroughs, feature explainers (AI lead scoring, dialer, task boards), competitor comparisons, industry-specific videos, and CRM education. Merges the seeded mirror with the channel's latest uploads at request time, newest first. Returns video id, watch URL, title, description, upload date and badge.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   async handle(_args) {
-    return ok({
-      synced_at: SYNCED_AT,
-      channel: "HelloGrowthCRM (YouTube)",
-      page_url: "https://hellogrowthcrm.com/videos",
-      count: YOUTUBE_VIDEOS.length,
-      note: "Seeded videos mirrored from source; the live site also merges the latest uploads from the YouTube channel feed at request time.",
-      videos: YOUTUBE_VIDEOS.map((v) => ({
+    // Merge seed + live channel, newest first. The seed alone had gone seven
+    // weeks stale: on 2026-08-31 not one of the 15 videos in the live feed
+    // appeared in it, so this tool was answering "what videos exist?" with a
+    // complete-looking list that omitted every recent upload.
+    const live = await fetchYouTubeFeed();
+
+    const byId = new Map<
+      string,
+      { id: string; title: string; description: string; upload_date: string; badge: string | null; tabs: string[] }
+    >();
+
+    for (const v of YOUTUBE_VIDEOS) {
+      byId.set(v.id, {
         id: v.id,
-        url: `https://www.youtube.com/watch?v=${v.id}`,
         title: v.title,
         description: v.description,
         upload_date: v.uploadDate,
         badge: v.badge ?? null,
+        tabs: v.tabs,
+      });
+    }
+    // Live entries win on title/description (the seed can be edited upstream),
+    // but never drop the seed's curated badge/tabs for a video we already knew.
+    for (const v of live) {
+      const seeded = byId.get(v.id);
+      byId.set(v.id, {
+        id: v.id,
+        title: v.title || seeded?.title || "",
+        description: v.description || seeded?.description || "",
+        upload_date: v.uploadDate || seeded?.upload_date || "",
+        badge: seeded?.badge ?? null,
+        tabs: seeded?.tabs ?? [],
+      });
+    }
+
+    const videos = [...byId.values()].sort(
+      (a, b) => new Date(b.upload_date).getTime() - new Date(a.upload_date).getTime(),
+    );
+
+    return ok({
+      synced_at: SYNCED_AT,
+      channel: "HelloGrowthCRM (YouTube)",
+      channel_url: `https://www.youtube.com/channel/${YOUTUBE_CHANNEL_ID}`,
+      page_url: "https://hellogrowthcrm.com/videos",
+      count: videos.length,
+      seeded_count: YOUTUBE_VIDEOS.length,
+      live_count: live.length,
+      note:
+        live.length > 0
+          ? "Seeded mirror merged with the channel's Atom feed, which carries only the latest ~15 uploads. " +
+            "The full library is at the channel URL; this list is not guaranteed exhaustive."
+          : "Live channel feed unavailable — serving the seeded mirror only, which may be out of date.",
+      videos: videos.map((v) => ({
+        id: v.id,
+        url: `https://www.youtube.com/watch?v=${v.id}`,
+        title: v.title,
+        description: v.description,
+        upload_date: v.upload_date,
+        badge: v.badge,
         tabs: v.tabs,
       })),
     });
