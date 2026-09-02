@@ -3,7 +3,7 @@
   "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
   "description": "Read-only HelloGrowthCRM website mirror (pricing, features, integrations, comparisons, guides) plus bot governance: discover, identify and govern every bot hitting your website with reverse-DNS identity verification and policy-driven robots.txt generation. The public endpoint requires no API key and returns no personal data. Not a CRM API and no CRM actions. Content-write and personal-data tools require an authenticated session.",
   "status": "active",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "repository": {
     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
     "source": "github"
@@ -14,7 +14,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "mcp-bot-crawler",
-      "version": "1.1.0",
+      "version": "2.0.0",
       "transport": {
         "type": "stdio"
       },

@@ -16,7 +16,7 @@ export const SERVER_NAME = "hellogrowthcrm-website";
 
 export const SERVER_TITLE = "HelloGrowthCRM Website & Bot Governance MCP";
 
-export const SERVER_VERSION = "1.1.0";
+export const SERVER_VERSION = "2.0.0";
 
 export const SERVER_DESCRIPTION =
   "Read-only website mirror + bot governance MCP server for hellogrowthcrm.com. " +

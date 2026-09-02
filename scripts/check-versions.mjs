@@ -11,6 +11,13 @@
  * smithery.yaml deliberately carries no version — Smithery reads it from the
  * package. Do not add one; a fourth copy is a fourth thing to forget.
  *
+ * CHANGELOG.md is also checked (added 2026-09-02). Until then this script only
+ * proved the version strings agreed with EACH OTHER, never with the release
+ * notes — so the 2.0.0 entry retiring GET /openapi.json sat on top of a
+ * CHANGELOG while every manifest still said 1.1.0, and this check passed.
+ * `GET /version` is the endpoint registries and pinning clients watch for
+ * exactly that breaking change, and it would have kept reporting 1.1.0.
+ *
  * Registries cache aggressively and clients pin. A server.json that advertises
  * 1.1.0 while npm serves 1.0.0 is not a cosmetic mismatch: the registry entry
  * points at a package version that does not exist, and installs fail for
@@ -110,4 +117,33 @@ if (mismatched.length > 0) {
   process.exit(1);
 }
 
-console.log(`\ncheck-versions: all ${found.length} version strings agree (${expected}).`);
+// CHANGELOG parity. The topmost released heading must name the version we are
+// about to ship. An "## [Unreleased]" section on top is fine — that is work in
+// flight, not a release — so skip to the first versioned heading after it.
+{
+  const changelogPath = join(root, "CHANGELOG.md");
+  if (existsSync(changelogPath)) {
+    const text = readFileSync(changelogPath, "utf8");
+    const headings = [...text.matchAll(/^##\s*\[([^\]]+)\]/gm)].map((m) => m[1]);
+    const topReleased = headings.find((h) => !/^unreleased$/i.test(h));
+
+    if (!topReleased) {
+      console.error(
+        "\ncheck-versions: CHANGELOG.md has no released version heading " +
+          "(expected a line like \"## [1.2.3] — YYYY-MM-DD\").",
+      );
+      process.exit(1);
+    }
+    if (topReleased !== expected) {
+      console.error(
+        `\ncheck-versions: CHANGELOG.md's newest release is [${topReleased}] but ` +
+          `the manifests say ${expected}. Whichever is right, the other is a lie ` +
+          "clients can read — bump the manifests or fix the heading. See RELEASING.md.",
+      );
+      process.exit(1);
+    }
+    console.log(`  ok   CHANGELOG.md → newest release${" ".repeat(Math.max(0, width - 29))}  ${topReleased}`);
+  }
+}
+
+console.log(`\ncheck-versions: all ${found.length} version strings agree (${expected}), and CHANGELOG.md matches.`);

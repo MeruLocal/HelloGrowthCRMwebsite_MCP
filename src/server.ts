@@ -30,7 +30,6 @@ import {
   adminTokenConfigured,
   PRIVILEGED_TOOLS,
 } from "./tools/access.js";
-import { openApiSpecJson } from "./openapi.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
 import {
@@ -299,7 +298,7 @@ const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a49
 // hand-maintained — a hard-coded tool count is exactly how the README came to
 // claim 81 while the server served 83.
 const TOOL_COUNT = toolsByName.size;
-const RESOURCE_COUNT = MCP_RESOURCES.length;
+const RESOURCE_COUNT = RESOURCES.length;
 
 const GOOGLE_TAG_ID = "G-TRJT49XKH5";
 const AHREFS_ANALYTICS_KEY = "typKHgOUagJygUMAlJyQKA";
@@ -346,7 +345,7 @@ const HOME_PAGE_HTML = `<!doctype html>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
     <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required, and the public endpoint returns no personal data. This is not a CRM API and it performs no CRM actions — never send CRM credentials here.</p>
     <p>Content-management tools and the tools that read newsletter subscribers or contact-form submissions are not served on this endpoint; they require an authenticated session.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
+    <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a></p>
   </main>
 </body>
 </html>
@@ -507,67 +506,6 @@ export async function runServer(): Promise<void> {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
-    // Finding C4: liveness/readiness probe. Deliberately unauthenticated and
-    // free of internals — status, version and the spec revision, nothing more.
-    if (url.pathname === "/health") {
-      if (req.method === "GET" || req.method === "HEAD") {
-        const healthBody = JSON.stringify({
-          status: "ok",
-          version: SERVER_VERSION,
-          mcp_spec: MCP_SPEC_REVISION,
-          timestamp: new Date().toISOString(),
-        });
-        res.writeHead(200, {
-          "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": "no-store",
-          "Content-Length": Buffer.byteLength(healthBody),
-        });
-        res.end(req.method === "HEAD" ? undefined : healthBody);
-        return;
-      }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
-      return;
-    }
-
-    // Finding C4: the API surface should not be indexed; the landing page may.
-    if (url.pathname === "/robots.txt") {
-      if (req.method === "GET" || req.method === "HEAD") {
-        res.writeHead(200, {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "public, max-age=86400",
-        });
-        res.end(req.method === "HEAD" ? undefined : ROBOTS_TXT);
-        return;
-      }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
-      return;
-    }
-
-    // Finding C4: mirrors the main site's policy so a researcher who lands on
-    // the API host has the same reporting path.
-    if (url.pathname === "/.well-known/security.txt") {
-      if (req.method === "GET" || req.method === "HEAD") {
-        res.writeHead(200, {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "public, max-age=86400",
-        });
-        res.end(req.method === "HEAD" ? undefined : SECURITY_TXT);
-        return;
-      }
-      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
-      return;
-    }
-
-    // Finding C4: no binary asset kept in this repo — point at the canonical
-    // one on the main site so the two can never drift.
-    if (url.pathname === "/favicon.ico") {
-      res.writeHead(302, {
-        Location: "https://hellogrowthcrm.com/favicon.ico",
-        "Cache-Control": "public, max-age=86400",
-      }).end();
-      return;
-    }
-
     if (url.pathname === "/sse") {
       if (!(await limiter.allow(ip))) { sendRateLimited(res, ip); return; }
       await handleStreamableHttp(req, res);
@@ -644,6 +582,11 @@ export async function runServer(): Promise<void> {
     // honest answer is a 410 that points at the real surface. The planned
     // authenticated CRM spec now lives with the package it describes, at
     // crm-mcp-tools/openapi.planned.json, and must not be served from this host.
+    //
+    // Restored 2026-09-02: the merge that brought this comment onto main kept
+    // the prose and dropped the behaviour — the handler below was still
+    // returning 200 with the very document the comment says was withdrawn. The
+    // retirement was merged; only its effect was lost.
     if (url.pathname === "/openapi.json") {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
@@ -655,14 +598,23 @@ export async function runServer(): Promise<void> {
         return;
       }
       if (req.method === "GET" || req.method === "HEAD") {
-        res.writeHead(200, {
+        const goneBody = `${JSON.stringify({
+          error: "gone",
+          message:
+            "GET /openapi.json is retired. It described 14 authenticated CRM " +
+            "operations that do not exist on this host. This is an MCP server: " +
+            "connect to /sse and enumerate tools over the protocol.",
+          endpoint: "/sse",
+          catalogue: "/version",
+        })}\n`;
+        res.writeHead(410, {
           "Content-Type": "application/json; charset=utf-8",
-          "Content-Length": String(Buffer.byteLength(openApiSpecJson)),
+          "Content-Length": String(Buffer.byteLength(goneBody)),
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "public, max-age=300",
         });
         if (req.method === "HEAD") res.end();
-        else res.end(openApiSpecJson);
+        else res.end(goneBody);
         return;
       }
       res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
@@ -691,6 +643,24 @@ export async function runServer(): Promise<void> {
       };
 
       if (url.pathname === "/") {
+        // Finding C5: CSP belongs on this HTML route only — never on JSON-RPC
+        // responses. script-src/connect-src/img-src must keep the two analytics
+        // tags in HOME_PAGE_HTML working (gtag from googletagmanager, the Ahrefs
+        // script injected at runtime), so tightening these means editing
+        // HOME_PAGE_HTML in the same change.
+        res.setHeader(
+          "Content-Security-Policy",
+          [
+            "default-src 'none'",
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://analytics.ahrefs.com",
+            "connect-src https://www.google-analytics.com https://analytics.google.com https://analytics.ahrefs.com",
+            "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com",
+            "style-src 'unsafe-inline'",
+            "base-uri 'none'",
+            "form-action 'none'",
+            "frame-ancestors 'none'",
+          ].join("; "),
+        );
         send(200, "text/html; charset=utf-8", HOME_PAGE_HTML);
         return;
       }
@@ -704,11 +674,19 @@ export async function runServer(): Promise<void> {
           `${JSON.stringify({
             status: "ok",
             version: SERVER_VERSION,
+            mcp_spec: MCP_SPEC_REVISION,
             uptimeSeconds: Math.floor(process.uptime()),
-            tools: TOOL_COUNT,
+            // Public count, matching what an unauthenticated tools/list returns
+            // (finding C0). Reporting TOOL_COUNT here would advertise the gated
+            // tools to callers that cannot reach them.
+            tools: TOOL_COUNT - PRIVILEGED_TOOLS.size,
+            tools_total: TOOL_COUNT,
+            tools_gated: PRIVILEGED_TOOLS.size,
             resources: RESOURCE_COUNT,
             transport: "streamable-http",
-            endpoint: "/mcp",
+            // This server routes /sse. It has never routed /mcp — the previous
+            // value sent probes to a 404.
+            endpoint: "/sse",
           })}\n`,
           "no-store",
         );
@@ -724,9 +702,8 @@ export async function runServer(): Promise<void> {
           [
             "User-agent: *",
             "Allow: /$",
-            "Disallow: /mcp",
+            // Only /sse exists on this host; /mcp and /message never did.
             "Disallow: /sse",
-            "Disallow: /message",
             "",
           ].join("\n"),
         );
@@ -739,31 +716,14 @@ export async function runServer(): Promise<void> {
         res.writeHead(204, { "Cache-Control": "public, max-age=86400" }).end();
         return;
       }
-    if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=300",
-        // Finding C5: CSP is scoped to this HTML route only. Applying it
-        // globally would attach a document policy to JSON-RPC responses, which
-        // is meaningless at best and breaks strict clients at worst.
-        //
-        // script-src/connect-src/img-src must keep the two analytics tags in
-        // HOME_PAGE_HTML working (gtag loaded from googletagmanager, the Ahrefs
-        // script injected at runtime from analytics.ahrefs.com, both with
-        // inline bootstrap blocks). Tightening these without also editing
-        // HOME_PAGE_HTML silently breaks landing-page analytics.
-        "Content-Security-Policy": [
-          "default-src 'none'",
-          "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://analytics.ahrefs.com",
-          "connect-src https://www.google-analytics.com https://analytics.google.com https://analytics.ahrefs.com",
-          "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com",
-          "style-src 'unsafe-inline'",
-          "base-uri 'none'",
-          "form-action 'none'",
-          "frame-ancestors 'none'",
-        ].join("; "),
-      }).end(HOME_PAGE_HTML);
-      return;
+
+      // Finding C4. Mirrors the main site's policy so a researcher landing on
+      // the API host has the same reporting path. Restored 2026-09-02: the
+      // merge that combined the two hygiene branches dropped this route.
+      if (url.pathname === "/.well-known/security.txt") {
+        send(200, "text/plain; charset=utf-8", SECURITY_TXT, "public, max-age=86400");
+        return;
+      }
     }
 
     res.writeHead(404).end("Not found");
