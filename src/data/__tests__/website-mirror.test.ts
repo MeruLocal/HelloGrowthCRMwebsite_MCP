@@ -56,6 +56,21 @@ describe("static data integrity", () => {
     expect(COMPANY.sameAs).toContain(
       "https://www.softwareadvice.com/product/539392-HelloGrowthCRM/",
     );
+    // 2026-08-31: this GitHub URL 404s. A dead entry in sameAs breaks the exact
+    // entity link it was added to make, and does it silently.
+    expect(COMPANY.sameAs).not.toContain("https://github.com/hellogrowthcrm");
+    expect(COMPANY.sameAs).toContain("https://github.com/hellocrmmerufintech-star");
+  });
+
+  it("spells each social account the same way in sameAs and brand", () => {
+    // The failure this guards is the one sameAs exists to prevent: the same
+    // account written two different ways across surfaces. GitHub had it (a 404ing
+    // URL in sameAs, a working one in brand) and YouTube acquired it when the
+    // channel-ID form was added to sameAs while brand kept the @handle.
+    expect(COMPANY.sameAs).toContain(COMPANY.brand.github);
+    expect(COMPANY.sameAs).toContain(COMPANY.brand.youtube);
+    expect(COMPANY.sameAs).toContain(COMPANY.brand.linkedin);
+    expect(COMPANY.sameAs).toContain(COMPANY.brand.x);
   });
 });
 
