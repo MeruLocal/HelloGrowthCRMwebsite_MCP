@@ -433,7 +433,61 @@ export async function runServer(): Promise<void> {
     if (req.method === "GET" || req.method === "DELETE") {
       const transport = sessionId ? httpTransports.get(sessionId) : undefined;
       if (!transport) {
-        res.writeHead(400, { "Content-Type": "text/plain" }).end("Invalid or missing session ID");
+        // A bare GET of this URL — someone pasting it into a browser, a registry
+        // validator, an uptime check — is the single most common way this server
+        // gets misread as broken. The August 2026 third-party audit did exactly
+        // that and reported "/sse returns internal error, no AI client can
+        // connect" while the server was serving every tool correctly.
+        //
+        // The 400 is right and stays: without a session there is nothing to
+        // stream. What changes is the body — it now says why, and what to do.
+        // HTML for a browser, JSON for everything else.
+        const wantsHtml = (req.headers.accept ?? "").includes("text/html");
+        const expired = Boolean(sessionId);
+        const reason = expired
+          ? "That mcp-session-id is not active. Sessions are held in memory, so a server restart ends them — re-initialize to get a new one."
+          : "No mcp-session-id was supplied. This endpoint is not browsable: an MCP session starts with a POST initialize handshake, and this GET only streams notifications for a session that already exists.";
+
+        if (wantsHtml) {
+          const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HelloGrowthCRM MCP — this endpoint is not browsable</title></head>
+<body>
+  <main>
+    <h1>This is an MCP endpoint, not a web page</h1>
+    <p>${reason}</p>
+    <p>The server is working. Point an MCP client at
+       <code>https://mcp.hellogrowthcrm.com/sse</code> — no credentials required —
+       or check <a href="/version">/version</a> and <a href="/health">/health</a>,
+       which are browsable.</p>
+    <p>Connect with Claude, Cursor, Windsurf, Zed or ChatGPT by adding that URL
+       as a remote MCP server. Details:
+       <a href="https://hellogrowthcrm.com/agentic-ai/mcp">hellogrowthcrm.com/agentic-ai/mcp</a>.</p>
+  </main>
+</body></html>
+`;
+          res.writeHead(400, {
+            "Content-Type": "text/html; charset=utf-8",
+            "Content-Length": String(Buffer.byteLength(html)),
+            "Cache-Control": "no-store",
+          }).end(html);
+          return;
+        }
+
+        const body = `${JSON.stringify({
+          error: expired ? "session_not_found" : "missing_session_id",
+          message: reason,
+          hint: "POST an initialize request to this same URL to start a session. The server is public and requires no credentials.",
+          status: "/health",
+          catalogue: "/version",
+          docs: "https://hellogrowthcrm.com/agentic-ai/mcp",
+        })}\n`;
+        res.writeHead(400, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": String(Buffer.byteLength(body)),
+          "Cache-Control": "no-store",
+        }).end(body);
         return;
       }
       await transport.handleRequest(req, res);
