@@ -13,8 +13,8 @@ Handler **scaffolds** for the 4 differentiator tools from
 ## Where these belong
 
 These target the **authenticated CRM product MCP server**
-(`mcp.hellogrowthcrm.com`), the same server documented by the repo-root
-`openapi.json`. They are deliberately **not** placed in `src/tools/` and **not**
+(`mcp.hellogrowthcrm.com`), the same server described by
+`openapi.planned.json` in this directory (not served anywhere — see below). They are deliberately **not** placed in `src/tools/` and **not**
 registered in `src/tools/index.ts`, because that directory powers the *public,
 unauthenticated* bot-crawler / website-data MCP server. Exposing a WhatsApp
 send tool there would be a security hole.
@@ -66,6 +66,23 @@ npx tsc --noEmit -p crm-mcp-tools/tsconfig.json
 1. `get_whatsapp_thread`, `get_sequence_status` (read-only, zero risk)
 2. `get_call_recording` (read-only)
 3. `send_whatsapp` (write — full QA: 24h window, opt-out, audit log, scope)
-4. Spec already updated: see repo-root `openapi.json` + `src/openapi.ts`.
+4. Spec already updated: see `crm-mcp-tools/openapi.planned.json`.
 5. Flip website status from "beta" to "live" once confirmed (`MCPPage.tsx`,
    `.well-known/mcp.json`).
+
+## `openapi.planned.json` — not deployed, do not serve publicly
+
+`openapi.planned.json` (moved here from the repo root on 2026-08-31) describes the
+**planned authenticated CRM MCP**: 14 operations (`get_pipeline`, `search_contacts`,
+`create_contact`, `update_deal`, `get_lead_score`, `trigger_sequence`, `log_activity`,
+`get_analytics`, `create_task`, `get_meeting_notes`, plus the four beta WhatsApp/voice
+tools in this directory) behind a bearer API key from `app.hellogrowthcrm.com`.
+
+It was previously served at `https://mcp.hellogrowthcrm.com/openapi.json`, where **none of
+those endpoints exist** — every `POST /tools/<name>` returns 404 — while the same host tells
+callers it holds no customer data and needs no API key. A spec that instructs people to send
+a live CRM credential to a public read-only host is a security problem, not just a docs bug.
+
+**Rule:** this file ships with the package it describes. It must not be served from the
+website-mirror host, and any host that does serve it must actually implement it and require
+the auth it declares.

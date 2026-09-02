@@ -28,7 +28,8 @@ Ready-to-paste listing copy for the **CRM product MCP server**
 **Endpoints**
 - Server (Streamable HTTP): `https://mcp.hellogrowthcrm.com/mcp`
 - Legacy SSE: `https://mcp.hellogrowthcrm.com/sse`
-- OpenAPI (GPT Actions): `https://mcp.hellogrowthcrm.com/openapi.json`
+- OpenAPI (GPT Actions): **none — `/openapi.json` is retired (HTTP 410).** This host is an
+  MCP server; clients enumerate it with `tools/list` over `POST /sse`.
 - Discovery manifest: `https://hellogrowthcrm.com/.well-known/mcp.json`
 - Landing page: `https://hellogrowthcrm.com/agentic-ai/mcp`
 - Docs / setup: `https://hellogrowthcrm.com/docs#mcp`
@@ -79,8 +80,8 @@ with the 14 tools (10 live + 4 beta) already declared in the manifest.
 
 ```
 □ 4 beta tools pass QA (24h window, opt-out, audit log, scope, PII masking)
-□ openapi.json live at mcp.hellogrowthcrm.com/openapi.json with all 14 tools  ← DONE in spec
-□ /.well-known/mcp.json reachable and lists 14 tools                          ← DONE
+□ (dropped) openapi.json — retired; the spec described 14 CRM tools this host does not serve
+□ /.well-known/mcp.json reachable (counts only, never a tool list)             ← see PR #23
 □ Public GitHub repo + LICENSE + README
 □ smithery.yaml added for Smithery claim
 □ 16:9 screenshot/logo (PNG) for cards (Smithery, Glama, mcp.so)

@@ -613,9 +613,6 @@ export async function runServer(): Promise<void> {
       return;
     }
 
-    // OpenAPI spec for the HelloGrowthCRM CRM tools — importable as ChatGPT GPT
-    // Actions. Served as a static document (not rate-limited) with permissive
-    // CORS so browser-based importers can fetch it.
     if (url.pathname === GOOGLE_SITE_VERIFICATION_PATH) {
       if (req.method === "GET" || req.method === "HEAD") {
         const body = `${GOOGLE_SITE_VERIFICATION_BODY}\n`;
@@ -632,12 +629,27 @@ export async function runServer(): Promise<void> {
       return;
     }
 
+    // /openapi.json — RETIRED (bug: the served spec described a different product).
+    //
+    // Until 2026-08-31 this path served an OpenAPI document titled
+    // "HelloGrowthCRM MCP" v1.0.0 describing 14 authenticated CRM operations
+    // (create_contact, update_deal, send_whatsapp, trigger_sequence, …) behind a
+    // bearer API key from app.hellogrowthcrm.com. None of those endpoints exist
+    // here — every POST /tools/<name> returned 404 — and the document directly
+    // contradicted this server's own stated identity: no customer data, no CRM
+    // actions, no API key. Anyone importing it into ChatGPT Actions was being
+    // told to send a live CRM credential to a host that must never receive one.
+    //
+    // An MCP server is enumerated over the protocol, not over OpenAPI, so the
+    // honest answer is a 410 that points at the real surface. The planned
+    // authenticated CRM spec now lives with the package it describes, at
+    // crm-mcp-tools/openapi.planned.json, and must not be served from this host.
     if (url.pathname === "/openapi.json") {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Access-Control-Allow-Headers": "Content-Type",
           "Access-Control-Max-Age": "86400",
         }).end();
         return;

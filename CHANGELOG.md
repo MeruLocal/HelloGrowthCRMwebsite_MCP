@@ -9,6 +9,37 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.0] — 2026-08-31
+
+### Removed — BREAKING
+
+- **`GET /openapi.json` is retired; it now returns `410 Gone`.** The document it
+  served described a different product: "HelloGrowthCRM MCP" v1.0.0, 14
+  authenticated CRM operations (`create_contact`, `update_deal`, `send_whatsapp`,
+  `trigger_sequence`, …) behind a `bearerAuth` scheme instructing callers to
+  generate an API key at app.hellogrowthcrm.com and send it here. None of those
+  endpoints exist — every `POST /tools/<name>` returned 404 — and the document
+  contradicted this server's own `initialize` response, which states it holds no
+  customer data, performs no CRM actions and requires no API key. Telling people
+  to POST a live CRM credential to a public unauthenticated host is a security
+  problem, not a documentation one.
+
+  **Major bump, per this file's own rule:** removing a public endpoint breaks
+  existing callers. Anyone who imported the spec into ChatGPT Actions was already
+  getting 404s from every operation; they now get a 410 that explains why and
+  points at `POST /sse` → `tools/list`.
+
+  The planned authenticated spec moved to `crm-mcp-tools/openapi.planned.json`,
+  beside the package it describes. It must not be served from this host.
+
+### Added
+
+- **`GET /.well-known/mcp.json`** — the discovery manifest agents and registries
+  probe before talking to a remote server. Previously 404. Built from
+  `server-info.ts` so it cannot drift from the wire identity, carries the
+  `server.json` registry name verbatim as `registry_name`, and deliberately
+  publishes tool *counts* rather than tool *names* — a second hand-maintained
+  list of tool names is exactly how `/openapi.json` rotted.
 ## [Unreleased] — 2026-09-01
 
 ### Security
