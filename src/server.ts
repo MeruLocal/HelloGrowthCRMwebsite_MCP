@@ -15,6 +15,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js"; // NOSONAR
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
+  LATEST_PROTOCOL_VERSION,
   isInitializeRequest,
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -23,9 +24,25 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { toolsByName } from "./tools/index.js";
+import {
+  isAuthorized,
+  isPrivileged,
+  adminTokenConfigured,
+  PRIVILEGED_TOOLS,
+} from "./tools/access.js";
 import { openApiSpecJson } from "./openapi.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
+import {
+  SERVER_NAME,
+  SERVER_TITLE,
+  SERVER_VERSION,
+  SERVER_DESCRIPTION,
+} from "./server-info.js";
+import {
+  createRateLimitStore,
+  type RateLimitStore,
+} from "./utils/rate-limit-store.js";
 import { getSupabase } from "./lib/supabase.js";
 import {
   buildSafeMeta,
@@ -52,7 +69,11 @@ const RESOURCES = [
   { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
 ];
 
-export function buildServer(): Server { // NOSONAR — advanced low-level Server (see import note)
+export function buildServer(opts: { authorized?: boolean } = {}): Server { // NOSONAR — advanced low-level Server (see import note)
+  // Finding C0: privileged tools (writes + personal-data reads) are served only
+  // to a session that presented a valid bearer token. Unauthenticated sessions
+  // never see them in tools/list and cannot reach them via tools/call.
+  const authorized = opts.authorized === true && adminTokenConfigured();
   const server = new Server( // NOSONAR
     {
       // Finding X: this identity must describe what the server actually runs —
@@ -67,12 +88,30 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-      tools: [...toolsByName.values()].map((t) => t.definition),
+      tools: [...toolsByName.values()]
+        .filter((t) => authorized || !isPrivileged(t.definition.name))
+        .map((t) => t.definition),
     };
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   server.setRequestHandler(CallToolRequestSchema, (async (req: any) => {
+      // Finding C0: refuse before lookup so an unauthenticated caller cannot
+      // distinguish "gated" from "does not exist" by probing.
+      if (!authorized && isPrivileged(req.params.name)) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Tool ${req.params.name} is not available on the public endpoint. ` +
+                "It writes data or reads personal data and requires an authenticated session.",
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const tool = toolsByName.get(req.params.name);
       if (!tool) {
         return {
@@ -223,6 +262,37 @@ export function buildServer(): Server { // NOSONAR — advanced low-level Server
   return server;
 }
 
+/**
+ * The MCP protocol revision this build actually speaks, read from the SDK
+ * rather than written down by hand. A hand-written revision is a claim that
+ * silently goes stale on the next SDK bump — the same class of untruth as
+ * finding C1. Currently "2025-11-25" (SDK 1.29.0).
+ */
+const MCP_SPEC_REVISION = LATEST_PROTOCOL_VERSION;
+
+/**
+ * Finding C4. The JSON-RPC surface has nothing to index and indexing it only
+ * invites junk traffic; the landing page is fair game. No sitemap is served —
+ * an API host has no pages to enumerate.
+ */
+const ROBOTS_TXT = `User-agent: *
+Disallow: /sse
+Disallow: /messages
+Allow: /$
+`;
+
+/** Finding C4. Mirrors https://hellogrowthcrm.com/.well-known/security.txt. */
+const SECURITY_TXT = `Contact: mailto:security@hellogrowthcrm.com
+Contact: https://hellogrowthcrm.com/contact
+Expires: 2027-04-27T00:00:00.000Z
+Acknowledgments: https://hellogrowthcrm.com/security-acknowledgments
+Preferred-Languages: en, hi
+Canonical: https://hellogrowthcrm.com/.well-known/security.txt
+Canonical: https://mcp.hellogrowthcrm.com/.well-known/security.txt
+Policy: https://hellogrowthcrm.com/security-policy
+Hiring: https://hellogrowthcrm.com/careers
+`;
+
 const GOOGLE_SITE_VERIFICATION_PATH = "/google7c8140a495901343.html";
 const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a495901343.html";
 // Counts shown on the landing page. Derived from the registries, never
@@ -274,8 +344,9 @@ const HOME_PAGE_HTML = `<!doctype html>
 <body>
   <main>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
-    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
+    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required, and the public endpoint returns no personal data. This is not a CRM API and it performs no CRM actions — never send CRM credentials here.</p>
+    <p>Content-management tools and the tools that read newsletter subscribers or contact-form submissions are not served on this endpoint; they require an authenticated session.</p>
+    <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
   </main>
 </body>
 </html>
@@ -304,7 +375,9 @@ export async function runServer(): Promise<void> {
   const transport = (process.env.TRANSPORT ?? "http").toLowerCase();
 
   if (transport === "stdio") {
-    const server = buildServer();
+    // stdio is an operator-run local process with the deployment's own env —
+    // it is trusted, unlike the public HTTP endpoint.
+    const server = buildServer({ authorized: true });
     const stdioTransport = new StdioServerTransport();
     await server.connect(stdioTransport);
     logger.info(`${SERVER_NAME} ready (stdio)`, {
@@ -391,7 +464,9 @@ export async function runServer(): Promise<void> {
         if (transport!.sessionId) httpTransports.delete(transport!.sessionId);
       };
 
-      const server = buildServer();
+      const server = buildServer({
+        authorized: isAuthorized(req.headers.authorization),
+      });
       await server.connect(transport);
     }
 
@@ -423,6 +498,76 @@ export async function runServer(): Promise<void> {
     const url = new URL(req.url ?? "/", `http://localhost:${port}`);
     const ip = clientIp(req);
 
+    // Finding C5: baseline security headers on every response. Set with
+    // setHeader (not writeHead) so each route below keeps its own headers and
+    // these ride along. No CSP here — it belongs on the HTML landing page only,
+    // never on JSON-RPC responses.
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+
+    // Finding C4: liveness/readiness probe. Deliberately unauthenticated and
+    // free of internals — status, version and the spec revision, nothing more.
+    if (url.pathname === "/health") {
+      if (req.method === "GET" || req.method === "HEAD") {
+        const healthBody = JSON.stringify({
+          status: "ok",
+          version: SERVER_VERSION,
+          mcp_spec: MCP_SPEC_REVISION,
+          timestamp: new Date().toISOString(),
+        });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store",
+          "Content-Length": Buffer.byteLength(healthBody),
+        });
+        res.end(req.method === "HEAD" ? undefined : healthBody);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
+      return;
+    }
+
+    // Finding C4: the API surface should not be indexed; the landing page may.
+    if (url.pathname === "/robots.txt") {
+      if (req.method === "GET" || req.method === "HEAD") {
+        res.writeHead(200, {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+        });
+        res.end(req.method === "HEAD" ? undefined : ROBOTS_TXT);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
+      return;
+    }
+
+    // Finding C4: mirrors the main site's policy so a researcher who lands on
+    // the API host has the same reporting path.
+    if (url.pathname === "/.well-known/security.txt") {
+      if (req.method === "GET" || req.method === "HEAD") {
+        res.writeHead(200, {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+        });
+        res.end(req.method === "HEAD" ? undefined : SECURITY_TXT);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" }).end("Method not allowed");
+      return;
+    }
+
+    // Finding C4: no binary asset kept in this repo — point at the canonical
+    // one on the main site so the two can never drift.
+    if (url.pathname === "/favicon.ico") {
+      res.writeHead(302, {
+        Location: "https://hellogrowthcrm.com/favicon.ico",
+        "Cache-Control": "public, max-age=86400",
+      }).end();
+      return;
+    }
+
     if (url.pathname === "/sse") {
       if (!(await limiter.allow(ip))) { sendRateLimited(res, ip); return; }
       await handleStreamableHttp(req, res);
@@ -441,7 +586,14 @@ export async function runServer(): Promise<void> {
             version: SERVER_VERSION,
             mcp_endpoint: "/sse",
             transport: "streamable-http",
-            tools: toolsByName.size,
+            mcp_spec: MCP_SPEC_REVISION,
+            // Finding C0: the public endpoint no longer serves every tool, so
+            // report the public count (what an anonymous client will see) and
+            // the gated count separately. `tools` staying the total would make
+            // this endpoint lie to the registries that read it.
+            tools: toolsByName.size - PRIVILEGED_TOOLS.size,
+            tools_total: toolsByName.size,
+            tools_gated: PRIVILEGED_TOOLS.size,
             resources: RESOURCES.length,
             changelog:
               "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/blob/main/CHANGELOG.md",
@@ -575,6 +727,31 @@ export async function runServer(): Promise<void> {
         res.writeHead(204, { "Cache-Control": "public, max-age=86400" }).end();
         return;
       }
+    if (req.method === "GET" && url.pathname === "/") {
+      res.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=300",
+        // Finding C5: CSP is scoped to this HTML route only. Applying it
+        // globally would attach a document policy to JSON-RPC responses, which
+        // is meaningless at best and breaks strict clients at worst.
+        //
+        // script-src/connect-src/img-src must keep the two analytics tags in
+        // HOME_PAGE_HTML working (gtag loaded from googletagmanager, the Ahrefs
+        // script injected at runtime from analytics.ahrefs.com, both with
+        // inline bootstrap blocks). Tightening these without also editing
+        // HOME_PAGE_HTML silently breaks landing-page analytics.
+        "Content-Security-Policy": [
+          "default-src 'none'",
+          "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://analytics.ahrefs.com",
+          "connect-src https://www.google-analytics.com https://analytics.google.com https://analytics.ahrefs.com",
+          "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com",
+          "style-src 'unsafe-inline'",
+          "base-uri 'none'",
+          "form-action 'none'",
+          "frame-ancestors 'none'",
+        ].join("; "),
+      }).end(HOME_PAGE_HTML);
+      return;
     }
 
     res.writeHead(404).end("Not found");
