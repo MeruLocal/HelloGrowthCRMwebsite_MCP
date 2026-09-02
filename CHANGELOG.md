@@ -40,6 +40,68 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `server.json` registry name verbatim as `registry_name`, and deliberately
   publishes tool *counts* rather than tool *names* — a second hand-maintained
   list of tool names is exactly how `/openapi.json` rotted.
+## [Unreleased] — 2026-09-01
+
+### Security
+
+- **The public HTTP endpoint no longer serves the write and personal-data
+  tools.** This server talks to Supabase with `SUPABASE_SERVICE_ROLE_KEY`,
+  which bypasses row-level security, and every one of the 88 tools was being
+  served over the unauthenticated endpoint. An anonymous caller could read
+  newsletter subscribers and contact-form submissions, and write to the blog
+  and help-centre tables.
+
+  Twelve tools are now gated behind `Authorization: Bearer $MCP_ADMIN_TOKEN` —
+  the eight write-capable tools (`blog_create`, `blog_update`,
+  `blog_revalidate`, `help_create_article`, `help_update_article`,
+  `newsletter_subscribe`, `newsletter_unsubscribe`, `forms_submit`) and the
+  four that read personal data (`newsletter_get_subscribers`,
+  `forms_list_submissions`, `forms_get_submission`, `forms_export_csv`).
+
+  Gated tools are absent from `tools/list` and refused by `tools/call` for an
+  unauthenticated session — hidden, not merely denied, so the public surface
+  does not advertise what it will not serve. **Fail-closed:** with
+  `MCP_ADMIN_TOKEN` unset they are not served at all, so a forgotten
+  environment variable can never re-open the endpoint. `stdio` is an
+  operator-run local process and remains fully trusted.
+
+  The gated set is derived from `TOOL_ANNOTATIONS` (`readOnlyHint: false`)
+  plus a named list of personal-data readers, so a new write tool is gated the
+  moment it is annotated. `src/tools/__tests__/access.test.ts` pins the exact
+  set. *(Finding C0.)*
+
+  **Breaking for any client that used those tools anonymously** — set
+  `MCP_ADMIN_TOKEN` in the deployment environment and send it as a bearer
+  token.
+
+### Added
+
+- **`GET /health`** — `{status, version, mcp_spec, timestamp}`, unauthenticated,
+  no internals. `mcp_spec` is read from the SDK's `LATEST_PROTOCOL_VERSION`
+  rather than hand-written, so it cannot go stale on an SDK bump. *(C4.)*
+- **`GET /robots.txt`** — disallows `/sse` and `/messages`, allows the landing
+  page. No sitemap: an API host has nothing to enumerate. *(C4.)*
+- **`GET /.well-known/security.txt`** — mirrors the main site's policy so a
+  researcher landing on the API host has the same reporting path. *(C4.)*
+- **`GET /favicon.ico`** — 302 to the main site's icon, so the two cannot
+  drift and no binary asset lives in this repo. *(C4.)*
+- **Security headers on every response** — HSTS, `X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`. CSP is scoped to the HTML landing page
+  only, and allows the googletagmanager/Ahrefs tags that page actually loads.
+  *(C5.)*
+- **`MCP_ADMIN_TOKEN`** documented in `.env.example` and `server.json`.
+
+### Changed
+
+- **`GET /version` now reports the split surface**: `tools` is the public count
+  (76), with `tools_total` (88) and `tools_gated` (12) alongside, plus
+  `mcp_spec`. Leaving `tools` at 88 would have made this endpoint lie to the
+  registries that read it.
+- **Corrected the "no customer data" claim** in `server-info.ts`,
+  `server.json` and the landing page. It was inaccurate: `forms_*` and
+  `newsletter_*` do read customer data. The copy now says what is true — the
+  *public endpoint* returns no personal data, and the tools that do require an
+  authenticated session. Still not a CRM API, still no CRM actions.
 
 ## [1.1.0] — 2026-08-12
 
