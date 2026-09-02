@@ -24,6 +24,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { toolsByName } from "./tools/index.js";
+import { buildWellKnownManifest } from "./well-known.js";
 import {
   isAuthorized,
   isPrivileged,
@@ -344,6 +345,9 @@ const HOME_PAGE_HTML = `<!doctype html>
 <body>
   <main>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
+    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
+    <p>Status: <a href="/version">/version</a> &middot; Discovery: <a href="/.well-known/mcp.json">/.well-known/mcp.json</a> &middot; Tools: <code>POST /sse</code> &rarr; <code>tools/list</code></p>
+    <p><small>This is not a customer CRM API. It holds no customer data, performs no CRM actions, and needs no API key &mdash; never send one here.</small></p>
     <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required, and the public endpoint returns no personal data. This is not a CRM API and it performs no CRM actions — never send CRM credentials here.</p>
     <p>Content-management tools and the tools that read newsletter subscribers or contact-form submissions are not served on this endpoint; they require an authenticated session.</p>
     <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a> &middot; Spec: <a href="/openapi.json">/openapi.json</a></p>
@@ -577,6 +581,38 @@ export async function runServer(): Promise<void> {
     // Version / status surface (finding BB): a machine-readable signal for
     // third parties that depend on this server, so tool-set changes are
     // discoverable instead of silent. See CHANGELOG.md for the human version.
+    // Discovery manifest. Agents and registries probe this path before they will
+    // talk to a remote server; it returned 404, so automated discovery saw
+    // nothing at all. Built from server-info.ts so it cannot drift from the
+    // identity reported by initialize / the landing page / /version.
+    if (url.pathname === "/.well-known/mcp.json") {
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
+        }).end();
+        return;
+      }
+      if (req.method === "GET" || req.method === "HEAD") {
+        const body = buildWellKnownManifest({
+          tools: toolsByName.size,
+          resources: RESOURCES.length,
+        });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=300",
+          "Content-Length": Buffer.byteLength(body),
+        });
+        res.end(req.method === "HEAD" ? undefined : body);
+        return;
+      }
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD, OPTIONS" }).end("Method not allowed");
+      return;
+    }
+
     if (url.pathname === "/version") {
       if (req.method === "GET" || req.method === "HEAD") {
         const body = JSON.stringify(
