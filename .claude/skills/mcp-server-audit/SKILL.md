@@ -75,6 +75,33 @@ information. This is where the real defects were found:
 - **`robots.txt` is per-origin.** `hellogrowthcrm.com/robots.txt` has never
   governed `mcp.hellogrowthcrm.com`.
 
+## 2b. Client fitness — the dimension every external audit missed
+
+A server can be perfectly conformant and still be unreachable for whole classes of
+client. `npm run audit:live` now checks these; the reasoning is here because the
+failures are invisible from the server side — nothing errors, the clients simply
+never arrive.
+
+| Check | Client class locked out when it fails | Verified how |
+|---|---|---|
+| CORS preflight on the MCP path | **every browser-based client** | `OPTIONS /sse` returned 405 with no `Access-Control-Allow-Origin` (2026-09-02) |
+| `mcp-session-id` in `Access-Control-Expose-Headers` | browser clients, *after* a preflight that looks fine | browser JS cannot read an unexposed header, so `initialize` appears to succeed and every later request 400s |
+| Tolerating `Accept: application/json` | shipped clients and plain HTTP agents that send one type | both that and a missing `Accept` returned 406 |
+| A `/mcp` path | anything that infers transport from the path name | `GET /sse` → 400; the inspector fails without `--transport http` |
+| Older protocol versions | clients pinned to 2025-03-26 / 2024-11-05 | server negotiates both correctly — this one passes |
+| Published npm package | Smithery, Glama, PulseMCP, mcp-get auto-indexing | `registry.npmjs.org/<name>` → 404 |
+
+**The trap worth remembering:** rewriting `req.headers.accept` to widen it does
+nothing. The SDK's Node transport converts the request with `@hono/node-server`,
+and that conversion builds the Web `Headers` from **`req.rawHeaders`** — a separate
+array. A shim that mutates only `req.headers` will provably fire and change nothing.
+
+**And the meta-lesson:** an endpoint named `/sse` that speaks Streamable HTTP has
+now caused four separate audits to report "no AI client can connect" while every
+tool was serving correctly. When an external report says the server is down, probe
+the transport before believing it — and fix the name, because the misdiagnosis will
+keep recurring while it stands.
+
 ## 3. Fact-checking an external report
 
 Externally produced MCP audits have a poor hit rate here — four were checked,
