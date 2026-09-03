@@ -26,7 +26,17 @@ because the most common failure in MCP auditing is a confident report about a
 server nobody actually connected to.
 
 Baseline for `mcp.hellogrowthcrm.com` on 2026-08-31: **2 fail · 5 warn · 12 pass**.
-A new FAIL is a regression. Record the run in the audit report.
+**Current baseline (2026-09-02, v2.0.0 post auth-gating): 0 fail · 4 warn · 14 pass.**
+The 4 standing warns: `/sse` naming confusion, `tools.listChanged` undeclared,
+no tool `title` fields, no `outputSchema`. A new FAIL is a regression. Record
+the run in the audit report.
+
+**Auth gating (v2.0.0):** anonymous sessions see **76 of 88 tools** — 12
+(8 write + 4 personal-data readers) are hidden, not denied, behind
+`Authorization: Bearer $MCP_ADMIN_TOKEN`. An anonymous audit measuring 76 is
+CORRECT; with the token expect 88. `/version` reports `tools`, `tools_total`,
+`tools_gated`. Never call the 4 personal-data readers in an audit, even with
+the token.
 
 ---
 
@@ -50,7 +60,11 @@ information. This is where the real defects were found:
   `countries_list`.
 - **Is the freshness stamp moving?** Payloads carry `synced_at`. A stamp weeks
   old with no regeneration job is the same silent-rot failure as any generated
-  file.
+  file. **Re-confirmed 2026-09-02:** `integrations_list` still reports
+  `synced_at: 2026-06-17` (11 weeks stale) and **630** integrations, vs **525**
+  in code (8/31 check) vs **"259+ live"** on the website and llms.txt — three
+  different numbers for one fact. The regeneration job + a single canonical
+  count remain the top open content defect.
 
 ## 2. Traps specific to this server
 
@@ -59,8 +73,11 @@ information. This is where the real defects were found:
   official Inspector fails against it with `SSE error: Non-200 status code (400)`
   unless you pass `--transport http`. Every external audit so far has misread
   this as an outage.
-- **`/openapi.json` and `/version` return 200, not 403.** Four separate AI audits
-  claimed 403 and prescribed WAF/CORS fixes. Measure before believing.
+- **`/openapi.json` returns 410 GONE since v2.0.0 — by design, not an outage.**
+  The OpenAPI surface was removed: an MCP server is enumerated over the
+  protocol. (Pre-v2 it returned 200; four separate AI audits claimed 403 and
+  prescribed WAF/CORS fixes. Measure before believing.) `/version` and
+  `/health` return 200.
 - **JSON-RPC errors come back at HTTP 200.** Any wrapper deriving success from
   the status code records every failed tool call as a success.
 - **A failed Supabase count returns `{count: null, error}`.** `count ?? 0` turns
@@ -140,7 +157,48 @@ mcp-get / PulseMCP auto-indexing. Also confirm `scripts/check-versions.mjs`
 passes (package.json / server.json / packages[0].version parity) and that
 `/.well-known/mcp.json` is served.
 
-## 6. Report format
+## 6. Benchmark: what the 2026 leaders do (measured 2026-09-02)
+
+Use this as the "are we missing anything structural" yardstick. Full sources in
+`docs/seo-reports/` (hellocrmwebsite) and the 9/2 benchmark report.
+
+- **Remote-first, OAuth-always.** Every leader (Stripe, HubSpot, Xero, Zoho,
+  Atlassian, Square, PayPal, Salesforce) hosts at `mcp.{company}.com` with
+  browser OAuth 2.1 + PKCE; Bearer keys survive only as documented fallback.
+  **Per-tenant Bearer keys alone (our CRM server) are below the 2026 baseline
+  and a hard blocker for Claude-directory listing.** Authless is acceptable
+  ONLY for public-data servers — our website server qualifies.
+- **Two-surface split is the validated architecture**: public knowledge/catalog
+  server (Shopify Storefront MCP, Cloudflare docs) + authenticated account
+  server. Ours matches — market it that way.
+- **Few smart tools beat 1:1 API wrappers**: Stripe = 4 meta-tools over 140
+  methods; Square = 3 tools over the whole API; Notion = agent-optimized tools
+  speaking token-lean markdown. 1:1 mapping is publicly called an anti-pattern.
+- **Permission inheritance + admin control-plane**: agents act as the OAuth'd
+  user, never above (HubSpot/Zoho/Atlassian); session list + one-click revoke
+  (Stripe Dashboard); token-scoped tool visibility (PayPal — the tool LIST is
+  filtered by the token, which is exactly our gating design); sandbox as a
+  first-class surface (PayPal `mcp.sandbox.*`, Square SANDBOX flag).
+- **Cheap differentiators nobody small ships**: a feedback tool inside the
+  server + mcp@ email (Stripe); "read-only at launch" trust messaging with an
+  END-USER landing page separate from dev docs (Xero); tool-call logs visible
+  to admins (Stripe Workbench).
+- **Distribution mechanics**: per-client snippets with one-click installs
+  (Cursor deeplink, `vscode.dev/redirect/mcp/install`, `claude mcp add`
+  one-liner) on one page, Stripe-style; launch/engineering blog post (Notion's
+  generated huge mindshare); Claude Connectors Directory + official MCP
+  Registry (namespace `com.hellogrowthcrm` needs DNS domain verification; npm
+  package must embed a matching `mcp-name` marker).
+- **Claude directory requirements** (for any future listing): Streamable HTTP,
+  OAuth (DCR or Client ID Metadata Docs) for account data, `title` on every
+  tool, accurate `readOnlyHint`/`destructiveHint`, separate read/write tools,
+  paginated results, useful validation errors, a populated reviewer account,
+  multi-tenant isolation tests.
+- **Spec runway**: current stable 2025-11-25 (what we speak); **2026-07-28 goes
+  stateless** — initialize handshake and `Mcp-Session-Id` removed. Plan session
+  handling for statelessness before bumping the SDK past it.
+
+## 7. Report format
 
 Lead with which of the two servers was audited and the commit or version it was
 measured at. Then: FAILs with the command and output that prove each, WARNs,
