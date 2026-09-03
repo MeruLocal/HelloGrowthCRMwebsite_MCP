@@ -565,7 +565,30 @@ export async function runServer(): Promise<void> {
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
     if (url.pathname === "/sse") {
+      // CORS. Without this a browser-based MCP client cannot connect AT ALL:
+      // `OPTIONS /sse` returned 405 with no Access-Control-Allow-Origin, so the
+      // preflight failed and the real request was never sent. Verified against
+      // production 2026-09-02.
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers":
+            "Content-Type, Accept, Authorization, Last-Event-ID, mcp-session-id, mcp-protocol-version",
+          "Access-Control-Expose-Headers": "mcp-session-id",
+          "Access-Control-Max-Age": "86400",
+        }).end();
+        return;
+      }
       if (!(await limiter.allow(ip))) { sendRateLimited(res, ip); return; }
+      // Expose-Headers is the load-bearing half and the easy one to omit:
+      // browser JS cannot READ a response header that is not exposed, so with
+      // Allow-Origin alone `initialize` would appear to succeed while the client
+      // silently failed to capture mcp-session-id — and every request after it
+      // would come back 400 'Invalid or missing session ID'. Set on the response
+      // before the transport writes, so it survives whatever status it chooses.
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Expose-Headers", "mcp-session-id");
       await handleStreamableHttp(req, res);
       return;
     }
