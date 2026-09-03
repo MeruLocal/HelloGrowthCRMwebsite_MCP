@@ -63,7 +63,9 @@ export function buildWellKnownManifest(counts: WellKnownCounts): string {
         "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/blob/main/CHANGELOG.md",
       transport: {
         type: "streamable-http",
-        url: `${PUBLIC_ORIGIN}/sse`,
+        url: `${PUBLIC_ORIGIN}/mcp`,
+        // Kept because published client configs point at it. Same handler.
+        legacy_alias_url: `${PUBLIC_ORIGIN}/sse`,
       },
       authentication: {
         type: "none",

@@ -42,7 +42,11 @@ describe("/.well-known/mcp.json manifest", () => {
 
   it("declares the transport this server actually speaks", () => {
     expect(doc.transport.type).toBe("streamable-http");
-    expect(doc.transport.url).toBe("https://mcp.hellogrowthcrm.com/sse");
+    // Canonical path is /mcp. /sse stays as an alias because published client
+    // configs point at it, and because an endpoint NAMED /sse makes clients try
+    // the legacy transport and get a 400 — the misdiagnosis this alias exists to end.
+    expect(doc.transport.url).toBe("https://mcp.hellogrowthcrm.com/mcp");
+    expect(doc.transport.legacy_alias_url).toBe("https://mcp.hellogrowthcrm.com/sse");
   });
 
   it("declares no authentication and warns against sending credentials", () => {

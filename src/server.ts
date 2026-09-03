@@ -564,7 +564,17 @@ export async function runServer(): Promise<void> {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
-    if (url.pathname === "/sse") {
+    // /mcp is the canonical path; /sse is kept forever as an alias, because
+    // published client configs already point at it.
+    //
+    // The NAME is the problem. This server speaks Streamable HTTP, but an endpoint
+    // called /sse tells every client it speaks the legacy HTTP+SSE transport — so
+    // they open with GET and get a 400. `npx @modelcontextprotocol/inspector --cli`
+    // fails in exactly this way unless `--transport http` is passed, and an August
+    // 2026 third-party audit read that 400 as "no AI client can connect" while
+    // every tool was serving correctly. A correctly-named path costs one line and
+    // removes the whole class of misdiagnosis.
+    if (url.pathname === "/sse" || url.pathname === "/mcp") {
       // CORS. Without this a browser-based MCP client cannot connect AT ALL:
       // `OPTIONS /sse` returned 405 with no Access-Control-Allow-Origin, so the
       // preflight failed and the real request was never sent. Verified against
@@ -662,7 +672,8 @@ export async function runServer(): Promise<void> {
             name: SERVER_NAME,
             title: SERVER_TITLE,
             version: SERVER_VERSION,
-            mcp_endpoint: "/sse",
+            mcp_endpoint: "/mcp",
+            mcp_endpoint_alias: "/sse",
             transport: "streamable-http",
             mcp_spec: MCP_SPEC_REVISION,
             // Finding C0: the public endpoint no longer serves every tool, so
