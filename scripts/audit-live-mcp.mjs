@@ -19,6 +19,8 @@
 // Exit codes: 0 = no FAILs, 1 = at least one FAIL, 2 = could not reach server.
 // ============================================================================
 
+import fs from "node:fs";
+
 const ORIGIN = (process.argv[2] ?? "https://mcp.hellogrowthcrm.com").replace(/\/$/, "");
 const MCP = `${ORIGIN}/sse`;
 const TIMEOUT_MS = 20000;
@@ -208,6 +210,69 @@ const echo = await rpc({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { 
 JSON.stringify(echo.json ?? {}).includes(CANARY)
   ? fail("privacy", "an error response echoed the caller's argument back — arguments must never be reflected or logged")
   : pass("privacy", "error responses do not echo caller arguments");
+
+// ── 9. Client fitness — can real MCP clients actually connect? ──────────────
+// Every check here maps to a client class that is silently locked out when it
+// fails. Protocol conformance can be perfect while none of these pass.
+
+// Browser-based clients: a failed preflight means the request is never sent.
+const pre = await http("/sse", {
+  method: "OPTIONS",
+  headers: { origin: "https://example.com", "access-control-request-method": "POST" },
+});
+const acao = pre.headers?.get("access-control-allow-origin");
+const expose = pre.headers?.get("access-control-expose-headers") ?? "";
+if (pre.status >= 400 || !acao) {
+  fail("fitness", `OPTIONS on the MCP endpoint returned ${pre.status}${acao ? "" : " with no Access-Control-Allow-Origin"} — NO browser-based client can connect`);
+} else if (!expose.toLowerCase().includes("mcp-session-id")) {
+  fail("fitness", "CORS preflight passes but mcp-session-id is not in Access-Control-Expose-Headers — browser JS cannot READ the session id, so initialize appears to succeed and every later request 400s");
+} else {
+  pass("fitness", "CORS preflight allows browser clients and exposes mcp-session-id");
+}
+
+// Clients that send only application/json. The spec asks for both types, but
+// plenty of shipped clients and plain HTTP agents send one, and a bare 406
+// is indistinguishable from an outage on their side.
+const narrow = await http("/sse", {
+  method: "POST",
+  headers: { "content-type": "application/json", accept: "application/json" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 90, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "audit", version: "1" } } }),
+});
+narrow.status === 406
+  ? warn("fitness", "a client offering only `Accept: application/json` gets 406 — tolerate it (widen the header) or the failure reads as a broken server")
+  : pass("fitness", `a client offering only Accept: application/json is served (${narrow.status})`);
+
+// Path naming. An endpoint NAMED /sse makes clients try the legacy transport.
+const alias = await http("/mcp", {
+  method: "POST",
+  headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 91, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "audit", version: "1" } } }),
+});
+alias.status === 200
+  ? pass("fitness", "/mcp is served — clients are not misled by the /sse name into trying the legacy transport")
+  : warn("fitness", `/mcp returned ${alias.status} — the only path is named /sse, which makes clients open with GET and read the 400 as an outage`);
+
+// Protocol-version negotiation: older shipped clients must not be turned away.
+for (const v of ["2025-03-26", "2024-11-05"]) {
+  const old = await http("/sse", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 92, method: "initialize", params: { protocolVersion: v, capabilities: {}, clientInfo: { name: "audit", version: "1" } } }),
+  });
+  old.status === 200
+    ? pass("fitness", `a client on protocol ${v} is accepted`)
+    : fail("fitness", `a client on protocol ${v} got ${old.status} — older shipped clients cannot connect`);
+}
+
+// Install path. Registries that auto-index (Smithery, Glama, PulseMCP, mcp-get)
+// key off a published package; without one the whole distribution story stalls.
+try {
+  const pkg = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  const reg = await fetch(`https://registry.npmjs.org/${pkg.name}`, { method: "HEAD" }).catch(() => null);
+  reg && reg.ok
+    ? pass("fitness", `npm package ${pkg.name} is published — npx install paths and registry auto-indexing work`)
+    : warn("fitness", `npm package ${pkg.name} is NOT published (registry.npmjs.org returned ${reg ? reg.status : "no response"}) — no npx one-liner, and Smithery/Glama/PulseMCP cannot auto-index`);
+} catch { /* package.json unreadable — not fatal for a remote audit */ }
 
 // ── report ───────────────────────────────────────────────────────────────────
 const order = { FAIL: 0, WARN: 1, PASS: 2 };
