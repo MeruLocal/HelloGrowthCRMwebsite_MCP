@@ -1,0 +1,49 @@
+# Production check — does main actually reach users?
+#
+# THE GAP THIS CLOSES, with a date attached: on 2026-09-02, PR #22 (retiring an
+# /openapi.json that instructed callers to POST a live CRM API key to this
+# public host) and PR #29 (stopping anonymous access to 8 write and 4
+# personal-data tools) both merged to main. Hours later production still served
+# the old behaviour on both. A merged security fix was decorative, and nothing
+# anywhere said so. AI_CRAWL_FIX_2026-07-13.md:23 records the same lesson from
+# July: "the fix only takes effect after deployment".
+#
+# There is no CD in this repository, so this does not deploy. It does the next
+# best thing — it makes the gap loud within a day instead of indefinite.
+name: Production check
+
+on:
+  schedule:
+    # 06:15 UTC daily. Off the hour: GitHub's scheduler is busiest exactly on
+    # the hour and delays runs there.
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Is production running what main says it should?
+        run: |
+          EXPECTED=$(node -p "require('./package.json').version")
+          LIVE=$(curl -fsS --max-time 20 https://mcp.hellogrowthcrm.com/version | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+          echo "main: $EXPECTED    production: $LIVE"
+          if [ "$EXPECTED" != "$LIVE" ]; then
+            echo "::error::production is serving $LIVE but main is $EXPECTED — main has been merged and not deployed."
+            exit 1
+          fi
+
+      # Zero dependencies by design: node's built-in fetch against documented
+      # protocol endpoints, installing nothing. Auditing an MCP server by
+      # `npx`-ing an unpinned scanner is the supply-chain exposure the audit is
+      # supposed to be looking for.
+      - name: Live MCP audit
+        run: npm run audit:live

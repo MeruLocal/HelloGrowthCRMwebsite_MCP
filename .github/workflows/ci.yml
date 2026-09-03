@@ -1,0 +1,65 @@
+# CI — the control plane this repository did not have.
+#
+# Until 2026-09-03 there were no workflows at all. Nothing verified a pull
+# request, nothing published, nothing noticed when production fell behind main.
+# Every comparable public MCP server runs between 5 and 27 workflows; this repo
+# ran zero, and the gap showed: on 2026-09-02 five PRs merged — including one
+# that stopped serving write and personal-data tools anonymously — and hours
+# later production was still serving the old behaviour, with nothing to say so.
+#
+# This workflow is the cheap half: prove the branch is sound before it merges.
+# production-check.yml is the other half: prove main actually reached users.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A newer push to the same ref makes the older run irrelevant. Cancel it
+  # rather than paying for both and reading a stale red X.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # package.json declares engines.node >=18.18. Test the floor and the
+        # current LTS: a server that only works on the maintainer's Node is not
+        # installable by anyone else, which is the whole point of publishing it.
+        node: ["18.18", "22"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # `npm ci` not `npm install`: it installs exactly the lockfile and fails
+      # when package.json and the lock disagree, which is the failure mode that
+      # otherwise reaches users as "works on my machine".
+      - run: npm ci
+
+      # verify = typecheck + check:versions + vitest. check:versions is the gate
+      # that stops server.json advertising an npm version that was never built —
+      # the exact mismatch that currently makes registry installs 404.
+      - run: npm run verify
+
+      # Build separately from typecheck: `tsc --noEmit` can pass while the real
+      # emit fails, and `files` in package.json ships dist/, so a broken build is
+      # a broken package.
+      - run: npm run build
+
+      - name: Confirm the published entrypoint actually runs
+        # `bin` points at dist/index.js. If that file cannot start, `npx
+        # mcp-bot-crawler` is broken for every user even though CI was green.
+        run: node -e "require('node:fs').accessSync('dist/index.js')"
