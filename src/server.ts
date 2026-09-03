@@ -581,6 +581,33 @@ export async function runServer(): Promise<void> {
         return;
       }
       if (!(await limiter.allow(ip))) { sendRateLimited(res, ip); return; }
+      // Accept-header tolerance. The spec requires a POST to offer BOTH
+      // application/json and text/event-stream; the SDK answers 406 otherwise.
+      // Verified against production: `Accept: application/json` alone, and no
+      // Accept header at all, both return 406. Plenty of shipped clients and
+      // ordinary HTTP agents send one type, and a bare 406 gives them nothing to
+      // act on. Widen the header instead of rejecting the caller — this server
+      // can always answer in JSON, so nothing is lost by accepting them.
+      //
+      // BOTH copies must be rewritten. The SDK's Node transport is a thin wrapper
+      // that converts the request with @hono/node-server, and that conversion
+      // builds the Web `Headers` from `req.rawHeaders` — so mutating
+      // `req.headers.accept` alone changes nothing the transport ever reads. The
+      // first draft of this fix did exactly that and still returned 406, with the
+      // shim provably firing.
+      if (req.method === "POST") {
+        const accept = req.headers.accept ?? "";
+        if (!accept.includes("text/event-stream") || !accept.includes("application/json")) {
+          const widened = "application/json, text/event-stream";
+          req.headers.accept = widened;
+          const raw = req.rawHeaders;
+          let found = false;
+          for (let i = 0; i < raw.length; i += 2) {
+            if (raw[i]?.toLowerCase() === "accept") { raw[i + 1] = widened; found = true; }
+          }
+          if (!found) raw.push("Accept", widened);
+        }
+      }
       // Expose-Headers is the load-bearing half and the easy one to omit:
       // browser JS cannot READ a response header that is not exposed, so with
       // Allow-Origin alone `initialize` would appear to succeed while the client
