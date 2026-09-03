@@ -1,0 +1,88 @@
+# Publish to npm.
+#
+# WHY THIS IS NOT AUTOMATIC ON MERGE: server.json is the published MCP registry
+# manifest and it pins packages[0].version. Publishing on every merge would race
+# that manifest and hand registries a version it does not advertise. Releases
+# here are deliberate: tag, then run this.
+#
+# CURRENT STATE, and the reason this file exists: server.json advertises
+# mcp-bot-crawler@2.0.0 and registry.npmjs.org returns 404 for it. Every install
+# that originates from the registry entry fails, and the failure lands on the
+# user. See docs/plans/RELEASE_AND_DISTRIBUTION_2026-09-03.md.
+#
+# BEFORE THE FIRST RUN, a maintainer must add the NPM_TOKEN secret:
+#   npmjs.com -> Access Tokens -> Generate -> "Automation" (bypasses 2FA prompts)
+#   then: repo Settings -> Secrets and variables -> Actions -> New secret
+# The job fails with a readable message if it is missing, rather than half-way
+# through with an auth error.
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run npm publish --dry-run only (no package is published)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      - name: Require NPM_TOKEN
+        run: |
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "::error::NPM_TOKEN is not set. Add it under Settings -> Secrets and variables -> Actions. See the header of this file."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      # prepublishOnly already runs clean + check:versions + build, so a version
+      # mismatch cannot be published by accident. Run verify first anyway: a
+      # published package is not revocable, only deprecable.
+      - run: npm run verify
+
+      - name: Confirm the tag matches package.json
+        if: github.event_name == 'release'
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "tag: $TAG    package.json: $PKG"
+          [ "$TAG" = "$PKG" ] || { echo "::error::release tag $TAG != package.json $PKG"; exit 1; }
+
+      - name: Publish (dry run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: npm publish --dry-run --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify it is actually installable
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          for i in 1 2 3 4 5 6; do
+            sleep 10
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://registry.npmjs.org/mcp-bot-crawler/$PKG") && [ "$CODE" = "200" ] && echo "registry has $PKG" && exit 0
+          done
+          echo "::error::published, but registry.npmjs.org still does not serve $PKG"
+          exit 1
