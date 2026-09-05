@@ -26,7 +26,22 @@ because the most common failure in MCP auditing is a confident report about a
 server nobody actually connected to.
 
 Baseline for `mcp.hellogrowthcrm.com` on 2026-08-31: **2 fail · 5 warn · 12 pass**.
-A new FAIL is a regression. Record the run in the audit report.
+**Current baseline (2026-09-02, v2.0.0 post auth-gating): 0 fail · 4 warn · 14 pass.**
+The 4 standing warns: `/sse` naming confusion, `tools.listChanged` undeclared,
+no tool `title` fields, no `outputSchema`. A new FAIL is a regression. Record
+the run in the audit report.
+
+**Automated cadence:** a scheduled task `weekly-mcp-audit` runs this script +
+the §1 pricing/freshness hand-checks every **Monday 09:05 IST** (desktop app
+must be open) and flags 🔴 on any regression. A manual run is still the right
+first move when anything MCP-related is in question — don't wait for Monday.
+
+**Auth gating (v2.0.0):** anonymous sessions see **76 of 88 tools** — 12
+(8 write + 4 personal-data readers) are hidden, not denied, behind
+`Authorization: Bearer $MCP_ADMIN_TOKEN`. An anonymous audit measuring 76 is
+CORRECT; with the token expect 88. `/version` reports `tools`, `tools_total`,
+`tools_gated`. Never call the 4 personal-data readers in an audit, even with
+the token.
 
 ---
 
@@ -44,13 +59,37 @@ information. This is where the real defects were found:
 - **Do the URLs resolve?** `curl -o /dev/null -w "%{http_code}"` every URL the
   server emits. A `sameAs` entry published as an entity signal was returning
   **404** while a second field in the same payload held a working one.
+  (Fixed by MCP repo PR #25; verified resolving 2026-09-03.) **Known false
+  positive: g2.com returns 403 to curl — that is G2's bot wall, not a dead
+  page; verify in a browser before flagging.**
 - **Are pricing / compliance / residency claims sourced?** These end up quoted
   verbatim by AI assistants. Check against the canonical source, not against a
   draft someone pasted. Real values live in `pricing_get_plans` and
-  `countries_list`.
+  `countries_list`. **Canonical INR rule (billing ground truth, 2026-09-03,
+  hellocrm `gstPlanSync.ts`): ₹899/user/mo + 18% GST on BOTH billing modes
+  (billed ₹1,060.82; annual ₹8,990/yr + GST = 2 months free). If
+  `pricing_get_plans` ever shows ₹1,099 as our price, that is a FAIL** — the
+  fiction was purged from the website (PR #1403) and the mirror fix is on
+  issue #40; its reappearance means a bad resync. USD canonical: $10 annual /
+  **$12** monthly (constants HG-004) — the mirror's "$13" is a known drift.
+- **Handshake snippet for hand-checks** (Streamable HTTP, session id from the
+  initialize response headers):
+  ```bash
+  SID=$(curl -s -D - -o /dev/null -X POST https://mcp.hellogrowthcrm.com/sse \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"audit","version":"1.0"}}}' \
+    | grep -i mcp-session-id | tr -d '\r' | awk '{print $2}')
+  curl -s -X POST https://mcp.hellogrowthcrm.com/sse -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" -H "mcp-session-id: $SID" \
+    -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"pricing_get_plans","arguments":{}}}'
+  ```
 - **Is the freshness stamp moving?** Payloads carry `synced_at`. A stamp weeks
   old with no regeneration job is the same silent-rot failure as any generated
-  file.
+  file. **Re-confirmed 2026-09-02:** `integrations_list` still reports
+  `synced_at: 2026-06-17` (11 weeks stale) and **630** integrations, vs **525**
+  in code (8/31 check) vs **"259+ live"** on the website and llms.txt — three
+  different numbers for one fact. The regeneration job + a single canonical
+  count remain the top open content defect.
 
 ## 2. Traps specific to this server
 
@@ -59,8 +98,11 @@ information. This is where the real defects were found:
   official Inspector fails against it with `SSE error: Non-200 status code (400)`
   unless you pass `--transport http`. Every external audit so far has misread
   this as an outage.
-- **`/openapi.json` and `/version` return 200, not 403.** Four separate AI audits
-  claimed 403 and prescribed WAF/CORS fixes. Measure before believing.
+- **`/openapi.json` returns 410 GONE since v2.0.0 — by design, not an outage.**
+  The OpenAPI surface was removed: an MCP server is enumerated over the
+  protocol. (Pre-v2 it returned 200; four separate AI audits claimed 403 and
+  prescribed WAF/CORS fixes. Measure before believing.) `/version` and
+  `/health` return 200.
 - **JSON-RPC errors come back at HTTP 200.** Any wrapper deriving success from
   the status code records every failed tool call as a success.
 - **A failed Supabase count returns `{count: null, error}`.** `count ?? 0` turns
@@ -134,13 +176,59 @@ Check before claiming the server is distributable:
 curl -s -o /dev/null -w "%{http_code}\n" https://registry.npmjs.org/mcp-bot-crawler
 ```
 
-On 2026-08-31 this returned **404 — the package is not published**, which by the
-repo's own `MCP_SERVER_SUBMISSION_REPORT.md` is what gates Smithery / Glama /
-mcp-get / PulseMCP auto-indexing. Also confirm `scripts/check-versions.mjs`
-passes (package.json / server.json / packages[0].version parity) and that
-`/.well-known/mcp.json` is served.
+On 2026-08-31 this returned **404 — the package is not published** (re-confirmed
+9/3), which by the repo's own `MCP_SERVER_SUBMISSION_REPORT.md` is what gates
+Smithery / Glama / mcp-get / PulseMCP auto-indexing. Also confirm
+`scripts/check-versions.mjs` passes (package.json / server.json /
+packages[0].version parity) and that `/.well-known/mcp.json` is served.
+**The submission report itself is stale (dated 6/12):** it says 81 tools
+(reality: 88 with 12 gated), predates the honest-copy rewrite, and is missing
+the two highest-value 2026 targets — the **Claude Connectors Directory** and
+the **GitHub MCP Registry**. Refresh it before executing any submission
+(tracked in dev-handoff PR #48 / issue #43).
 
-## 6. Report format
+## 6. Benchmark: what the 2026 leaders do (measured 2026-09-02)
+
+Use this as the "are we missing anything structural" yardstick. Full sources in
+`docs/seo-reports/` (hellocrmwebsite) and the 9/2 benchmark report.
+
+- **Remote-first, OAuth-always.** Every leader (Stripe, HubSpot, Xero, Zoho,
+  Atlassian, Square, PayPal, Salesforce) hosts at `mcp.{company}.com` with
+  browser OAuth 2.1 + PKCE; Bearer keys survive only as documented fallback.
+  **Per-tenant Bearer keys alone (our CRM server) are below the 2026 baseline
+  and a hard blocker for Claude-directory listing.** Authless is acceptable
+  ONLY for public-data servers — our website server qualifies.
+- **Two-surface split is the validated architecture**: public knowledge/catalog
+  server (Shopify Storefront MCP, Cloudflare docs) + authenticated account
+  server. Ours matches — market it that way.
+- **Few smart tools beat 1:1 API wrappers**: Stripe = 4 meta-tools over 140
+  methods; Square = 3 tools over the whole API; Notion = agent-optimized tools
+  speaking token-lean markdown. 1:1 mapping is publicly called an anti-pattern.
+- **Permission inheritance + admin control-plane**: agents act as the OAuth'd
+  user, never above (HubSpot/Zoho/Atlassian); session list + one-click revoke
+  (Stripe Dashboard); token-scoped tool visibility (PayPal — the tool LIST is
+  filtered by the token, which is exactly our gating design); sandbox as a
+  first-class surface (PayPal `mcp.sandbox.*`, Square SANDBOX flag).
+- **Cheap differentiators nobody small ships**: a feedback tool inside the
+  server + mcp@ email (Stripe); "read-only at launch" trust messaging with an
+  END-USER landing page separate from dev docs (Xero); tool-call logs visible
+  to admins (Stripe Workbench).
+- **Distribution mechanics**: per-client snippets with one-click installs
+  (Cursor deeplink, `vscode.dev/redirect/mcp/install`, `claude mcp add`
+  one-liner) on one page, Stripe-style; launch/engineering blog post (Notion's
+  generated huge mindshare); Claude Connectors Directory + official MCP
+  Registry (namespace `com.hellogrowthcrm` needs DNS domain verification; npm
+  package must embed a matching `mcp-name` marker).
+- **Claude directory requirements** (for any future listing): Streamable HTTP,
+  OAuth (DCR or Client ID Metadata Docs) for account data, `title` on every
+  tool, accurate `readOnlyHint`/`destructiveHint`, separate read/write tools,
+  paginated results, useful validation errors, a populated reviewer account,
+  multi-tenant isolation tests.
+- **Spec runway**: current stable 2025-11-25 (what we speak); **2026-07-28 goes
+  stateless** — initialize handshake and `Mcp-Session-Id` removed. Plan session
+  handling for statelessness before bumping the SDK past it.
+
+## 7. Report format
 
 Lead with which of the two servers was audited and the commit or version it was
 measured at. Then: FAILs with the command and output that prove each, WARNs,
@@ -148,3 +236,10 @@ what you checked and found clean, and — explicitly — **what you did not chec
 Silence reads as a pass.
 
 One PR per finding. Never bundle.
+
+**Where findings go:** map each finding to its owning ticket before opening
+anything new — dev handoff `docs/plans/DEV_HANDOFF_2026-09-05.md` (MCP repo
+PR #48) is the entry point; roadmap issues **#38–#45** own the phased work
+(boundary #38, security/ops #39, truth pipeline #40, protocol polish #41,
+tool-architecture #42, distribution #43, deferred #44, epic #45). A finding
+that maps to none of these gets its own issue + PR.
