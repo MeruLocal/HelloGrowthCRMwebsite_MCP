@@ -31,6 +31,11 @@ The 4 standing warns: `/sse` naming confusion, `tools.listChanged` undeclared,
 no tool `title` fields, no `outputSchema`. A new FAIL is a regression. Record
 the run in the audit report.
 
+**Automated cadence:** a scheduled task `weekly-mcp-audit` runs this script +
+the §1 pricing/freshness hand-checks every **Monday 09:05 IST** (desktop app
+must be open) and flags 🔴 on any regression. A manual run is still the right
+first move when anything MCP-related is in question — don't wait for Monday.
+
 **Auth gating (v2.0.0):** anonymous sessions see **76 of 88 tools** — 12
 (8 write + 4 personal-data readers) are hidden, not denied, behind
 `Authorization: Bearer $MCP_ADMIN_TOKEN`. An anonymous audit measuring 76 is
@@ -54,10 +59,30 @@ information. This is where the real defects were found:
 - **Do the URLs resolve?** `curl -o /dev/null -w "%{http_code}"` every URL the
   server emits. A `sameAs` entry published as an entity signal was returning
   **404** while a second field in the same payload held a working one.
+  (Fixed by MCP repo PR #25; verified resolving 2026-09-03.) **Known false
+  positive: g2.com returns 403 to curl — that is G2's bot wall, not a dead
+  page; verify in a browser before flagging.**
 - **Are pricing / compliance / residency claims sourced?** These end up quoted
   verbatim by AI assistants. Check against the canonical source, not against a
   draft someone pasted. Real values live in `pricing_get_plans` and
-  `countries_list`.
+  `countries_list`. **Canonical INR rule (billing ground truth, 2026-09-03,
+  hellocrm `gstPlanSync.ts`): ₹899/user/mo + 18% GST on BOTH billing modes
+  (billed ₹1,060.82; annual ₹8,990/yr + GST = 2 months free). If
+  `pricing_get_plans` ever shows ₹1,099 as our price, that is a FAIL** — the
+  fiction was purged from the website (PR #1403) and the mirror fix is on
+  issue #40; its reappearance means a bad resync. USD canonical: $10 annual /
+  **$12** monthly (constants HG-004) — the mirror's "$13" is a known drift.
+- **Handshake snippet for hand-checks** (Streamable HTTP, session id from the
+  initialize response headers):
+  ```bash
+  SID=$(curl -s -D - -o /dev/null -X POST https://mcp.hellogrowthcrm.com/sse \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"audit","version":"1.0"}}}' \
+    | grep -i mcp-session-id | tr -d '\r' | awk '{print $2}')
+  curl -s -X POST https://mcp.hellogrowthcrm.com/sse -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" -H "mcp-session-id: $SID" \
+    -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"pricing_get_plans","arguments":{}}}'
+  ```
 - **Is the freshness stamp moving?** Payloads carry `synced_at`. A stamp weeks
   old with no regeneration job is the same silent-rot failure as any generated
   file. **Re-confirmed 2026-09-02:** `integrations_list` still reports
@@ -151,11 +176,16 @@ Check before claiming the server is distributable:
 curl -s -o /dev/null -w "%{http_code}\n" https://registry.npmjs.org/mcp-bot-crawler
 ```
 
-On 2026-08-31 this returned **404 — the package is not published**, which by the
-repo's own `MCP_SERVER_SUBMISSION_REPORT.md` is what gates Smithery / Glama /
-mcp-get / PulseMCP auto-indexing. Also confirm `scripts/check-versions.mjs`
-passes (package.json / server.json / packages[0].version parity) and that
-`/.well-known/mcp.json` is served.
+On 2026-08-31 this returned **404 — the package is not published** (re-confirmed
+9/3), which by the repo's own `MCP_SERVER_SUBMISSION_REPORT.md` is what gates
+Smithery / Glama / mcp-get / PulseMCP auto-indexing. Also confirm
+`scripts/check-versions.mjs` passes (package.json / server.json /
+packages[0].version parity) and that `/.well-known/mcp.json` is served.
+**The submission report itself is stale (dated 6/12):** it says 81 tools
+(reality: 88 with 12 gated), predates the honest-copy rewrite, and is missing
+the two highest-value 2026 targets — the **Claude Connectors Directory** and
+the **GitHub MCP Registry**. Refresh it before executing any submission
+(tracked in dev-handoff PR #48 / issue #43).
 
 ## 6. Benchmark: what the 2026 leaders do (measured 2026-09-02)
 
@@ -206,3 +236,10 @@ what you checked and found clean, and — explicitly — **what you did not chec
 Silence reads as a pass.
 
 One PR per finding. Never bundle.
+
+**Where findings go:** map each finding to its owning ticket before opening
+anything new — dev handoff `docs/plans/DEV_HANDOFF_2026-09-05.md` (MCP repo
+PR #48) is the entry point; roadmap issues **#38–#45** own the phased work
+(boundary #38, security/ops #39, truth pipeline #40, protocol polish #41,
+tool-architecture #42, distribution #43, deferred #44, epic #45). A finding
+that maps to none of these gets its own issue + PR.
