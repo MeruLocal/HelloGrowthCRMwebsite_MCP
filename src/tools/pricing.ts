@@ -57,7 +57,9 @@ const GLOBAL_PLANS = [
     name: "Growth",
     slug: "growth",
     price_annual: "$10/user/month (billed annually)",
-    price_monthly: "$13/user/month",
+    // $12 per HG-004 (2026-08-12, pricing-constants.ts in hellocrmwebsite) —
+    // the canonical decision postdates this file's 8/6 rewrite which had $13.
+    price_monthly: "$12/user/month",
     billing: "Annual billing · Unlimited users · 14-day free trial",
     best_for: "Growing US sales teams",
     ai_credits: "2,500 per user/month",
@@ -156,8 +158,11 @@ const INDIA_PLANS = [
   {
     name: "Growth",
     slug: "growth",
-    price_annual: "₹899/user/month (annual — 10 months paid, 2 months free = ₹8,990/user/year)",
-    price_monthly: "₹1,099/user/month",
+    // Canonical INR rule (billing ground truth, hellocrm gstPlanSync.ts,
+    // founder decision 2026-09-03): ₹899 + 18% GST on BOTH billing modes
+    // (billed ₹1,060.82/mo). ₹1,099 matched no Razorpay plan — never reintroduce.
+    price_annual: "₹899/user/month + 18% GST (annual — 10 months paid, 2 months free = ₹8,990/user/year + GST)",
+    price_monthly: "₹899/user/month + 18% GST (same rate; annual adds 2 months free)",
     billing: "Annual billing · Unlimited users · 14-day free trial · Hero tier",
     best_for: "Growing Indian sales teams",
     ai_credits: "2,500 per user/month · Overage ₹0.60/K",
@@ -251,7 +256,7 @@ const PRICING_FAQ = [
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
   { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($13 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
-  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. All India prices include GST. Call pricing_get_country_plans for a specific market." },
+  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices are exclusive of GST — 18% GST is added on top (₹899 bills as ₹1,060.82). Call pricing_get_country_plans for a specific market." },
   { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
