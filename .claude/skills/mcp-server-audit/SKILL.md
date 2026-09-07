@@ -168,6 +168,33 @@ npx @modelcontextprotocol/inspector --cli https://mcp.hellogrowthcrm.com/sse \
 
 Without `--transport http` it fails misleadingly (see §2).
 
+## 4b. LLM-assisted checks (gpt-6-astra) — evidence-bound reviewer, never another auditor
+
+A frontier reviewer is available at the Azure AI Foundry endpoint (creds in the
+gitignored `C:\GoogleAdsMCP\google-ads-mcp\.env`: `AZURE_ASTRA_*`; `/responses`
+API, `api-key` header, no temperature — see memory
+`reference-azure-openai-direct-api`). Use it for what the script cannot judge,
+under one rule: **it adjudicates evidence you send; it never generates facts.**
+Highest value-per-token uses (its own ranking, 2026-09-07, adopted):
+
+1. **Semantic drift adjudication** — send changed claims + code/website excerpts
+   + timestamps; it returns a claim ledger (contradiction / different
+   definitions / unsupported / consistent) with the smallest verification
+   needed. Missing evidence must yield "unresolved", never a guessed fix.
+2. **Pricing copy vs billing behavior** — decision table mapping each customer
+   promise to what code/tests actually do; only on pricing/entitlement changes.
+3. **Finding challenger** — before any audit finding becomes a "fact", send the
+   finding + its cited evidence; it returns what the evidence actually
+   establishes and the strongest alternative explanation. (Four external AI
+   audits were wrong here; this is the antidote.)
+4. **Tool-description usability review** — can an agent pick the right tool for
+   a real task? Returns minimal title/description edits; titles are proposals,
+   output schemas are hypotheses until checked against implementation.
+
+Guards: send diffs/excerpts, never the whole repo, **never bearer tokens or
+personal data**; expected test results must come from implementation or
+fixtures, never from its own narrative (no circular tests).
+
 ## 5. Registry readiness
 
 Check before claiming the server is distributable:
