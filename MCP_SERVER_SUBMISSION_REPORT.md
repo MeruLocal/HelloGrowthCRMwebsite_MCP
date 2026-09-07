@@ -219,3 +219,22 @@ npx -y mcp-bot-crawler
 - **DR is live** (Ahrefs, 2026‑06‑12). Re‑check before a campaign — directory DR climbs fast.
 - "Dofollow/Nofollow" indicates SEO link value; nofollow sites (Reddit, HN, Medium, Dev.to) still drive **referral traffic and discovery**, so keep them.
 - The biggest SEO wins are the **auto‑indexers** (Smithery, Glama, PulseMCP) and **GitHub awesome lists** — one public repo + npm publish cascades into most of Tier 2 automatically.
+
+---
+
+## ADDENDUM — 2026-09-07 refresh (read before executing ANY row above)
+
+**Corrections to the 6/12 report:**
+- Tool count is **88 (76 public + 12 gated behind auth)**, not 81. Server is v2.0.0.
+- Description for every listing must match the post-R1 honest copy: *"Public, read-only MCP server for HelloGrowthCRM product knowledge (pricing, features, integrations, comparisons, help content) plus website bot/crawler governance. No API key for public tools. Returns no personal data. Not a CRM API — performs no CRM actions."* Never describe CRM-data access.
+- **mcp.so:** `/server/mcp-bot-crawler` now returns 404 (verified 9/7) — the earlier listing is gone or re-slugged. Treat as a fresh submission, with the honest copy.
+- The "npm publish unlocks Smithery/Glama/mcp-get/PulseMCP" claim is this report's own assertion — **verify each directory's current submission path first**; several accept remote Streamable-HTTP servers without npm (adversarial review 9/7, `docs/plans/ASTRA_FINDING_CHALLENGE_2026-09-07.md`).
+- npm publish prerequisite on this machine: **not authenticated** (`npm whoami` → ENEEDAUTH). Run `npm login` as the org account first; then follow RELEASING.md exactly (version parity ×3, `npm run verify`, npm BEFORE registry manifest).
+
+**Two missing high-value targets (add above Tier 1):**
+| Target | Why | How |
+|---|---|---|
+| **Claude Connectors Directory** (claude.ai/directory) | Direct distribution into Claude users; authless is permitted for public-data servers — we qualify TODAY | Org-admin submits via claude.ai admin settings; needs icon, privacy-policy URL, support contact, permanent slug. Requirements: `reference_mcp_guidelines_2026` memory / audit skill §6 |
+| **GitHub MCP Registry** (github.com/mcp) | Launched Sept 2025; high-authority discovery surface the 6/12 report predates | Public repo + registry submission flow |
+
+**Gate before executing anything:** PR #50 (canonical pricing in the mirror) must be merged AND deployed — verified by the Monday audit's pricing check — so every listing points at a truthful server.
