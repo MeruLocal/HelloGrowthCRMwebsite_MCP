@@ -1,0 +1,16 @@
+{
+  "brand": "hellogrowthcrm",
+  "competitors": ["zoho","hubspot","salesforce","pipedrive","freshsales","freshworks","telecrm","kylas","leadsquared","bigin","runo","cronberry","interakt","wati","aisensy","doubletick","salesmate","engagebay","neodove","picky assist"],
+  "queries": [
+    {"id":"Q1","q":"What is the best WhatsApp CRM in India? Recommend specific products."},
+    {"id":"Q2","q":"What is the best CRM for small businesses in India?"},
+    {"id":"Q3","q":"Which CRM software has the best WhatsApp integration?"},
+    {"id":"Q4","q":"What is the best recruitment CRM software in India?"},
+    {"id":"Q5","q":"Best CRM for real estate agents in India?"},
+    {"id":"Q6","q":"Which Indian CRM has a built-in dialer for sales calls?"},
+    {"id":"Q7","q":"What are the best TeleCRM alternatives?"},
+    {"id":"Q8","q":"What are good alternatives to Kylas CRM?"},
+    {"id":"Q9","q":"How much does CRM software cost in India per user?"},
+    {"id":"Q10-BRANDED","q":"Is HelloGrowthCRM good? What do reviews say?"}
+  ]
+}
