@@ -1,5 +1,5 @@
 ---
-name: mcp-server-audit
+name: rss-mcp-server-audit
 description: >-
   Audit an MCP server end to end — protocol conformance, tool-schema and
   annotation hygiene, session and error handling, discovery surfaces, write-tool
