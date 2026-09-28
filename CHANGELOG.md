@@ -9,6 +9,23 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.1] — 2026-09-28
+
+### Fixed
+
+- **Canonical prices** (from #50): India Growth is ₹899/user/month + 18% GST,
+  and USD Growth is $10 annual / $12 monthly per the website's
+  `pricing-constants.ts`. ₹1,099 matched no billed amount.
+- **"Unlimited users" removed** from the Growth billing line (USD and INR) and
+  from an AI-credit note. Growth is priced per user.
+- **No data-residency claims.** India, Australia and New Zealand residency
+  statements were removed from `pricing_get_country_plans` and `solutions_*`
+  compliance lines. Production is not region-pinned.
+- New `pricing-truth` test covers every pricing tool. It asserts no ₹1,099 and
+  no "Unlimited users", and pins the canonical prices.
+
+Output shapes are unchanged, so this is a patch release. Refs #40.
+
 ## [2.0.0] — 2026-08-31
 
 ### Removed — BREAKING

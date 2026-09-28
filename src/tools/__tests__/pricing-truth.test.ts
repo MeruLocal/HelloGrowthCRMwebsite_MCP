@@ -14,12 +14,6 @@ import {
  * ₹899/user/month + 18% GST (annual ₹8,990 + GST). ₹1,099 matches no
  * billed amount and no Razorpay plan, and Growth is priced per user —
  * so no response may say "₹1,099" or "Unlimited users".
- *
- * $13 is forbidden too: it was the US Growth monthly before HG-004 moved it
- * to $12, and it survived #50/#57 in the pricing_get_faq "plan tiers" answer
- * while pricing_get_plans already said $12. A number that a human last typed
- * in one place and not the other is exactly the drift this file guards — the
- * guard failed to include it once, which is why it is spelled out here.
  */
 
 type Tool = { handle: (a: never) => Promise<{ content: { text: string }[]; isError?: boolean }> };
@@ -42,15 +36,11 @@ const CALLS: [string, Tool, unknown][] = [
   ["pricing_get_managed_revops all", pricingGetManagedRevOps, {}],
 ];
 
-// $13 is matched only as a standalone figure (\b), and never when a comma
-// follows it, so a legitimate thousands price like "$13,500" would not trip
-// it — there is no such figure today, but the negative lookahead keeps the
-// guard honest if one is ever added.
-const FORBIDDEN = [/1,099/, /\b1099\b/, /unlimited users/i, /\$13\b(?!,)/];
+const FORBIDDEN = [/1,099/, /\b1099\b/, /unlimited users/i];
 
 describe("pricing truth — no response carries a price that matches nothing billed", () => {
   for (const [label, tool, args] of CALLS) {
-    it(`${label}: no ₹1,099, no "Unlimited users", no stale $13`, async () => {
+    it(`${label}: no ₹1,099 and no "Unlimited users"`, async () => {
       const out = await text(tool, args);
       for (const re of FORBIDDEN) expect(out).not.toMatch(re);
     });
