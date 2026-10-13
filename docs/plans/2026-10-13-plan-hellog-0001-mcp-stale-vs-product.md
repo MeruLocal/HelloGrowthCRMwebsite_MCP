@@ -1,132 +1,137 @@
-# Plan — MCP repo: what is stale against the product, and what to update  *(rev 2 — Sol r1 REJECT folded)*
+# Plan — MCP repo: one controlled factual-correction release, and a register of what is still stale  *(rev 3 — narrowed after Sol REJECT and Astra REJECT)*
 
-- **Plan id:** PLAN-HELLOG-0001 (first plan id in this repo; prefix is derived because the skill has no adapter for it — `plan-id.mjs next` could not read the trunk, so run `plan-id.mjs check` after the push)
+- **Plan id:** PLAN-HELLOG-0001 (first plan id in this repo; prefix derived because the skill has no adapter for it — `plan-id.mjs check` run after the push)
 - **Branch:** plan/hellog-0001-mcp-stale-vs-product · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (verified: `origin/HEAD -> origin/main`; last commit 2026-09-02, `7312627`)
 - **Mode:** PLAN · **Change tags:** customer_visible, public_api
-- **Tier:** T2 — Sol, then fold, then Astra (blind). No human gate owed; M1 (merge + redeploy) is a human action regardless.
+- **Tier:** T2 — Sol, then fold, then Astra (blind). No human gate owed, but R1's release and its two decisions are human.
 - **Owed (workflow.mjs obligations):** acceptance_criteria, blast_radius, caller_inventory, chatbot_kb, compatibility_test, help_content, intent, necessary_changes, premise_check, smoke_test
-- **Restricted areas touched (G2):** none authored by this plan. Pricing and compliance copy are restricted; this plan changes neither — it routes both to the plans that own them.
-- **Freeze in force?** none recorded for this repo. `main` has simply not moved since 2026-09-02 while 20+ PRs wait.
+- **Restricted areas touched (G2):** pricing and compliance copy. This plan authors neither; it defines the gate and names the founder decisions. Any child PR that edits those values carries the founder's area-naming word verbatim.
+- **Freeze in force?** none recorded for this repo (`main` has not moved since 2026-09-02 while 20+ PRs wait).
 - **Date:** 2026-10-13
-- **Scope note:** this is the **website-data MCP** (a mirror of website content). The CRM-side MCP (`crm-mcp-server`, 30 tools, in hellocrm) is out of scope — it is planned under PLAN-HGC-0435/0434.
+- **Scope:** the **website-data MCP** (a public mirror of website content, no tenant data). The CRM-side MCP is out of scope (hellocrm PLAN-HGC-0435/0434).
+- **Why narrowed:** two reviewers rejected the nine-package version for the same reason — too many moving parts around one release. This revision keeps **one** package (R1) and moves everything else to a register, each item becoming its own plan when unblocked.
 
 ## 0. Intent
-- **Claim** — The MCP serves AI assistants facts that are stale, contradicted by the product, or unverified, and it is missing two cheap protocol-level features. Most of the fix already exists in open PRs that nobody has merged.
-- **Mechanism** — One umbrella plan that classifies every difference found between this repo and the verified product inventory (hellocrm PLAN-HGC-0456 evidence) into: already fixed in an open PR (release it), blocked on a decision elsewhere (route it), and unblocked work (plan it). Each unblocked item becomes its own small child PR.
-- **Observable** — After the packages ship: `pricing_get_plans` answers ₹899 + 18% GST and the agreed USD figures with no "Unlimited users"; comparison rows quote the Free cap from one constant; `initialize` carries an `instructions` string; no claim in the mirror is stronger than its evidence.
-- **Risk** — The MCP is a public API that AI clients call; a changed field shape or removed tool breaks callers silently. Mitigation: additive changes only, a compatibility test per package, and no edit to pricing/compliance values that another plan owns.
+- **Claim** — The deployed MCP tells AI assistants Growth costs ₹1,099 / $13 monthly with "Unlimited users", and repeats an unverified SOC 2 attestation. Fixes for the prices exist in open PRs (#50, #57) but have not been released.
+- **Mechanism** — R1: release #50 and #57 (on top of #47, the CI) as one controlled correction, behind a truth gate that is mandatory on **every** path that builds or deploys an artifact, with a defined containment policy because rolling back would restore the wrong claims.
+- **Observable** — The live `pricing_get_plans` equals an approved offer record; the live audit passes for every enumerated tool response; the currently deployed SOC 2 wording has an owner and a deadline.
+- **Risk** — A public API that AI clients call. Mitigation: no tool name, schema or output field changes; transport PRs (#32/#33/#34) stay out of this release; a recorded contract baseline of the deployed artifact is compared before and after.
 
 ## 0a. Necessary changes (this PR only)
 - [x] `docs/plans/2026-10-13-plan-hellog-0001-mcp-stale-vs-product.md` — this plan
 
-Child packages (built later, each its own PR; paths verified on `origin/main`):
-- [ ] `src/server.ts` (line ~86 `new Server(..., { capabilities: { tools: {}, resources: {} } })`) — M5 add `instructions`
-- [ ] `src/server-info.ts` / tests — M5 compatibility test
-- [ ] `src/tools/alternatives.ts` (7+ rows "200 leads") — M3 single Free-cap constant
-- [ ] `src/data/website-mirror.ts` (lines ~33, ~322 SOC 2 text; ~311 price strings) — M2/M4, value changes owned elsewhere
-- [ ] `README.md` line ~198 and `src/tools/integrations.ts` / `src/tools/llms-txt.ts` — M6 integrations count from the derived catalog
-- [ ] `src/tools/__tests__/*` — one test per acceptance criterion
+R1's child PR(s), built later (paths verified on `origin/main`):
+- [ ] `src/data/approved-offer.ts` (new) + `scripts/check-offer.mjs` (new) — the approved offer record and its validator
+- [ ] `package.json` — wire the validator into `verify` and `prepublishOnly`
+- [ ] `src/data/website-mirror.ts` — values arrive only via #50/#57; the validator checks them
+- [ ] `scripts/audit-live-mcp.mjs` — extend the existing live audit with the enumerated matrix and the offer-record comparison
+- [ ] `src/**/__tests__/*` — one test per acceptance criterion
 
-## 0b. What we already know (G4 · learning brief)
-No lessons brief is available for this repo (it is outside the lessons corpus); recorded as "no applicable lesson". Sources read: memory `project_mcp_foundation_plans_2026-10-12.md`, open PR list, audit docs in `docs/`.
-
+## 0b. What we already know (G4)
+No lessons corpus exists for this repo ("no applicable lesson"). Sources: memory `project_mcp_foundation_plans_2026-10-12.md`; open PR list; `RELEASING.md`; `scripts/audit-live-mcp.mjs`; audit docs #53/#55.
 | Source | What it said | What this plan does about it |
 |---|---|---|
-| open **#50** | canonical prices in the mirror: ₹899 + 18% GST both modes, USD $10 annual / $12 monthly | M1 releases it; does not re-implement |
-| open **#57** | drops "Unlimited users" and residency claims; adds a pricing-truth test (stacked on #50) | M1 releases it |
-| open **#55 / #53** | audits: `pricing_get_plans` regressed to ₹1,099; "merge #50 + redeploy is the only live fix needed" | evidence for the premise |
-| open **#47** | CI control plane this repo never had | merge first so the pricing-truth test actually runs |
-| open **#32 / #33 / #34** | SSE CORS, accept application/json clients, `/mcp` canonical path | included in the merge order |
-| open **#59** | what is still pending from the MCP plans (2026-10-12) | this plan adds only the delta from the 2026-10-13 product inventory |
-| hellocrm **#8356** (PLAN-HGC-0456) and website **#1731** (PLAN-HCW-0136) | own the Free caps, USD prices and SOC 2 / integration-count questions | M2–M4, M6 are blocked on them and say so |
-| founder policy (memory 2026-09-17) | the site may claim more than the product does; audit under-advertising | not applied to compliance attestations or to prices — those are facts, not roadmap |
+| open #50, #57 | ₹899 + 18% GST both modes; USD $10 annual / $12 monthly; drops "Unlimited users"; pricing-truth test | R1 releases them under the gate; does not re-implement |
+| open #47 | CI control plane this repo never had | prerequisite of R1 so the tests run |
+| open #32/#33/#34 | SSE CORS, application/json clients, `/mcp` canonical path | **excluded from R1** (transport change = separate release with its own contract tests; see F5) |
+| #53/#55 | audits: live `pricing_get_plans` regressed to ₹1,099 | premise; re-observed in R1 |
+| `RELEASING.md` | publishing and deployment are separate steps; `prepublishOnly` = clean + check:versions + build | the gate attaches to both |
+| website #1731, hellocrm #8356 | own USD/Free/SOC 2/integration decisions | R1 consumes their decisions, never makes them |
+| founder policy 2026-09-17 | site may claim more than the product does | not applied to prices or compliance attestations — those are facts |
 
-## 1. Premise (G8) — what was measured
-All on `origin/main` @ `7312627` by `git grep` (file counts are lower bounds):
+## 1. Premise (G8)
+On `origin/main` @ `7312627` (`git grep`; counts are lower bounds):
 | # | Claim | Type | Evidence | Running system? |
 |---|---|---|---|---|
-| 1 | The mirror's Growth price strings are ₹1,099 monthly and $13 monthly; "Unlimited users" appears in 1 file | documentation | `src/data/website-mirror.ts:311`; `git grep -i "unlimited users"` | **yes — the deployed answer is only reported by audit PRs #55/#53; re-observe before quoting** |
-| 2 | Free plan "200 leads" hard-coded in 7+ comparison rows | documentation | `src/tools/alternatives.ts` (~683, 724, 757, 793, 828, 1074, 1108); product Free cap 150 since 2026-08-04 (hellocrm migration `20260804113254`) | no |
-| 3 | The mirror states "SOC 2 certified" and `compliance: "SOC 2 Type II, CCPA compliant"` | documentation | `src/data/website-mirror.ts:~33, ~322`; the report is in no repo read here | **evidence needed (website WP-C)** |
-| 4 | README says "630-entry catalog, 116 categories"; the website's derived public count is lower and the app's live list is 358 | documentation | `README.md:198`; website `integrations-catalog-data.ts`; product catalogue F-0901 | no |
-| 5 | `initialize` advertises only `tools` and `resources`; no `instructions`, no `prompts` | missing_feature | `src/server.ts:86` | no |
-| 6 | HelloGrowthCRM itself is described as "built for the WhatsApp-first … team" | documentation | `src/tools/alternatives.ts:871`; other "WhatsApp-first" hits describe competitors and are correct | no |
-If a premise is false at the head a package starts on, that package stops with Report B.
+| 1 | Mirror holds Growth ₹1,099 monthly / $13 monthly and "Unlimited users" | documentation | `src/data/website-mirror.ts:311`; `git grep -i "unlimited users"` | **yes — the deployed answer is reported only by audit PRs #53/#55; R1 re-observes it first** |
+| 2 | Mirror asserts "SOC 2 certified" and "SOC 2 Type II"; the report is in no repo read | documentation | `website-mirror.ts:~33, ~322` | **evidence needed (website WP-C)** |
+| 3 | No mirror generator lives in this repo: `website-mirror.ts` changes arrive by PR; the build/deploy paths are `npm run verify`, `prepublishOnly`, and the separate deployment step | documentation | `package.json` scripts; `ls scripts`; `RELEASING.md` | no |
+If a premise is false at the head R1 starts on, R1 stops with Report B.
 
-## 2. What changes — packages (each its own PR; order = risk-first, unblocked-first)
-- **M1 · Release what is already fixed — conditional on a tested release artifact.** Human action; the plan specifies the gate, not the merge.
-  1. **Integration head, not a PR list.** Build one release branch that stacks #47 → #50 → #57 → #32/#33/#34 on current `main`, resolve conflicts there, and run the full suite on that **combined head**. The artifact that is deployed is that head's SHA, recorded in the release note. **Stop condition:** any failing test, any unresolved conflict, or a PR that no longer applies stops the release.
-  2. **Approved offer record.** The release carries a small file listing each public price/cap claim with its approved source and owner: INR Growth 899 per user per month, **GST 18% additional** (billing period and per-user basis stated), USD monthly $12 (founder-final), USD annual **pending Q2**. A check compares the mirror to this record and fails on any mismatch or any unapproved entry.
-  3. **Compliance gate.** The mirror's SOC 2 text (website-mirror.ts ~33, ~322) is **not redeployed as-is** unless the report check (website PLAN-HCW-0136 WP-C: entity, scope, period, wording) has passed, **or** the founder authorises qualified wording (restricted area, G2: the founder's area-naming word is recorded verbatim in the child PR). This plan does not edit the claim itself; it blocks the release on it.
-  4. **Live audit of every affected tool response** — `pricing_get_plans`, `alternatives_*`, `integrations_list`, `initialize` — against the approved offer record, on the deployed candidate (with representative old-style client calls), not only a source grep.
-  5. **Rollback trigger:** any live claim that fails the approved record, or a client-visible error rate above the pre-release baseline, redeploys the previous artifact immediately; the previous artifact's SHA is recorded before release.
-  After deploy, re-run the audit once more after the next mirror sync (the mirror can regress).
-- **M2 · Prices.** No value is edited here. #50's USD annual figure is **$10 per user per month** pending the founder's confirmation (**FOUNDER Q2**: the founder's reply was cut off at "annual at USD 1"; $10 is the reading that matches #50 and the website constants, but it is not recorded as decided). **M1's release is blocked until Q2 is answered**, because a public pricing release cannot use an unresolved value as its pass condition. Any later value change comes from website #1727 / hellocrm #8356.
-- **M3 · One Free-cap constant.** Replace the 7+ literal "200 leads" rows with a single exported constant; the **value** is whatever website #1727 / hellocrm #8114 finally decide (shipped today: 150). Blocked on that decision; the refactor itself is small and additive.
-- **M4 · SOC 2 text — release-gated (see M1 step 3).** The existing text is neither extended nor repeated in new text. It does not stay live by default: either WP-C's report check passes, or the founder authorises qualified wording, before M1 redeploys.
-- **M5 · Protocol guidance (unblocked).** Add an `instructions` string to `initialize` (what the server is, that data is a mirror of the public website, how to cite, the date the mirror was synced). Additive only. A `prompts` capability is **cut** from this plan: it has no stated caller or acceptance criterion. Instruction text MUST NOT contain prices, caps or compliance claims (it would go stale the same way).
-- **M6 · Integrations count.** README line ~198 and `integrations_list` stop quoting a hand-typed count; they read a **versioned catalog summary published by the website** (a JSON with a version and a sync date), consumed through the committed generator after website WP-B1 defines the eligible set. A test rejects a missing summary, a summary whose sync date is older than a stated window, and a printed sync date that differs from the summary's. How the website publishes that summary is specified in the M6 child plan (it needs a website-side change). Blocked on WP-B1.
-- **M7 · Wording.** Reword the one line that calls HelloGrowthCRM "WhatsApp-first" (`alternatives.ts:871`) to the multi-channel description; leave competitor descriptions alone; verify the generated llms.txt output (`src/tools/llms-txt.ts`) for the same phrase at BUILD.
-- *(Not packages — notes only, cut from the package list per review.)* The CRM-side MCP announcement is a founder call; triage of the other 20+ open PRs is housekeeping. Neither resolves this mirror's release.
+## 2. What changes — R1 only
+**R1 · Controlled factual-correction release.** Human action; the plan specifies the gate and the policies.
+1. **Preconditions (block R1):** **Q2** USD annual answered (the founder's reply was cut off at "annual at USD 1"; $10 matches #50 but is not recorded as decided) and **D-SOC2** decided (below).
+2. **Baseline of the deployed contract, before anything changes:** with `audit:live`, capture from the **currently deployed** artifact: `initialize`, `tools/list` with schemas, and the entry points as currently served (legacy and canonical transport paths, JSON and SSE negotiation, session lifecycle, browser-origin behaviour). R1 must reproduce this baseline exactly except the intended price/claim values. Supported old entry points are preserved.
+3. **Release candidate:** a branch stacking #47 → #50 → #57 only, on current `main`; conflicts resolved there; full `npm run verify` on the combined head; the deployed artifact is that head's SHA. Stop condition: any failing test, unresolved conflict, or PR that no longer applies.
+4. **Approved offer record** `src/data/approved-offer.ts` + validator: per offer — currency, billing cadence, commitment period, per-seat basis, **monthly equivalent vs amount charged** (stated separately), effective date, tax treatment (INR: GST 18% additional; **USD tax treatment is not inferred from GST** and stays "not stated" unless the founder states it), approval source and owner. The validator fails on any mismatch with the mirror and on any unapproved entry.
+5. **The truth gate is mandatory on every path that produces or deploys an artifact** (named, with enforcement points):
+   | Path | Enforcement point |
+   |---|---|
+   | local / CI verification | `npm run verify` runs `check-offer` |
+   | npm publish | `prepublishOnly` runs `check-offer` |
+   | deployment (separate step per `RELEASING.md`) | post-deploy `npm run audit:live` against the offer record; deployment is not complete until it passes |
+   | any future mirror generator or sync | MUST call the same validator before replacing `website-mirror.ts`; an unapproved generated artifact never replaces the accepted one |
+   There is no sync path in this repo today (premise 3), so there is nothing to "re-audit after the next sync" — the check runs on every build and deploy instead.
+6. **Live audit matrix (enumerated, committed with the audit script, generated from `registry.ts` at BUILD):** `initialize`; `pricing_get_plans` (no arguments); `alternatives_*` for every competitor slug in the registry; `integrations_list`, `integrations_get` for a named sample and `integrations_list_categories`; `faqs`/`features` tools that mention price or caps. Each response is compared to the offer record and to a forbidden-strings list (₹1,099 as Growth price, "Unlimited users", unapproved certification wording).
+7. **Containment and rollback — not a blind rollback.** The previous artifact carries the forbidden claims, so **automatic redeploy of it is not a recovery policy.** If the live audit fails after deploy: (a) redeploy the *release candidate's parent only if* the failing claim is not one the gate forbids; otherwise (b) deploy a **containment build** that answers the affected tool/field with a neutral "currently unavailable" response — this needs the founder's recorded authorisation in advance (restricted copy). The owner of the live remediation is the founder; the deadline for deciding how the currently deployed wording is handled is **before R1's deploy date**. Post-deploy probes are **synthetic** (3 probes over 10 minutes against the matrix), independent of traffic volume; one transient network failure is retried once before it counts.
+8. **D-SOC2 (founder, blocks R1):** exactly one of — (a) evidence it: website WP-C checks the report (entity, scope, period, wording) and the wording is kept; (b) authorise qualified/removed wording in R1's build (area-naming word recorded verbatim); (c) knowingly accept the currently deployed wording until WP-C finishes, recorded as a risk acceptance with a date. The plan does not pick; the live endpoint is not left silently unowned.
+
+## 3. Register of what is still stale — NOT packages; each becomes its own plan when unblocked
+| ID | Finding | Blocked on | Notes for its plan |
+|---|---|---|---|
+| F1 | HelloGrowthCRM's own Free cap "200 leads" hard-coded in 7+ rows of `src/tools/alternatives.ts`; shipped cap is 150 | website #1727 / hellocrm #8114 decision | single constant; the acceptance check is **scoped to HelloGrowthCRM's own cap** — competitor descriptions legitimately contain other numbers |
+| F2 | README line ~198 "630-entry catalog" and the `integrations_*` counts | website PLAN-HCW-0136 WP-B1 (eligible set) | consume a **validated local artifact** (versioned JSON), never a per-request website fetch; bound its size; define count vs pagination semantics; freshness = **catalog sync time**, never build time; reject future dates and missing summaries; stale-window enforcement must not make a previously safe rollback artifact undeployable; export ownership on the website side |
+| F3 | `initialize` has no `instructions` field (`src/server.ts:86`) | none (additive); baseline = the deployed artifact after R1, or the current verified baseline with a later integration rerun | instruction text carries no prices, caps, certification or counts; acceptance covers the tool response **and** generated `llms.txt` |
+| F4 | `alternatives.ts:871` calls HelloGrowthCRM "WhatsApp-first" | none | competitor descriptions untouched; check generated `llms.txt` output too |
+| F5 | Transport PRs #32/#33/#34 | their own contract-test plan | legacy and canonical paths, JSON/SSE negotiation, initialization/session lifecycle, allowed-origin and cross-session isolation tests; explicit versioning of any removed entry point; CORS is not authentication |
+| F6 | Public-only inputs | none | verify catalog generation uses public inputs only and cannot publish tenant-specific or private integration metadata |
+Not in this repo's scope: CRM-side MCP announcement; triage of the other open PRs.
 
 ## 5. Blast radius
-- **Backward** — every MCP client (Claude, ChatGPT connectors, directory crawlers): responses of `pricing_get_plans`, `alternatives_*`, `integrations_*`, `initialize`. **Forward** — a new `instructions` field is read by clients that start honouring it. **Sideways** — website repo (source of the mirror), hellocrm (price/caps), Smithery/registry listings (`server.json`, `smithery.yaml`), `llms.txt` consumers.
-### 5a. Caller inventory  [caller_inventory]
-| Caller | What it reads | Effect of this plan |
+Backward: every MCP client (assistants, connectors, directory crawlers) reading `pricing_get_plans`, `alternatives_*`, `integrations_*`, `initialize`. Forward: none (no new field in R1). Sideways: the website repo (source of the values), hellocrm (price/caps), registry listings (`server.json`, `smithery.yaml`), cached AI answers (days).
+### 5a. Caller inventory
+| Caller | What it reads | Effect of R1 |
 |---|---|---|
-| MCP clients via `initialize` / `tools/list` | capabilities, tool names and schemas | M5 adds a field; tool names/schemas unchanged |
-| Clients calling `pricing_get_plans` | plan price strings | values change only through #50/#57; shape unchanged |
-| Clients calling `alternatives_*` / `integrations_*` | comparison rows, counts | M3/M6 change values, not shape |
-| Directory/registry crawlers (`server.json`, llms.txt) | descriptions, counts | M6/M7 wording; re-submission not owed |
-| Website repo mirror generator | `website-mirror.ts` structure | unchanged |
+| MCP clients via `initialize` / `tools/list` | capabilities, names, schemas | unchanged (baseline-compared) |
+| Clients of `pricing_get_plans` | plan price strings | values change; shape unchanged |
+| Clients of `alternatives_*` / `integrations_*` | rows, counts | unchanged in R1 |
+| Registry crawlers (`server.json`, `llms.txt`) | descriptions | unchanged in R1 |
 
 ## 6. Acceptance criteria
-- **AC-01** — After M1, a live `tools/call pricing_get_plans` equals the approved offer record (INR 899 per user per month, GST 18% additional, USD monthly $12, billing period and per-user basis stated) and contains no "Unlimited users" and no ₹1,099 as the Growth price.
-- **AC-09** — M1 does not deploy while Q2 (USD annual) or the SOC 2 gate is unresolved.
-- **AC-10** — The deployed artifact's SHA equals the tested integration head's SHA.
-- **AC-11** — Every affected tool response (`pricing_get_plans`, `alternatives_*`, `integrations_list`, `initialize`) passes the live audit against the approved record.
-- **AC-02** — NEGATIVE: no package changes a tool name, input schema or output field name.
-- **AC-03** — REGRESSION: the existing suite (`src/tools/__tests__/*`, `registry.test.ts`, `annotations.test.ts`) passes unchanged.
-- **AC-04** — M5: `initialize` response contains a non-empty `instructions` string; a client that ignores it behaves exactly as before.
-- **AC-05** — NEGATIVE: the M5 `instructions` text contains no price, plan cap, certification or integration count.
-- **AC-06** — M3: `git grep -n "200 leads"` over `src/` returns 0 literals; every Free-cap mention is read from the one constant.
-- **AC-07** — NEGATIVE: no SOC 2 / ISO / PCI wording is added anywhere by any package.
-- **AC-08** — M6: the integrations count in README and the tool equals the website catalog summary at the sync date printed beside it.
+- **AC-01** — After R1 the live `pricing_get_plans` equals the approved offer record, including cadence, per-seat basis, monthly-equivalent vs charged amount and tax treatment as stated there; it contains no ₹1,099 as Growth and no "Unlimited users".
+- **AC-02** — NEGATIVE: no tool name, input schema or output field name differs from the pre-release deployed baseline (nested shape, not only top-level keys).
+- **AC-03** — REGRESSION: the existing suite passes unchanged on the combined head.
+- **AC-04** — The deployed artifact's SHA equals the tested release head's SHA.
+- **AC-05** — Every path in the §2.5 table fails closed when the validator fails (a deliberately wrong value breaks `verify`, `prepublishOnly` and the post-deploy audit).
+- **AC-06** — Every response in the enumerated live matrix passes against the offer record and the forbidden-strings list.
+- **AC-07** — NEGATIVE: R1 adds no SOC 2 / ISO / PCI wording and none of #32/#33/#34's transport changes.
+- **AC-08** — R1 does not deploy while Q2 or D-SOC2 is unresolved.
+- **AC-09** — Rollback policy test: simulating a failed audit does not redeploy an artifact containing a forbidden claim (the containment path is exercised on a non-production target).
 
 ## 7b. Smoke test — Expected only
-Env: the deployed MCP endpoint and a local `npm run dev`/inspector · No login · Client: `test-mcp.mjs` or the MCP inspector.
+Env: the deployed MCP endpoint and a local `npm run dev`; client `scripts/audit-live-mcp.mjs` or the MCP inspector · no login.
 | # | Action | Expected |
 |---|---|---|
-| 1 ⭐ | `tools/call pricing_get_plans` | equals the approved offer record: Growth INR 899 per user per month with GST 18% additional; USD monthly $12; no "Unlimited users"; USD annual only once Q2 is answered |
-| 1b | run the offer-record check against the deployed candidate | 0 mismatches, 0 unapproved entries |
-| 2 ⭐ | `initialize` | response includes `instructions` **(new)** |
-| 3 | `tools/list` | same tool names and schemas as before the change |
-| 4 NEGATIVE | `tools/call alternatives_*` for any competitor | no "200 leads" string |
-| 5 REGRESSION | `tools/call integrations_list` | still returns entries; count printed with its sync date |
-| 6 ⭐ | repo `npm test` (after #47) | all suites pass |
+| 1 ⭐ | `tools/call pricing_get_plans` | equals the approved offer record; INR 899 per user per month, GST 18% additional; USD monthly $12; no "Unlimited users"; USD annual only once Q2 is answered |
+| 2 ⭐ | `npm run audit:live` | 0 mismatches, 0 forbidden strings across the enumerated matrix |
+| 3 | `tools/list` | identical names and schemas to the recorded pre-release baseline |
+| 4 NEGATIVE | put a wrong price in a scratch branch and run `npm run verify` | the build fails at `check-offer` |
+| 5 REGRESSION | `tools/call integrations_list` | still returns entries (unchanged in R1) |
+| 6 ⭐ | `npm test` on the release head | all suites pass |
 
-## 7f. Compatibility test  [compatibility_test]
-For M3, M5, M6, M7 a test pins the **public shape**: tool names, input schemas and the **full nested output structure** (keys and value types, not only top-level keys). The baseline is the **tested pre-release artifact from M1** (the integration head), not `origin/main`, so changes introduced by the release stack are not mistaken for regressions or missed. Values clients parse — price strings, comparison rows, counts — get their own pattern tests (billing period, per-user basis, GST stated as additional). Representative old-style client calls are replayed against the deployed candidate; an old-style client with no `instructions` handling must still succeed.
+## 7f. Compatibility test
+The pre-release baseline is captured from the **deployed** artifact (§2.2) and compared, nested-structure and value-type exact, with the release candidate. Parsed values (price strings, cadence text) have pattern tests. Old-style client calls are replayed against the deployed candidate. Transport behaviour is explicitly unchanged in R1 because the transport PRs are excluded.
 
 ## 8. Risks and edge cases
-Directory listings and AI answers may cache the old values for days after deploy; a redeploy without the audit re-run proves nothing; `instructions` text can itself go stale (hence AC-05); the mirror can regress to old values if the website-side generator still emits them — M1 verification must be repeated after the next mirror sync.
+Cached answers elsewhere persist for days after deploy; directory listings are not updated by a redeploy; the offer record can itself go stale — it has an owner and a review date; a probe failing on a low-traffic endpoint is retried before counting; timezone of the "effective date" is stated in the record.
 
 ## 9. What this deliberately does NOT do
-- Does not edit any price, Free cap, SOC 2 or integration value (all owned by #50/#57, #1727, #8356, PLAN-HCW-0136).
-- Does not add or remove a tool.
-- Does not touch the CRM-side MCP server.
-- Does not claim anything about what is deployed; the live answer is re-observed in M1.
+- Does not edit any price, cap, compliance or integration value (owned by #50/#57, #1727, #8356, PLAN-HCW-0136).
+- Does not release #32/#33/#34, add a `prompts` capability or an `instructions` field.
+- Does not roll back to an artifact containing forbidden claims.
+- Does not touch the CRM-side MCP.
 
 ## 10. Review record
 | Reviewer | Plan version | Verdict | Accepted | Rejected, and why |
 |---|---|---|---|---|
-| Sol | rev 1 | REJECT | B1 no release on unresolved USD annual (M1 blocked on Q2; approved offer record); B2 SOC 2 text must not stay live unverified — taken as a release gate + founder-authorised wording, NOT a unilateral edit (restricted area G2); B3 tested integration head + stop condition; B4 compat baseline = tested pre-release artifact + nested shape. Risks: price semantics (period, per-user, GST) tested; source-to-release check; old-client replay on deployed candidate; rollback trigger. Missing: all-claims release gate, versioned catalog summary + stale-sync test, live audit of every affected tool. Cut: `prompts` capability, M8/M9 | partially: Sol asked to "remove or qualify" the SOC 2 text; rejected as a unilateral action — a compliance attestation is restricted copy and the founder decides (remove, qualify or evidence it); the plan instead blocks the redeploy until that decision exists |
-| Astra (blind) | rev 2 | pending | | |
-- **Human approval:** not owed at T2; M1 is a human merge/redeploy action.
-- **What left the machine (G9b):** pending.
+| Sol | rev 1 | REJECT | release gated on approved values + tested head + compat baseline; SOC 2 as a release gate | the request to "remove or qualify" SOC 2 text was taken as a founder decision (D-SOC2), not a unilateral edit — restricted copy |
+| Astra (blind) | rev 2 | REJECT | (1) pre-change compatibility gate on the deployed contract; (2) rollback can restore forbidden claims → containment policy + owner/deadline; (3) truth checks mandatory on every artifact-producing and deploying path (named); risks/missing/cuts: offer-record schema, enumerated matrix, M5↔M1 dependency, scoped Free-cap assertion, M7 acceptance, drop #32-34 from R1, drop Q3, drop `prompts` claim | none — one correction: Astra assumed a website generator writes the mirror; no such generator exists in this repo (premise 3), so the gate attaches to build and deploy paths instead of a sync path |
+| Astra (blind) | rev 3 (this revision, narrowed) | pending | | |
+- **Human approval:** not owed at T2; R1's release, Q2 and D-SOC2 are human.
+- **What left the machine (G9b):** plan text only; egress CLEAN each time; no customer data.
 
-## 11b. Planned help content  [help_content · chatbot_kb]
-The consumer-facing "help" for this server is its README tool table and the MCP `instructions` string: both are updated by M5/M6 in the product's words; the website's chatbot/help sources are covered by website PLAN-HCW-0136 WP-D, not duplicated here. Stale README statements the changes touch are corrected in the same PR.
+## 11b. Planned help content
+The MCP's consumer-facing documentation is its README tool table and `llms.txt`. R1 changes no wording there. F2/F3/F4 own those edits; the website chatbot/help sources are covered by website PLAN-HCW-0136 WP-D.
 
 ## Founder questions
-Q1 Merge-and-redeploy authority for #47/#50/#57 (who clicks, when)? Q2 Growth annual USD: confirm $10 (reply was truncated). Q3 Announce the CRM-side MCP: yes/no/later? Q4 SOC 2 report: exists / issuer / scope / period (shared with website WP-C).
+Q1 Who clicks merge/deploy for R1, and by when? Q2 Growth annual USD — confirm $10 (reply was cut off at "annual at USD 1"). **D-SOC2** choose (a), (b) or (c) above; also the SOC 2 report facts (issuer, scope, period) if (a). Q4 USD tax treatment: state it, or leave "not stated"?
