@@ -290,13 +290,14 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 | `UPSTASH_REDIS_REST_TOKEN` | — | Optional: token for the shared rate-limit store. |
 | `TRANSPORT` | `http` | `http` (Streamable HTTP on `PORT`, endpoint `/sse`) or `stdio`. |
 | `MCP_STDIO_TRUSTED` | unset | `1` elevates a **stdio** session to the full tool set (still requires `MCP_ADMIN_TOKEN` to be set). Without it stdio gets the same public tools as HTTP. Exposes write tools — only for operator use. |
-| `TRUST_PROXY_HEADERS` | `false` | Honour forwarded headers for the rate-limit key — and only when the TCP peer is in `TRUSTED_PROXY_CIDRS`. Production behind Apache on the same host sets `true`. |
-| `TRUSTED_PROXY_CIDRS` | `127.0.0.1/32,::1/128` | Peers whose `X-Forwarded-For` (and, with the next setting, `CF-Connecting-IP`) is believed. XFF is walked from the right, skipping trusted hops. |
-| `TRUST_CLOUDFLARE` | `false` | Also honour `CF-Connecting-IP` from a trusted peer. Set only when the origin is reachable through Cloudflare alone. |
+| `TRUST_PROXY_HEADERS` | `false` | Honour forwarded headers for the rate-limit key — and only when the TCP peer is in `TRUSTED_PROXY_CIDRS`. Production behind Cloudflare -> Apache sets `true`. |
+| `TRUSTED_PROXY_CIDRS` | `127.0.0.1/32,::1/128` | Peers whose `X-Forwarded-For` (and, with the next setting, `CF-Connecting-IP`) is believed. XFF is walked from the right, skipping trusted hops. **Production behind Cloudflare -> Apache must list Cloudflare's published IPv4 and IPv6 ranges ([ips-v4](https://www.cloudflare.com/ips-v4), [ips-v6](https://www.cloudflare.com/ips-v6)) plus the local proxy address, with `TRUST_PROXY_HEADERS=true`; otherwise every caller is keyed by a Cloudflare edge IP and shares one bucket. Cloudflare changes these lists occasionally, so refresh them periodically.** |
+| `TRUST_CLOUDFLARE` | `false` | Also honour `CF-Connecting-IP`, but only when the hop that delivered it (right-most `X-Forwarded-For` hop, or the socket peer without XFF) is inside `CLOUDFLARE_CIDRS`. Otherwise it is ignored. |
+| `CLOUDFLARE_CIDRS` | empty | Cloudflare's published ranges (same lists as above); required for `TRUST_CLOUDFLARE` to have any effect. |
 | `OUTBOUND_BUDGET_PER_MIN` / `OUTBOUND_BUDGET_PER_HOUR` | `30` / `300` | Outbound fetches an anonymous client may trigger (each redirect hop counts). Authenticated sessions are exempt. |
 | `PUBLIC_MAX_PAGES_PER_CALL` | `5` | Public per-call cap for `crawl_pages` `limit`, `scan_website_bots` `sampleSize`, `check_ai_extractability` URLs and sitemap child expansion. |
 | `MCP_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1],mcp.hellogrowthcrm.com` | `Host` values `/sse` accepts (an entry without a port matches any port). Anything else gets 403 (DNS-rebinding protection). |
-| `MCP_ALLOWED_ORIGINS` | localhost origins + `https://mcp.hellogrowthcrm.com` | Browser `Origin` values `/sse` accepts; requests without `Origin` pass. `*` disables the Origin check. |
+| `MCP_ALLOWED_ORIGINS` | localhost origins + `https://mcp.hellogrowthcrm.com` | Browser `Origin` values `/sse` accepts; requests without `Origin` pass. `*` disables the Origin check. **Deploy note:** browser-hosted clients (an `Origin` such as a hosted inspector) now get 403 unless `MCP_ALLOWED_ORIGINS` includes them or is `*`; decide before deploy. |
 | `MCP_MAX_BODY_BYTES` | `1048576` | Larger request bodies get 413 before parsing. |
 | `MCP_MAX_SESSIONS` / `MCP_SESSION_IDLE_MS` | `1000` / `1800000` | Session cap (least-recently-used evicted) and idle timeout. |
 | `ENABLE_MCP_ANALYTICS` | `false` | Master switch for MCP/SSE analytics — must be `true` to send. |

@@ -17,7 +17,10 @@
  *   - the TCP peer (req.socket.remoteAddress) is inside TRUSTED_PROXY_CIDRS
  *     (default 127.0.0.1/32,::1/128 — a reverse proxy on the same host).
  * Then:
- *   - CF-Connecting-IP is used only when TRUST_CLOUDFLARE=true as well.
+ *   - CF-Connecting-IP is used only when TRUST_CLOUDFLARE=true as well AND the
+ *     hop that delivered it (the right-most X-Forwarded-For hop, or the socket
+ *     peer when there is no XFF) is inside CLOUDFLARE_CIDRS. A forged
+ *     CF-Connecting-IP arriving via any non-Cloudflare path is ignored.
  *   - Otherwise X-Forwarded-For is walked from the RIGHT, skipping hops that
  *     are themselves trusted proxies; the first untrusted hop is the client.
  * Anything else → the socket address.
@@ -27,6 +30,8 @@
  * TRUST_CLOUDFLARE=true. Ops must confirm the topology before deploy: with
  * the defaults behind a proxy, every caller shares the proxy's bucket.
  */
+
+import { isIP } from "node:net";
 
 import { ipInCidrs, normalizeIp, parseCidrList, type Cidr } from "./cidr.js";
 
@@ -38,6 +43,8 @@ export interface ClientIpConfig {
   trustProxy: boolean;
   trustedProxies: readonly Cidr[];
   trustCloudflare: boolean;
+  /** Cloudflare's published edge ranges; CF-Connecting-IP is believed only from these. */
+  cloudflareRanges: readonly Cidr[];
 }
 
 export type ClientIpMode = "direct" | "proxy" | "proxy+cloudflare";
@@ -51,6 +58,7 @@ export function clientIpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): Cli
     trustProxy: truthy(env.TRUST_PROXY_HEADERS),
     trustedProxies: parseCidrList(env.TRUSTED_PROXY_CIDRS ?? DEFAULT_TRUSTED_PROXY_CIDRS),
     trustCloudflare: truthy(env.TRUST_CLOUDFLARE),
+    cloudflareRanges: parseCidrList(env.CLOUDFLARE_CIDRS ?? ""),
   };
 }
 
@@ -79,20 +87,25 @@ export function resolveClientIp(
 
   if (!config.trustProxy || !ipInCidrs(peer, config.trustedProxies)) return peer;
 
+  const xff = firstValue(headers["x-forwarded-for"]);
+  // Valid IPs only: a garbage entry must never become a rate-limit key.
+  const hops = xff ? xff.split(",").map((h) => normalizeIp(h)).filter((h) => isIP(h) !== 0) : [];
+
   if (config.trustCloudflare) {
+    // The hop that handed us the request must itself be Cloudflare.
+    const deliverer = hops.length > 0 ? hops[hops.length - 1] : peer;
     const cf = firstValue(headers["cf-connecting-ip"])?.trim();
-    if (cf) return normalizeIp(cf);
+    if (cf && ipInCidrs(deliverer, config.cloudflareRanges)) {
+      const ip = normalizeIp(cf);
+      if (isIP(ip) !== 0) return ip;
+    }
   }
 
-  const xff = firstValue(headers["x-forwarded-for"]);
-  if (xff) {
-    const hops = xff.split(",").map((h) => normalizeIp(h)).filter(Boolean);
-    // Walk from the right: everything left of the first untrusted hop is
-    // caller-supplied and worthless.
-    for (let i = hops.length - 1; i >= 0; i -= 1) {
-      const hop = hops[i]!;
-      if (!ipInCidrs(hop, config.trustedProxies)) return hop;
-    }
+  // Walk from the right: everything left of the first untrusted hop is
+  // caller-supplied and worthless.
+  for (let i = hops.length - 1; i >= 0; i -= 1) {
+    const hop = hops[i]!;
+    if (!ipInCidrs(hop, config.trustedProxies)) return hop;
   }
 
   return peer;
