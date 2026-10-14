@@ -1,6 +1,6 @@
 # Plan: UTM-tag own-site URLs and add a `get_started` tool
 
-**Severity:** P2 · **Effort:** M · **Server:** website MCP, `origin/main` 7312627
+**Severity:** P1 (corrected 2026-10-14: skill §4 V1/V2 rate missing UTM and a missing conversion tool P1). Re-measured with the new script: `WARN X.utm`, with 0 of 3 URLs in the `pricing_get_plans` output tagged. `X.conversion_tool` passes only on a name heuristic (`company_get_contacts`); there is still no `get_started` tool. · **Effort:** M · **Server:** website MCP, `origin/main` 7312627
 
 ## Finding
 - Tools return many hellogrowthcrm.com URLs: product pages, comparisons, pricing, country hubs and resources (`src/server.ts:175-205`). A grep finds 81 literal `https://hellogrowthcrm.com…` occurrences in non-test `src/**/*.ts`, plus URLs built from `routePrefix`/`pricingHref` in `src/data/website-mirror.ts`.
