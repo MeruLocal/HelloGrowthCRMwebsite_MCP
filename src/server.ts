@@ -273,13 +273,11 @@ const MCP_SPEC_REVISION = LATEST_PROTOCOL_VERSION;
 /**
  * Finding C4. The JSON-RPC surface has nothing to index and indexing it only
  * invites junk traffic; the landing page is fair game. No sitemap is served —
- * an API host has no pages to enumerate.
+ * an API host has no pages to enumerate. This is the ONLY robots.txt source:
+ * the /robots.txt route serves it verbatim. Only /sse exists on this host;
+ * /mcp and /message never did.
  */
-const ROBOTS_TXT = `User-agent: *
-Disallow: /sse
-Disallow: /messages
-Allow: /$
-`;
+export const ROBOTS_TXT = ["User-agent: *", "Allow: /$", "Disallow: /sse", ""].join("\n");
 
 /** Finding C4. Mirrors https://hellogrowthcrm.com/.well-known/security.txt. */
 const SECURITY_TXT = `Contact: mailto:security@hellogrowthcrm.com
@@ -303,7 +301,10 @@ const RESOURCE_COUNT = RESOURCES.length;
 
 const GOOGLE_TAG_ID = "G-TRJT49XKH5";
 const AHREFS_ANALYTICS_KEY = "typKHgOUagJygUMAlJyQKA";
-const HOME_PAGE_HTML = `<!doctype html>
+const escapeHtml = (text: string): string =>
+  text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+export const HOME_PAGE_HTML = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -344,12 +345,9 @@ const HOME_PAGE_HTML = `<!doctype html>
 <body>
   <main>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
-    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Discovery: <a href="/.well-known/mcp.json">/.well-known/mcp.json</a> &middot; Tools: <code>POST /sse</code> &rarr; <code>tools/list</code></p>
-    <p><small>This is not a customer CRM API. It holds no customer data, performs no CRM actions, and needs no API key &mdash; never send one here.</small></p>
-    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required, and the public endpoint returns no personal data. This is not a CRM API and it performs no CRM actions — never send CRM credentials here.</p>
-    <p>Content-management tools and the tools that read newsletter subscribers or contact-form submissions are not served on this endpoint; they require an authenticated session.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a></p>
+    <p>${escapeHtml(SERVER_DESCRIPTION)}</p>
+    <p>Connect: <code>https://mcp.hellogrowthcrm.com/sse</code> &mdash; Streamable HTTP (MCP Inspector: <code>--transport http</code>). No credentials are needed.</p>
+    <p>Status: <a href="/health">/health</a> &middot; <a href="/version">/version</a> &middot; <a href="/.well-known/mcp.json">/.well-known/mcp.json</a></p>
   </main>
 </body>
 </html>
@@ -786,17 +784,7 @@ export async function runServer(): Promise<void> {
       if (url.pathname === "/robots.txt") {
         // This host serves a protocol endpoint, not indexable content. The
         // landing page is the only thing worth crawling.
-        send(
-          200,
-          "text/plain; charset=utf-8",
-          [
-            "User-agent: *",
-            "Allow: /$",
-            // Only /sse exists on this host; /mcp and /message never did.
-            "Disallow: /sse",
-            "",
-          ].join("\n"),
-        );
+        send(200, "text/plain; charset=utf-8", ROBOTS_TXT);
         return;
       }
 
