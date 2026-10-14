@@ -1,6 +1,6 @@
 # Plan: make stdio packaging work and stop it trusting by default
 
-**Severity:** P1 · **Effort:** S · **Server:** website MCP, `origin/main` 7312627
+**Severity:** P0 (corrected 2026-10-14: skill §4 S5 rates stdio exposing write/personal-data tools without the token P0; part 1, the packaging mismatch, alone would be P1) · **Effort:** S · **Server:** website MCP, `origin/main` 7312627
 
 ## Finding
 1. **Packaging says stdio, the binary starts HTTP.**
