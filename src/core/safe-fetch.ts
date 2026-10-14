@@ -78,6 +78,7 @@ const V4_BLOCKED: [string, number][] = [
   ["169.254.0.0", 16],
   ["172.16.0.0", 12],
   ["192.0.0.0", 24],
+  ["192.88.99.0", 24], // deprecated 6to4 relay anycast
   ["192.168.0.0", 16],
   ["198.18.0.0", 15],
   ["224.0.0.0", 4],
@@ -146,6 +147,7 @@ export function isBlockedAddress(ip: string): boolean {
   if ((a & 0xffc0) === 0xfe80) return true; // fe80::/10
   if ((a & 0xff00) === 0xff00) return true; // ff00::/8
   if (a === 0x64 && b === 0xff9b && h.slice(2, 6).every((x) => x === 0)) return true; // 64:ff9b::/96
+  if (a === 0x2001 && b === 0) return true; // Teredo 2001:0::/32
   const v4 = mappedV4(h);
   if (v4) return isBlockedAddress(v4); // ::ffff:0:0/96 and ::/96
   if (a === 0x2002) {
