@@ -9,6 +9,30 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Security
+
+- **`export_bot_report` never writes files on the public endpoint.** `saveToDisk`
+  now defaults to `false`; a public call that asks for it gets the report inline
+  with `savedTo: null` and a note. Authenticated sessions may still save, but
+  only a plain file name inside `REPORT_OUTPUT_DIR` (traversal is rejected).
+- **No server file reads from public tools.** `logPath` (analyze_access_logs,
+  export_bot_report, scan_website_bots, suggest_bot_policy) and `robotsTxtPath`
+  (list_allowed_bots, list_blocked_bots) are refused for public callers and
+  removed from the public `tools/list` schemas. Authenticated sessions may read
+  only inside `LOG_DIR`. Read errors no longer echo the path or the OS error.
+  New inline `robotsTxt` input on the two `list_*` tools.
+- **SSRF:** every outbound fetch goes through one helper that refuses private,
+  loopback, link-local/metadata, CGNAT and other reserved addresses (IPv4 and
+  IPv6), re-checks each redirect hop, pins the connection to the vetted
+  address, caps the body and returns generic error codes.
+- **`generate_robots_txt`** rejects line breaks in sitemap URLs, user agents and
+  paths, so a value cannot inject extra robots.txt directives.
+- **`analytics_social_proof` returns counts only** (`confirmed_subscribers`,
+  `new_last_30_days`). It no longer returns masked emails or subscribe times.
+  `limit` is accepted and ignored.
+
 ## [2.0.0] — 2026-08-31
 
 ### Removed — BREAKING

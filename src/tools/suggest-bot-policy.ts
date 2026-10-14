@@ -9,7 +9,8 @@
 import { z } from "zod";
 
 import { aggregate } from "../core/aggregator.js";
-import { parseAccessLog, parseAccessLogFile } from "../core/log-parser.js";
+import { parseAccessLog } from "../core/log-parser.js";
+import { READ_FAILED, readResolved, resolveLogPath } from "../core/log-access.js";
 import type { BotPolicySuggestion, BotSummary } from "../utils/types.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -27,8 +28,8 @@ export const suggestBotPolicy = defineTool({
     inputSchema: {
       type: "object",
       properties: {
-        logPath: { type: "string" },
-        logText: { type: "string" },
+        logPath: { type: "string", description: "Operator-only (authenticated sessions): a log file inside LOG_DIR." },
+        logText: { type: "string", description: "Raw access-log content." },
       },
       additionalProperties: false,
     },
@@ -38,13 +39,12 @@ export const suggestBotPolicy = defineTool({
     if (args.logText) {
       parsed = parseAccessLog(args.logText);
     } else {
-      const path = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
-      if (!path) return fail("Provide `logPath` or `logText`.");
-      try {
-        parsed = await parseAccessLogFile(path);
-      } catch (err) {
-        return fail(`Could not read log file ${path}: ${(err as Error).message}`);
-      }
+      const resolved = await resolveLogPath(args.logPath);
+      if (resolved.kind === "denied") return fail(resolved.message);
+      if (resolved.kind === "none") return fail("Provide `logText` (the log content).");
+      const text = await readResolved(resolved.path);
+      if (text === null) return fail(READ_FAILED);
+      parsed = parseAccessLog(text);
     }
 
     const summaries = aggregate(parsed.entries);

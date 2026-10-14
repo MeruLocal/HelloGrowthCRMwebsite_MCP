@@ -25,6 +25,7 @@
 import { z } from "zod";
 
 import { PoliteCrawler } from "../core/crawler.js";
+import { safeFetch } from "../core/safe-fetch.js";
 import { isDisallowed } from "../core/robots-parser.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -223,36 +224,21 @@ export function countLocs(xml: string): number {
   return (xml.match(/<loc>/gi) ?? []).length;
 }
 
+/** Sitemaps may legitimately be large (50k URLs ≈ 10 MB); still bounded. */
+const SITEMAP_MAX_BYTES = 10 * 1024 * 1024;
+
 async function timedFetch(
   url: string,
   timeoutMs: number,
   userAgent: string,
 ): Promise<TimedFetch> {
   const started = Date.now();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  timer.unref?.();
-
-  try {
-    const res = await fetch(url, {
-      headers: { "user-agent": userAgent, accept: "application/xml,text/xml" },
-      signal: controller.signal,
-    });
-    const body = await res.text();
-    return {
-      body,
-      result: {
-        url,
-        ok: res.status < 400,
-        status: res.status,
-        elapsedMs: Date.now() - started,
-        bytes: body.length,
-        urlCount: countLocs(body),
-        error: res.status >= 400 ? `http_${res.status}` : null,
-      },
-    };
-  } catch (err) {
-    const aborted = (err as Error).name === "AbortError";
+  const res = await safeFetch(url, {
+    timeoutMs,
+    maxBytes: SITEMAP_MAX_BYTES,
+    headers: { "user-agent": userAgent, accept: "application/xml,text/xml" },
+  });
+  if (!res.ok) {
     return {
       body: "",
       result: {
@@ -263,13 +249,24 @@ async function timedFetch(
         bytes: 0,
         urlCount: null,
         // A timeout and a reset connection are different problems: the first is
-        // usually a slow generator, the second an edge/origin failure.
-        error: aborted ? "timeout" : `network_error: ${(err as Error).message}`,
+        // usually a slow generator, the second an edge/origin failure. Only the
+        // generic code is returned, never the internal error message.
+        error: res.error,
       },
     };
-  } finally {
-    clearTimeout(timer);
   }
+  return {
+    body: res.body,
+    result: {
+      url,
+      ok: res.status < 400,
+      status: res.status,
+      elapsedMs: Date.now() - started,
+      bytes: res.bytes,
+      urlCount: countLocs(res.body),
+      error: res.status >= 400 ? `http_${res.status}` : res.truncated ? "too_large" : null,
+    },
+  };
 }
 
 /** Pull child sitemap URLs out of a sitemap index. */

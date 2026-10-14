@@ -62,9 +62,11 @@ HelloGrowthCRMwebsite_MCP/
 ```
 
 > There is **no `samples/access.log`** in the repo, though `DEFAULT_ACCESS_LOG`
-> defaults to that path. Point `DEFAULT_ACCESS_LOG` at a real log, or pass
-> `logPath` / `logText` explicitly to `analyze_access_logs` and
-> `export_bot_report`. `reports/` is created on first export.
+> defaults to that path. Point `DEFAULT_ACCESS_LOG` at a real log, or pass the
+> log content as `logText`. `logPath` / `robotsTxtPath` (server-side files) and
+> `saveToDisk` are operator-only: refused on the public endpoint, and for an
+> authenticated session limited to files inside `LOG_DIR` /
+> `REPORT_OUTPUT_DIR`. `reports/` is created on first authorised export.
 
 ## Quick start
 
@@ -153,7 +155,7 @@ for what changed between versions.
 | `list_blocked_bots` | Bots blocked under the current policy (default high-risk, or live robots.txt). |
 | `generate_robots_txt` | Policy-driven robots.txt generator (block AI / SEO / scrapers / security scanners, declare sitemaps, set Crawl-delay). |
 | `suggest_bot_policy` | For each bot observed in a log, recommends allow / monitor / rate-limit / block with rationale and ready-to-paste nginx snippet. |
-| `export_bot_report` | Writes a Markdown / JSON / CSV report under `REPORT_OUTPUT_DIR`. |
+| `export_bot_report` | Returns a Markdown / JSON / CSV report inline. Authenticated sessions may also save it under `REPORT_OUTPUT_DIR` (plain file names only). |
 
 Full payload examples live in [`examples/usage.md`](examples/usage.md).
 
@@ -267,7 +269,9 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 | `CRAWL_DELAY_MS` | `1000` | Per-host delay. |
 | `HTTP_TIMEOUT_MS` | `10000` | Per-request timeout. |
 | `CRAWLER_USER_AGENT` | `mcp-bot-crawler/1.0 (+...)` | Outbound UA. |
-| `REPORT_OUTPUT_DIR` | `./reports` | Where exports land. |
+| `REPORT_OUTPUT_DIR` | `./reports` | Where authorised exports land. The public endpoint never writes. |
+| `LOG_DIR` | unset | The only directory an authenticated session may read through `logPath` / `robotsTxtPath`. Unset = nobody may. |
+| `SAFE_FETCH_ALLOW_PRIVATE` | unset | Local development only: `1` lets outbound tools fetch loopback (127.0.0.0/8, ::1). Every other private range stays blocked. Never set in production. |
 | `LOG_LEVEL` | `info` | `error` / `warn` / `info` / `debug`. |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window for the HTTP transport. |
 | `RATE_LIMIT_MAX_REQUESTS` | `60` | Max requests per window per client IP. |

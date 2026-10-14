@@ -9,15 +9,23 @@
 import { z } from "zod";
 
 import { aggregate } from "../core/aggregator.js";
-import { parseAccessLog, parseAccessLogFile } from "../core/log-parser.js";
-import { renderReport, writeReport } from "../reports/report-generator.js";
+import { parseAccessLog } from "../core/log-parser.js";
+import { READ_FAILED, readResolved, resolveLogPath } from "../core/log-access.js";
+import {
+  REPORT_FILENAME_PATTERN,
+  renderReport,
+  writeReport,
+} from "../reports/report-generator.js";
+import { getCallContext } from "./call-context.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const Input = z.object({
   logPath: z.string().optional(),
   logText: z.string().optional(),
   format: z.enum(["json", "markdown", "csv"]).default("markdown"),
-  saveToDisk: z.boolean().default(true),
+  saveToDisk: z.boolean().default(false),
+  // Validated in writeReport (authorised path only), so a public call with a
+  // bad name still gets its report inline instead of a schema error.
   filename: z.string().optional(),
   targetUrl: z.string().url().optional(),
 });
@@ -27,19 +35,23 @@ export const exportBotReport = defineTool({
   definition: {
     name: "export_bot_report",
     description:
-      "Generate a bot-activity report (markdown / json / csv) and optionally save it under REPORT_OUTPUT_DIR.",
+      "Generate a bot-activity report (markdown / json / csv) from access-log text and return it inline. Saving to the server's REPORT_OUTPUT_DIR (saveToDisk, filename) is limited to authenticated operator sessions.",
     inputSchema: {
       type: "object",
       properties: {
-        logPath: { type: "string" },
-        logText: { type: "string" },
+        logPath: { type: "string", description: "Operator-only (authenticated sessions): a log file inside LOG_DIR." },
+        logText: { type: "string", description: "Raw access-log content." },
         format: {
           type: "string",
           enum: ["json", "markdown", "csv"],
           default: "markdown",
         },
-        saveToDisk: { type: "boolean", default: true },
-        filename: { type: "string" },
+        saveToDisk: { type: "boolean", default: false, description: "Operator-only (authenticated sessions)." },
+        filename: {
+          type: "string",
+          pattern: REPORT_FILENAME_PATTERN.source,
+          description: "Operator-only: a plain file name (no directories) inside REPORT_OUTPUT_DIR.",
+        },
         targetUrl: { type: "string", format: "uri" },
       },
       additionalProperties: false,
@@ -47,36 +59,49 @@ export const exportBotReport = defineTool({
   },
   async handle(args) {
     let parsed;
+    let source: string;
     if (args.logText) {
       parsed = parseAccessLog(args.logText);
+      source = "inline-text";
     } else {
-      const path = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
-      if (!path) return fail("Provide `logPath` or `logText`.");
-      try {
-        parsed = await parseAccessLogFile(path);
-      } catch (err) {
-        return fail(`Could not read log file ${path}: ${(err as Error).message}`);
-      }
+      const resolved = await resolveLogPath(args.logPath);
+      if (resolved.kind === "denied") return fail(resolved.message);
+      if (resolved.kind === "none") return fail("Provide `logText` (the log content).");
+      const text = await readResolved(resolved.path);
+      if (text === null) return fail(READ_FAILED);
+      parsed = parseAccessLog(text);
+      source = resolved.label;
     }
 
     const summaries = aggregate(parsed.entries);
     const meta: { targetUrl?: string; source?: string } = {
-      source: args.logText ? "inline-text" : (args.logPath ?? process.env.DEFAULT_ACCESS_LOG ?? "unknown"),
+      source,
       targetUrl: args.targetUrl ?? process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
     };
 
     const body = renderReport(summaries, args.format, meta);
 
+    // The public endpoint never writes to disk, whatever the arguments say.
+    const notes: string[] = [];
     let savedTo: string | null = null;
-    if (args.saveToDisk) {
-      savedTo = await writeReport(body, args.format, args.filename);
+    if (args.saveToDisk && !getCallContext().authorized) {
+      notes.push(
+        "saveToDisk is not available on the public endpoint; the report is returned inline instead.",
+      );
+    } else if (args.saveToDisk) {
+      try {
+        savedTo = await writeReport(body, args.format, args.filename);
+      } catch {
+        return fail("Could not save the report. Use a plain file name such as weekly.md.");
+      }
     }
 
     return ok({
       format: args.format,
       bots: summaries.length,
       savedTo,
-      report: args.saveToDisk ? undefined : body,
+      report: savedTo ? undefined : body,
+      ...(notes.length ? { notes } : {}),
     });
   },
 });

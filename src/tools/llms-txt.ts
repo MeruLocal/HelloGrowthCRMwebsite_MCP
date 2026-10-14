@@ -36,6 +36,7 @@
 
 import { z } from "zod";
 
+import { safeFetch } from "../core/safe-fetch.js";
 import { toolsByName } from "./index.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -304,13 +305,8 @@ const CheckInput = z.object({
 });
 
 async function head(url: string): Promise<{ status: number; bytes: number }> {
-  try {
-    const res = await fetch(url, { headers: { accept: "text/plain" } });
-    const body = await res.text();
-    return { status: res.status, bytes: Buffer.byteLength(body, "utf8") };
-  } catch {
-    return { status: 0, bytes: 0 };
-  }
+  const res = await safeFetch(url, { timeoutMs: 15_000, headers: { accept: "text/plain" } });
+  return res.ok ? { status: res.status, bytes: res.bytes } : { status: 0, bytes: 0 };
 }
 
 export const checkLlmsTxt = defineTool({
