@@ -143,6 +143,9 @@ sid ? pass("session", "initialize returns an mcp-session-id header") : fail("ses
 
 const caps = init.json.result.capabilities ?? {};
 if (caps.tools?.listChanged) pass("capabilities", "tools.listChanged is declared");
+// Roadmap 3.4: an explicit `false` is a recorded decision (the tool list is
+// fixed per session), not an omission.
+else if (caps.tools?.listChanged === false) pass("capabilities", "tools.listChanged is explicitly false: the tool list is fixed for the life of a session (roadmap 3.4 decision)");
 else warn("capabilities", "tools.listChanged is NOT declared — connected clients cannot be told the tool set changed and will serve a stale list until restart");
 
 const noSession = await rpc({ jsonrpc: "2.0", id: 99, method: "tools/list", params: {} });

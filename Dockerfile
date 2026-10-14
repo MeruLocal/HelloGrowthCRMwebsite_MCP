@@ -24,6 +24,8 @@ RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 COPY samples ./samples
+# Served as the hellogrowth://changelog MCP resource.
+COPY CHANGELOG.md ./CHANGELOG.md
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
     && mkdir -p reports \
