@@ -499,8 +499,10 @@ export function createHttpServer(): http.Server {
 
   // StreamableHTTP sessions, keyed by mcp-session-id. Bounded: at most
   // MCP_MAX_SESSIONS (least-recently-used evicted) and closed after
-  // MCP_SESSION_IDLE_MS without a request.
-  const httpTransports = new Map<string, { transport: StreamableHTTPServerTransport; lastSeen: number }>();
+  // MCP_SESSION_IDLE_MS without a request. A session with an open GET SSE
+  // stream (streams > 0) counts as active: it is skipped by the idle sweep and
+  // by LRU eviction, and its lastSeen is refreshed when the stream closes.
+  const httpTransports = new Map<string, { transport: StreamableHTTPServerTransport; lastSeen: number; streams: number }>();
 
   const closeSession = (sid: string): void => {
     const entry = httpTransports.get(sid);
@@ -511,7 +513,7 @@ export function createHttpServer(): http.Server {
   const sweep = setInterval(() => {
     const cutoff = Date.now() - guards.sessionIdleMs;
     for (const [sid, entry] of httpTransports) {
-      if (entry.lastSeen < cutoff) closeSession(sid);
+      if (entry.streams === 0 && entry.lastSeen < cutoff) closeSession(sid);
     }
   }, Math.min(60_000, guards.sessionIdleMs));
   sweep.unref();
@@ -520,7 +522,7 @@ export function createHttpServer(): http.Server {
     let oldest: string | undefined;
     let oldestSeen = Infinity;
     for (const [sid, entry] of httpTransports) {
-      if (entry.lastSeen < oldestSeen) { oldest = sid; oldestSeen = entry.lastSeen; }
+      if (entry.streams === 0 && entry.lastSeen < oldestSeen) { oldest = sid; oldestSeen = entry.lastSeen; }
     }
     if (!oldest) return false;
     closeSession(oldest);
@@ -605,6 +607,16 @@ export function createHttpServer(): http.Server {
         }).end(body);
         return;
       }
+      if (req.method === "GET") {
+        const entry = httpTransports.get(sessionId!);
+        if (entry) {
+          entry.streams += 1;
+          res.once("close", () => {
+            entry.streams = Math.max(0, entry.streams - 1);
+            entry.lastSeen = Date.now();
+          });
+        }
+      }
       await transport.handleRequest(req, res);
       return;
     }
@@ -641,7 +653,7 @@ export function createHttpServer(): http.Server {
       // New session: the SDK assigns the id on initialize and reports it via onsessioninitialized.
       const created = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sid) => { httpTransports.set(sid, { transport: created, lastSeen: Date.now() }); },
+        onsessioninitialized: (sid) => { httpTransports.set(sid, { transport: created, lastSeen: Date.now(), streams: 0 }); },
       });
       transport = created;
       created.onclose = () => {

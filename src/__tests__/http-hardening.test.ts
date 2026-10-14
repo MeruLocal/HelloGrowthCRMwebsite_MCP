@@ -21,7 +21,7 @@ afterEach(async () => {
 
 async function start(env: Record<string, string> = {}): Promise<number> {
   process.env = { ...ENV, ...env };
-  for (const k of ["TRUST_PROXY_HEADERS", "TRUST_CLOUDFLARE", "TRUSTED_PROXY_CIDRS", "MCP_ALLOWED_ORIGINS", "MCP_ALLOWED_HOSTS"]) {
+  for (const k of ["TRUST_PROXY_HEADERS", "TRUST_CLOUDFLARE", "CLOUDFLARE_CIDRS", "TRUSTED_PROXY_CIDRS", "MCP_ALLOWED_ORIGINS", "MCP_ALLOWED_HOSTS"]) {
     if (!(k in env)) delete process.env[k];
   }
   const s = createHttpServer();
@@ -146,6 +146,67 @@ describe("sessions", () => {
     const port = await start({ MCP_SESSION_IDLE_MS: "50" });
     const a = sid(await post(port, INIT));
     await new Promise((r) => setTimeout(r, 250));
+    expect((await ping(port, a)).status).toBe(400);
+  });
+});
+
+describe("sessions with an open GET stream", () => {
+  const sid = (r: { headers: http.IncomingHttpHeaders }) => String(r.headers["mcp-session-id"]);
+  const ping = (port: number, id: string) =>
+    post(port, JSON.stringify({ jsonrpc: "2.0", id: 2, method: "ping" }), {
+      "mcp-session-id": id,
+      "mcp-protocol-version": "2025-06-18",
+    });
+  const openStream = (port: number, id: string): Promise<http.ClientRequest> =>
+    new Promise((resolve, reject) => {
+      const req = http.request(
+        {
+          host: "127.0.0.1",
+          port,
+          path: "/sse",
+          method: "GET",
+          agent: false,
+          headers: { accept: "text/event-stream", "mcp-session-id": id, "mcp-protocol-version": "2025-06-18" },
+        },
+        (res) => {
+          res.resume();
+          resolve(req);
+        },
+      );
+      req.on("error", () => undefined);
+      req.on("error", reject);
+      req.end();
+    });
+
+  it("is not closed by the idle sweep while the stream is open", async () => {
+    const port = await start({ MCP_SESSION_IDLE_MS: "50" });
+    const a = sid(await post(port, INIT));
+    const stream = await openStream(port, a);
+    await new Promise((r) => setTimeout(r, 250));
+    expect((await ping(port, a)).status).toBe(200);
+    stream.destroy();
+  });
+
+  it("is not evicted by LRU while the stream is open", async () => {
+    const port = await start({ MCP_MAX_SESSIONS: "2" });
+    const a = sid(await post(port, INIT)); // oldest, but streaming
+    const stream = await openStream(port, a);
+    await new Promise((r) => setTimeout(r, 5));
+    const b = sid(await post(port, INIT));
+    await new Promise((r) => setTimeout(r, 5));
+    const c = sid(await post(port, INIT));
+    expect((await ping(port, a)).status).toBe(200); // kept
+    expect((await ping(port, b)).status).toBe(400); // evicted instead
+    expect((await ping(port, c)).status).toBe(200);
+    stream.destroy();
+  });
+
+  it("is swept normally once the stream closes", async () => {
+    const port = await start({ MCP_SESSION_IDLE_MS: "50" });
+    const a = sid(await post(port, INIT));
+    const stream = await openStream(port, a);
+    stream.destroy();
+    await new Promise((r) => setTimeout(r, 400));
     expect((await ping(port, a)).status).toBe(400);
   });
 });

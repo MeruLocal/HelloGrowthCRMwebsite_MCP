@@ -10,6 +10,7 @@ const proxy = (extra: Partial<ClientIpConfig> = {}): ClientIpConfig => ({
   trustProxy: true,
   trustedProxies: parseCidrList("127.0.0.1/32,::1/128"),
   trustCloudflare: false,
+  cloudflareRanges: parseCidrList("198.51.100.0/24,2001:db8:cf::/48"),
   ...extra,
 });
 
@@ -70,10 +71,46 @@ describe("resolveClientIp — Cloudflare", () => {
     expect(resolveClientIp({ "cf-connecting-ip": "198.51.100.1" }, LOCAL_PROXY, proxy())).toBe(LOCAL_PROXY);
   });
 
-  it("CF-Connecting-IP is honoured with TRUST_CLOUDFLARE and a trusted peer", () => {
+  it("CF-Connecting-IP is honoured when the delivering XFF hop is a Cloudflare range", () => {
     const cfg = proxy({ trustCloudflare: true });
     expect(clientIpMode(cfg)).toBe("proxy+cloudflare");
-    expect(resolveClientIp({ "cf-connecting-ip": ["198.51.100.1"] }, LOCAL_PROXY, cfg)).toBe("198.51.100.1");
+    expect(
+      resolveClientIp({ "cf-connecting-ip": ["192.0.2.55"], "x-forwarded-for": "10.9.9.9, 198.51.100.7" }, LOCAL_PROXY, cfg),
+    ).toBe("192.0.2.55");
+  });
+
+  it("CF-Connecting-IP is honoured when there is no XFF and the socket peer is Cloudflare", () => {
+    const cfg = proxy({ trustCloudflare: true, trustedProxies: parseCidrList("198.51.100.0/24") });
+    expect(resolveClientIp({ "cf-connecting-ip": "192.0.2.55" }, "198.51.100.7", cfg)).toBe("192.0.2.55");
+  });
+
+  it("forged CF-Connecting-IP via a non-Cloudflare path is ignored", () => {
+    const cfg = proxy({ trustCloudflare: true });
+    // no XFF: the local proxy peer is not a Cloudflare range
+    expect(resolveClientIp({ "cf-connecting-ip": "192.0.2.55" }, LOCAL_PROXY, cfg)).toBe(LOCAL_PROXY);
+    // XFF whose right-most hop is a direct caller, not Cloudflare
+    expect(
+      resolveClientIp({ "cf-connecting-ip": "192.0.2.55", "x-forwarded-for": "198.51.100.7, 203.0.113.50" }, LOCAL_PROXY, cfg),
+    ).toBe("203.0.113.50");
+  });
+
+  it("CF-Connecting-IP is ignored when no Cloudflare ranges are configured", () => {
+    const cfg = proxy({ trustCloudflare: true, cloudflareRanges: [] });
+    expect(
+      resolveClientIp({ "cf-connecting-ip": "192.0.2.55", "x-forwarded-for": "198.51.100.7" }, LOCAL_PROXY, cfg),
+    ).toBe("198.51.100.7");
+  });
+
+  it("a malformed CF-Connecting-IP from Cloudflare falls back to XFF", () => {
+    const cfg = proxy({ trustCloudflare: true });
+    expect(
+      resolveClientIp({ "cf-connecting-ip": "garbage", "x-forwarded-for": "192.0.2.9, 198.51.100.7" }, LOCAL_PROXY, cfg),
+    ).toBe("198.51.100.7");
+  });
+
+  it("XFF entries that are not IPs are skipped", () => {
+    expect(resolveClientIp({ "x-forwarded-for": "192.0.2.9, garbage" }, LOCAL_PROXY, proxy())).toBe("192.0.2.9");
+    expect(resolveClientIp({ "x-forwarded-for": "garbage" }, LOCAL_PROXY, proxy())).toBe(LOCAL_PROXY);
   });
 
   it("CF-Connecting-IP from an untrusted peer is ignored even with TRUST_CLOUDFLARE", () => {
@@ -88,7 +125,9 @@ describe("resolveClientIp — env parsing", () => {
       TRUST_PROXY_HEADERS: "true",
       TRUSTED_PROXY_CIDRS: "10.0.0.0/8",
       TRUST_CLOUDFLARE: "1",
+      CLOUDFLARE_CIDRS: "198.51.100.0/24",
     });
+    expect(cfg.cloudflareRanges).toHaveLength(1);
     expect(cfg.trustProxy).toBe(true);
     expect(cfg.trustCloudflare).toBe(true);
     expect(resolveClientIp({ "x-forwarded-for": "5.6.7.8" }, "10.2.3.4", cfg)).toBe("5.6.7.8");
