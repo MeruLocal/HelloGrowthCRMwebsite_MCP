@@ -171,7 +171,7 @@ const INTEGRATION_CATEGORIES: IntegrationCategory[] = [
 
 // Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts (merged
 // INTEGRATIONS_CATALOG, 630 entries) — SYNCED_AT 2026-06-17
-const INTEGRATIONS: IntegrationRecord[] = [
+const CATALOG_ROWS: IntegrationRecord[] = [
   // ── Email marketing & CRM sync (7) ──
   { slug: "mailchimp", name: "Mailchimp", category: "email-marketing", description: "Syncs CRM leads and contacts to Mailchimp audiences with a one-way push.", route: "/integrations/mailchimp" },
   { slug: "brevo", name: "Brevo (Sendinblue)", category: "email-marketing", description: "Creates and updates contacts in Brevo lists with field mapping and tags.", route: "/integrations/brevo" },
@@ -1035,6 +1035,50 @@ const INTEGRATIONS: IntegrationRecord[] = [
   { slug: "range", name: "Range", category: "coming-soon-people-mgmt-and-engagement", description: "Async team check-ins", status: "scaffolded", route: "/integrations/range" },
 ];
 
+// ── Truthful defaults (plan #72) ─────────────────────────────────────────────
+//
+// The mirrored catalogue mixes shipped integrations with content backlog: rows
+// whose description is the content task ("Creates a planned X integration page
+// for HelloGrowthCRM so teams can discover …") and rows that are not
+// integrations at all (product behaviours and field names parsed out of docs).
+// An agent asked "does HelloGrowthCRM integrate with X?" found such a row and
+// answered yes. So:
+//   - non-integration rows are dropped from the dataset;
+//   - rows that are not live/backend-ready are "planned" (available: false)
+//     with a neutral, factual description;
+//   - list tools return shipped rows unless include_planned is true.
+// The source text lives in the website catalogue; this is applied at load so
+// a re-mirror cannot reintroduce it.
+
+/** Categories and slugs parsed from docs that are not integrations. */
+const NON_INTEGRATION_CATEGORIES = new Set(["what-customers-see", "steps-for-engineering"]);
+const NON_INTEGRATION_SLUGS = new Set(["the-standard-pattern-is", "system", "type", "other", "tab", "crm"]);
+
+type Availability = "live" | "backend-ready" | "planned";
+
+interface IntegrationRow extends Omit<IntegrationRecord, "status"> {
+  status: Availability;
+  available: boolean;
+}
+
+const CATEGORY_TITLES = new Map(INTEGRATION_CATEGORIES.map((c) => [c.slug, c.title]));
+
+function normalize(r: IntegrationRecord): IntegrationRow {
+  const shipped = r.status === "live" || r.status === "backend-ready";
+  const status: Availability = shipped ? (r.status as "live" | "backend-ready") : "planned";
+  const description = /^Creates a planned\b/i.test(r.description)
+    ? `${r.name}: ${CATEGORY_TITLES.get(r.category) ?? r.category}. Not yet available; see the page for status.`
+    : r.description;
+  return { ...r, description, status, available: shipped };
+}
+
+const INTEGRATIONS: IntegrationRow[] = CATALOG_ROWS.filter(
+  (r) => !NON_INTEGRATION_CATEGORIES.has(r.category) && !NON_INTEGRATION_SLUGS.has(r.slug),
+).map(normalize);
+
+const VISIBLE_CATEGORIES = INTEGRATION_CATEGORIES.filter((c) => !NON_INTEGRATION_CATEGORIES.has(c.slug));
+const SHIPPED_COUNT = INTEGRATIONS.filter((i) => i.available).length;
+
 function categoryTitle(slug: string): string {
   return INTEGRATION_CATEGORIES.find((c) => c.slug === slug)?.title ?? slug;
 }
@@ -1051,31 +1095,40 @@ export const integrationsList = defineTool({
       .string()
       .optional()
       .describe("Keyword filter on integration name or description (case-insensitive)."),
+    include_planned: z
+      .boolean()
+      .default(false)
+      .describe("Also return planned integrations (status planned, available false). Default: shipped only."),
   }),
   definition: {
     name: "integrations_list",
     description:
-      "List the HelloGrowthCRM integrations catalog mirrored from hellogrowthcrm.com/integrations (630 documented entries across 116 categories; 630+ total apps reachable incl. Zapier). Filterable by category and keyword.",
+      `List HelloGrowthCRM integrations mirrored from hellogrowthcrm.com/integrations. By default only shipped integrations (status live or backend-ready, ${SHIPPED_COUNT} today) are returned; pass include_planned=true to also see the ${INTEGRATIONS.length - SHIPPED_COUNT} planned ones, which are marked available=false and are NOT available yet. Filterable by category and keyword.`,
     inputSchema: {
       type: "object",
       properties: {
         category: { type: "string", description: "Category slug, title, or short label filter (case-insensitive)." },
         search: { type: "string", description: "Keyword filter on name or description (case-insensitive)." },
+        include_planned: {
+          type: "boolean",
+          default: false,
+          description: "Also return planned (not yet available) integrations.",
+        },
       },
       additionalProperties: false,
     },
   },
   async handle(args) {
-    let items = INTEGRATIONS;
+    let items = args.include_planned ? INTEGRATIONS : INTEGRATIONS.filter((i) => i.available);
     let categoryMatch: IntegrationCategory | undefined;
     if (args.category) {
       const q = args.category.toLowerCase();
-      categoryMatch = INTEGRATION_CATEGORIES.find(
+      categoryMatch = VISIBLE_CATEGORIES.find(
         (c) => c.slug.toLowerCase() === q || c.title.toLowerCase() === q || c.shortLabel.toLowerCase() === q,
       );
       if (!categoryMatch) {
         return fail(
-          `Category "${args.category}" not found. Valid category slugs: ${INTEGRATION_CATEGORIES.map((c) => c.slug).join(", ")}`,
+          `Category "${args.category}" not found. Valid category slugs: ${VISIBLE_CATEGORIES.map((c) => c.slug).join(", ")}`,
         );
       }
       const matchSlug = categoryMatch.slug;
@@ -1090,7 +1143,9 @@ export const integrationsList = defineTool({
     return ok({
       synced_at: SYNCED_AT,
       public_integration_count: PUBLIC_INTEGRATION_COUNT,
+      shipped_count: SHIPPED_COUNT,
       total_documented: INTEGRATIONS.length,
+      includes_planned: args.include_planned,
       filtered_count: items.length,
       ...(categoryMatch ? { category: categoryMatch } : {}),
       items: items.map((i) => ({
@@ -1098,7 +1153,8 @@ export const integrationsList = defineTool({
         name: i.name,
         category: i.category,
         description: i.description,
-        ...(i.status ? { status: i.status } : {}),
+        status: i.status,
+        available: i.available,
         url: `${SITE}${i.route}`,
       })),
     });
@@ -1114,7 +1170,7 @@ export const integrationsGet = defineTool({
   definition: {
     name: "integrations_get",
     description:
-      "Get one HelloGrowthCRM integration by slug with its name, category, description, status, and page URL on hellogrowthcrm.com.",
+      "Get one HelloGrowthCRM integration by slug with its name, category, description, status (live, backend-ready or planned), available (false for planned), and page URL on hellogrowthcrm.com.",
     inputSchema: {
       type: "object",
       properties: { slug: { type: "string", description: "Integration slug." } },
@@ -1142,7 +1198,8 @@ export const integrationsGet = defineTool({
       category: record.category,
       category_title: categoryTitle(record.category),
       description: record.description,
-      ...(record.status ? { status: record.status } : {}),
+      status: record.status,
+      available: record.available,
       route: record.route,
       url: `${SITE}${record.route}`,
     });
@@ -1152,23 +1209,39 @@ export const integrationsGet = defineTool({
 // ── integrations_list_categories ────────────────────────────────────────────────
 
 export const integrationsListCategories = defineTool({
-  schema: z.object({}),
+  schema: z.object({
+    include_planned: z.boolean().default(false),
+  }),
   definition: {
     name: "integrations_list_categories",
     description:
-      "List all integration categories on hellogrowthcrm.com/integrations with the number of documented integrations in each.",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      "List integration categories on hellogrowthcrm.com/integrations with the number of shipped integrations in each (categories with none are omitted). Pass include_planned=true to count planned integrations too and list every category.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        include_planned: {
+          type: "boolean",
+          default: false,
+          description: "Count planned (not yet available) integrations as well.",
+        },
+      },
+      additionalProperties: false,
+    },
   },
-  async handle(_args) {
+  async handle(args) {
+    const rows = args.include_planned ? INTEGRATIONS : INTEGRATIONS.filter((i) => i.available);
+    const categories = VISIBLE_CATEGORIES.map((c) => ({
+      ...c,
+      count: rows.filter((i) => i.category === c.slug).length,
+    })).filter((c) => args.include_planned || c.count > 0);
     return ok({
       synced_at: SYNCED_AT,
       public_integration_count: PUBLIC_INTEGRATION_COUNT,
+      shipped_count: SHIPPED_COUNT,
       total_documented: INTEGRATIONS.length,
-      category_count: INTEGRATION_CATEGORIES.length,
-      categories: INTEGRATION_CATEGORIES.map((c) => ({
-        ...c,
-        count: INTEGRATIONS.filter((i) => i.category === c.slug).length,
-      })),
+      includes_planned: args.include_planned,
+      category_count: categories.length,
+      categories,
     });
   },
 });

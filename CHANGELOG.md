@@ -11,6 +11,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed — agent-facing output
+
+- **Large list tools are paged.** `integrations_list`, `integrations_list_categories`,
+  `content_list_tools`, `features_list`, `templates_list`, `glossary_list_terms`,
+  `media_list_videos`, `guides_list`, `alternatives_list`, `list_allowed_bots`,
+  `faqs_get_site`, `switch_list_competitors` and `content_list_case_studies`
+  accept `cursor` / `limit` (default 50, max 200, pages stop before ~24k
+  characters) and return a `page` object (`total`, `returned`, `has_more`,
+  `next_cursor`). Existing arguments still work; clients that expected the
+  whole list in one call must follow `next_cursor`. Any tool result over 100k
+  characters is cut with a note.
+- **Integrations are truthful by default.** `integrations_list` and
+  `integrations_list_categories` return shipped (live / backend-ready)
+  integrations unless `include_planned: true`. Planned rows have
+  `status: "planned"`, `available: false` and a factual description instead of
+  "Creates a planned … integration page". Rows that were product behaviours or
+  field names (category `what-customers-see`, `steps-for-engineering`) are gone.
+- **Own-site links carry UTM tags** (`utm_source=mcp&utm_medium=ai_agent&utm_campaign=<tool>`),
+  applied centrally to tool results and resources; canonical/hreflang/sitemap
+  identifiers, the SEO tools and live-diagnostic tools are left untouched.
+
+### Added
+
+- **`get_started`** — signup, demo, contact and pricing links (optionally per
+  country), no prices.
+- **Server `instructions`** in the initialize result, generated from the
+  registry, routing agents to the right tool group.
+
 ### Security
 
 - **`export_bot_report` never writes files on the public endpoint.** `saveToDisk`

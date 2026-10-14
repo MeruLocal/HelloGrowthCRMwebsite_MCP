@@ -24,6 +24,11 @@ import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirr
 // The live ladder in every market is: Free Forever → Growth → Enterprise.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Signup and demo-booking links, shared with get_started (src/tools/get-started.ts). */
+export const SIGNUP_URL = "https://app.hellogrowthcrm.com/signup";
+export const DEMO_BOOKING_URL =
+  "https://app.hellogrowthcrm.com/book/hellogrowthcrm-app-free-demo?token=77396889-c602-4e59-be14-d16f8663e5ba";
+
 const GLOBAL_PLANS = [
   {
     name: "Free Forever",
@@ -117,8 +122,7 @@ const GLOBAL_PLANS = [
       "Data migration & onboarding support",
       "10,000 AI credits/user/month + 3-month rollover",
     ],
-    cta_url:
-      "https://app.hellogrowthcrm.com/book/hellogrowthcrm-app-free-demo?token=77396889-c602-4e59-be14-d16f8663e5ba",
+    cta_url: DEMO_BOOKING_URL,
   },
 ];
 

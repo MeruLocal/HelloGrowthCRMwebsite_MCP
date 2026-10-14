@@ -55,6 +55,7 @@ const READ_ONLY_CLOSED: readonly string[] = [
   "forms_get_submission",
   "forms_export_csv",
   // Website mirror — static content
+  "get_started",
   "content_list_case_studies",
   "content_get_comparison",
   "content_list_comparisons",

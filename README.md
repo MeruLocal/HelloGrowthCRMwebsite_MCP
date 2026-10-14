@@ -6,7 +6,7 @@ It is **polite by design**: it respects `robots.txt`, rate-limits its own fetche
 
 ## Features
 
-- **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus 80 more, see [the full catalog](#full-mcp-tool-catalog-88-tools).
+- **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus the website-knowledge tools, see [the full catalog](#full-mcp-tool-catalog). `GET /version` reports the live tool counts.
 - **Curated database of 58 well-known bots** — Googlebot, Bingbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Amazonbot, Google-Extended, Applebot-Extended, FacebookBot, LinkedInBot, AhrefsBot, SemrushBot, Bytespider, and more — each tagged with category, operator, baseline risk, and reverse-DNS verification suffixes.
 - **Behavioural risk scoring**: combines UA matching, robots.txt compliance, error rate, request rate, and unique-path fan-out into a 0–100 score and a recommended action (`allow` / `monitor` / `rate-limit` / `block` / `verify-identity`).
 - **Cryptographic-grade identity verification** via PTR + forward DNS (same method documented by Google, Microsoft, OpenAI).
@@ -165,9 +165,9 @@ Full payload examples live in [`examples/usage.md`](examples/usage.md).
 
 ## Tool annotations
 
-Every one of the 88 tools carries explicit MCP annotations (`readOnlyHint`,
+Every tool carries explicit MCP annotations (`readOnlyHint`,
 `destructiveHint`, `idempotentHint`, `openWorldHint`) so clients can decide
-what needs human approval. 80 tools are read-only. Exactly eight can write —
+what needs human approval. All but eight are read-only. Exactly eight can write —
 `blog_create`, `blog_update`, `blog_revalidate`, `help_create_article`,
 `help_update_article`, `newsletter_subscribe`, `newsletter_unsubscribe`,
 `forms_submit` — and nine reach the open world (live crawls, DNS verification,
@@ -175,7 +175,13 @@ site revalidation). The classification lives in
 [`src/tools/annotations.ts`](src/tools/annotations.ts); a startup guard and a
 test fail the build if a tool is ever registered without an entry.
 
-## Full MCP tool catalog (88 tools)
+## Full MCP tool catalog
+
+Large list tools are paged (`cursor` / `limit`, reply `page.next_cursor`), and
+links to hellogrowthcrm.com in tool results carry UTM tags
+(`utm_source=mcp&utm_medium=ai_agent&utm_campaign=<tool>`) except canonical,
+hreflang and sitemap identifiers. The server's `initialize` result includes
+`instructions` that route an agent to the right tool group.
 
 Beyond the original eight bot-governance tools, this server exposes the entire
 hellogrowthcrm.com website — every module, feature, product, pricing table, AI
@@ -196,12 +202,13 @@ of the website source files (see [`WEBSITE_DATA_TOOLS.md`](WEBSITE_DATA_TOOLS.md
 | Static content (6) | `content_list_case_studies`, `content_list_comparisons`, `content_get_comparison`, `content_list_industries`, `content_list_tools`, `content_get_seo_rules` |
 | Pricing (6) | `pricing_get_plans`, `pricing_get_addons`, `pricing_get_faq`, `pricing_compare_plans`, `pricing_get_country_plans`, `pricing_get_managed_revops` — the CRM ladder is Free → Growth → Enterprise; Managed RevOps is a flat monthly service retainer, not a per-seat tier |
 | Features (3) | `features_list`, `features_get`, `features_list_products` |
-| Analytics (1) | `analytics_social_proof` |
+| Analytics (1) | `analytics_social_proof` — aggregate counts only |
+| Getting started (1) | `get_started` — signup, demo, contact and (per-country) pricing links, UTM-tagged; no prices |
 | Countries (2) | `countries_list`, `country_get` |
 | Company (2) | `company_get_profile`, `company_get_contacts` |
 | SEO (5) | `seo_get_site_config`, `seo_get_hreflang`, `seo_get_canonical`, `seo_get_sitemaps`, `seo_get_schema` |
 | Products (2) | `products_list`, `product_get` |
-| Integrations (3) | `integrations_list`, `integrations_get`, `integrations_list_categories` — 630-entry catalog, 116 categories |
+| Integrations (3) | `integrations_list`, `integrations_get`, `integrations_list_categories` — shipped (live / backend-ready) integrations by default; `include_planned: true` adds planned ones, marked `available: false` |
 | AI Agents / Agentic AI (4) | `agents_list`, `agents_get`, `agents_get_autonomy_levels`, `agents_list_comparisons` — 12 agents, autonomy matrix, 4 vs-competitor pages |
 | Glossary (2) | `glossary_list_terms`, `glossary_get_term` — 58 terms |
 | Templates (2) | `templates_list`, `templates_get` — 42 templates in 7 categories |
