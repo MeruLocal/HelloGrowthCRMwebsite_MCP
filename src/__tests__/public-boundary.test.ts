@@ -162,7 +162,7 @@ describe("anonymous sessions cannot invoke privileged tools", () => {
     `functions.${name}`,
     `default_api.${name}`,
     `hellogrowthcrm/${name}`,
-    `${name}​`, // zero-width space
+    `${name}\u200b`, // zero-width space
     name.replace("o", "о"), // Cyrillic o
   ];
 
@@ -232,13 +232,9 @@ describe("public tool annotations", () => {
     await client.close();
   });
 
-  it("every tool that is not read-only is privileged", () => {
-    for (const [name, tool] of toolsByName) {
-      if (tool.definition.annotations?.readOnlyHint !== true) {
-        expect(PRIVILEGED_TOOLS.has(name), name).toBe(true);
-      }
-    }
-  });
+  // Not re-tested here: "every non-read-only tool is privileged" holds by
+  // construction, because PRIVILEGED_TOOLS is derived from readOnlyHint in
+  // access.ts (and access.test.ts pins the exact set).
 });
 
 describe("no meta-dispatch path", () => {
@@ -280,6 +276,7 @@ describe("HTTP transport: a session's privilege is fixed at initialize", () => {
   let base = "";
   const ORIGINAL_PORT = process.env.PORT;
   const ORIGINAL_TRANSPORT = process.env.TRANSPORT;
+  const ORIGINAL_RATE_MAX = process.env.RATE_LIMIT_MAX_REQUESTS;
 
   // The outer afterEach restores the token after every test, so set it again
   // before each one: isAuthorized reads the environment per request.
@@ -289,6 +286,8 @@ describe("HTTP transport: a session's privilege is fixed at initialize", () => {
 
   beforeAll(async () => {
     process.env.PORT = "0"; // let the OS pick a free port
+    // Keep the in-memory rate limiter out of the way of these few requests.
+    process.env.RATE_LIMIT_MAX_REQUESTS = "1000";
     delete process.env.TRANSPORT;
     httpServer = await runServer();
     const { port } = httpServer!.address() as AddressInfo;
@@ -299,6 +298,8 @@ describe("HTTP transport: a session's privilege is fixed at initialize", () => {
     if (ORIGINAL_PORT === undefined) delete process.env.PORT;
     else process.env.PORT = ORIGINAL_PORT;
     if (ORIGINAL_TRANSPORT !== undefined) process.env.TRANSPORT = ORIGINAL_TRANSPORT;
+    if (ORIGINAL_RATE_MAX === undefined) delete process.env.RATE_LIMIT_MAX_REQUESTS;
+    else process.env.RATE_LIMIT_MAX_REQUESTS = ORIGINAL_RATE_MAX;
     await new Promise<void>((resolve) => httpServer?.close(() => resolve()) ?? resolve());
   });
 
