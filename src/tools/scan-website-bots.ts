@@ -17,6 +17,7 @@ import { aggregate } from "../core/aggregator.js";
 import { PoliteCrawler } from "../core/crawler.js";
 import { parseAccessLog } from "../core/log-parser.js";
 import { readResolved, resolveLogPath } from "../core/log-access.js";
+import { OUTBOUND_BUDGET_WARNING, capWarning, publicPageCap } from "../utils/outbound-budget.js";
 import type { ScanResult } from "../utils/types.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -32,7 +33,7 @@ const Input = z.object({
     .min(0)
     .max(100)
     .default(10)
-    .describe("Number of sitemap pages to fetch (0 = don't fetch any)."),
+    .describe("Number of sitemap pages to fetch (0 = don't fetch any; public endpoint: at most 5)."),
   logPath: z
     .string()
     .optional()
@@ -46,7 +47,7 @@ export const scanWebsiteBots = defineTool({
   definition: {
     name: "scan_website_bots",
     description:
-      "Politely scan a website's robots.txt and sitemap, sample a few pages, and (optionally) correlate with access-log activity. Always honours robots.txt for our own User-Agent.",
+      "Politely scan a website's robots.txt and sitemap, sample a few pages, and (optionally) correlate with access-log activity. Always honours robots.txt for our own User-Agent. On the public endpoint a call samples at most 5 pages and each client has an outbound fetch budget.",
     inputSchema: {
       type: "object",
       properties: {
@@ -67,6 +68,8 @@ export const scanWebsiteBots = defineTool({
 
     const crawler = new PoliteCrawler();
     const warnings: string[] = [];
+    const sample = publicPageCap(args.sampleSize);
+    if (sample.capped) warnings.push(capWarning("sampleSize", args.sampleSize, sample.value));
 
     const robots = await crawler.fetchRobots(target);
     if (!robots) warnings.push("Could not fetch or parse /robots.txt");
@@ -77,7 +80,8 @@ export const scanWebsiteBots = defineTool({
     ];
 
     const entries: { loc: string }[] = [];
-    for (const sm of sitemapUrls) {
+    for (const sm of sitemapUrls.slice(0, publicPageCap(sitemapUrls.length).value)) {
+      if (crawler.budgetExhausted) break;
       const list = await crawler.fetchSitemap(sm);
       entries.push(...list);
     }
@@ -87,8 +91,9 @@ export const scanWebsiteBots = defineTool({
       target,
       robots,
       entries,
-      args.sampleSize,
+      sample.value,
     );
+    if (crawler.budgetExhausted) warnings.push(OUTBOUND_BUDGET_WARNING);
 
     // Correlate with access logs if provided.
     let detectedBots: ScanResult["detectedBots"] = [];

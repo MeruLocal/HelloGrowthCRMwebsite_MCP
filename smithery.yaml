@@ -53,6 +53,7 @@ startCommand:
       command: 'node',
       args: ['dist/index.js'],
       env: {
+        TRANSPORT: 'stdio',
         DEFAULT_TARGET_URL: config.defaultTargetUrl ?? 'https://hellogrowthcrm.com',
         DEFAULT_ACCESS_LOG: config.defaultAccessLog ?? './samples/access.log',
         CRAWLER_USER_AGENT: config.crawlerUserAgent ?? 'mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)',

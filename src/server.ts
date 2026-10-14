@@ -33,7 +33,8 @@ import {
 } from "./tools/access.js";
 import { publicInputSchema, runWithCallContext } from "./tools/call-context.js";
 import { logger } from "./utils/logger.js";
-import { resolveClientIp } from "./utils/client-ip.js";
+import { clientIpConfigFromEnv, clientIpMode, resolveClientIp } from "./utils/client-ip.js";
+import { httpGuardConfigFromEnv, isAllowedHost, isAllowedOrigin } from "./utils/http-guards.js";
 import {
   SERVER_NAME,
   SERVER_TITLE,
@@ -150,15 +151,19 @@ export function buildServer(opts: { authorized?: boolean; clientIp?: string } = 
         );
         return result;
       } catch (err) {
+        // Full detail stays in the server log; the caller gets a fixed message
+        // plus an id that appears in both, so a report can be matched.
+        const errorId = randomUUID().slice(0, 8);
         logger.error("Tool handler threw", {
           tool: req.params.name,
+          errorId,
           err: (err as Error).message,
         });
         return {
           content: [
             {
               type: "text",
-              text: `Internal error in ${req.params.name}: ${(err as Error).message}`,
+              text: `Internal error in ${req.params.name}. The error was logged (id ${errorId}).`,
             },
           ],
           isError: true,
@@ -264,7 +269,8 @@ export function buildServer(opts: { authorized?: boolean; clientIp?: string } = 
         return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }] };
       }
     } catch (e) {
-      return { contents: [{ uri, mimeType: "text/plain", text: `Error fetching resource: ${(e as Error).message}` }] };
+      logger.error("Resource read failed", { uri, err: (e as Error).message });
+      return { contents: [{ uri, mimeType: "text/plain", text: "Error fetching resource." }] };
     }
 
     return { contents: [{ uri, mimeType: "text/plain", text: `Unknown resource: ${uri}` }] };
@@ -385,16 +391,28 @@ class IpRateLimiter {
   }
 }
 
+/**
+ * Options for a stdio session. stdio used to be trusted implicitly, so any
+ * launch whose environment happened to hold MCP_ADMIN_TOKEN (e.g. a developer
+ * running with the production .env) exposed the write and personal-data tools
+ * without presenting the token. Holding the token is not the same as wanting
+ * the session elevated: trust is now an explicit opt-in, still ANDed with
+ * adminTokenConfigured() inside buildServer.
+ */
+export function stdioServerOptions(env: NodeJS.ProcessEnv = process.env): { authorized: boolean } {
+  return { authorized: env.MCP_STDIO_TRUSTED === "1" };
+}
+
 export async function runServer(): Promise<void> {
   const transport = (process.env.TRANSPORT ?? "http").toLowerCase();
 
   if (transport === "stdio") {
-    // stdio is an operator-run local process with the deployment's own env —
-    // it is trusted, unlike the public HTTP endpoint.
-    const server = buildServer({ authorized: true });
+    const opts = stdioServerOptions();
+    const server = buildServer(opts);
     const stdioTransport = new StdioServerTransport();
     await server.connect(stdioTransport);
     logger.info(`${SERVER_NAME} ready (stdio)`, {
+      trusted: opts.authorized && adminTokenConfigured(),
       site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
       tools: [...toolsByName.keys()],
     });
@@ -403,16 +421,33 @@ export async function runServer(): Promise<void> {
 
   // Streamable HTTP transport, served at /sse
   const port = Number.parseInt(process.env.PORT ?? "3008", 10);
+  const httpServer = createHttpServer();
+  await new Promise<void>((resolve) => httpServer.listen(port, resolve));
+  logger.info(`${SERVER_NAME} ready (http)`, {
+    url: `http://localhost:${port}`,
+    mcp: `http://localhost:${port}/sse`,
+    site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
+    tools: [...toolsByName.keys()],
+  });
+}
+
+/**
+ * Build the HTTP server (not listening). Settings are read from the
+ * environment when this is called, so tests can build one per configuration.
+ */
+export function createHttpServer(): http.Server {
   const rateLimitWindow = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10);
   const rateLimitMax    = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
   const limiter = new IpRateLimiter(rateLimitWindow, rateLimitMax, createRateLimitStore());
 
-  // See src/utils/client-ip.ts. Do NOT go back to x-forwarded-for[0]: it is
-  // client-controlled, and Cloudflare appends rather than replaces, so the
-  // first entry is whatever the caller sent. That made the limiter bypassable
-  // by rotating a spoofed header.
+  // See src/utils/client-ip.ts. Forwarded headers are honoured only from a
+  // trusted proxy peer, and only when the operator opted in.
+  const ipConfig = clientIpConfigFromEnv();
+  logger.info("Client IP mode", { mode: clientIpMode(ipConfig) });
   const clientIp = (req: http.IncomingMessage): string =>
-    resolveClientIp(req.headers, req.socket.remoteAddress);
+    resolveClientIp(req.headers, req.socket.remoteAddress, ipConfig);
+
+  const guards = httpGuardConfigFromEnv();
 
   const sendRateLimited = (res: http.ServerResponse, ip: string): void => {
     res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": String(Math.ceil(rateLimitWindow / 1000)) })
@@ -420,29 +455,98 @@ export async function runServer(): Promise<void> {
     logger.warn("Rate limit hit", { ip });
   };
 
+  const sendJsonRpcError = (res: http.ServerResponse, status: number, message: string, headers: Record<string, string> = {}): void => {
+    res.writeHead(status, { "Content-Type": "application/json", ...headers }).end(JSON.stringify({
+      jsonrpc: "2.0",
+      error: { code: -32000, message },
+      id: null,
+    }));
+  };
+
   // Read and JSON-parse a request body (StreamableHTTP needs the parsed body
-  // to detect the `initialize` request that opens a new session).
-  const readJsonBody = (req: http.IncomingMessage): Promise<unknown> =>
+  // to detect the `initialize` request that opens a new session). Bytes are
+  // counted: past MCP_MAX_BODY_BYTES the rest is discarded and the caller gets
+  // 413, so one large POST cannot cost memory before the rate limiter matters.
+  const readJsonBody = (req: http.IncomingMessage): Promise<{ tooLarge: boolean; body?: unknown }> =>
     new Promise((resolve) => {
-      let raw = "";
-      req.on("data", (chunk) => { raw += chunk; });
-      req.on("end", () => {
-        if (!raw) { resolve(undefined); return; }
-        try { resolve(JSON.parse(raw)); } catch { resolve(undefined); }
+      const chunks: Buffer[] = [];
+      let bytes = 0;
+      let tooLarge = false;
+      req.on("data", (chunk: Buffer) => {
+        if (tooLarge) return;
+        bytes += chunk.length;
+        if (bytes > guards.maxBodyBytes) {
+          tooLarge = true;
+          chunks.length = 0;
+          resolve({ tooLarge: true });
+          return;
+        }
+        chunks.push(chunk);
       });
-      req.on("error", () => resolve(undefined));
+      req.on("end", () => {
+        if (tooLarge) return;
+        const raw = Buffer.concat(chunks).toString("utf8");
+        if (!raw) { resolve({ tooLarge: false }); return; }
+        try { resolve({ tooLarge: false, body: JSON.parse(raw) }); } catch { resolve({ tooLarge: false }); }
+      });
+      req.on("error", () => resolve({ tooLarge: false }));
     });
 
-  // StreamableHTTP sessions, keyed by mcp-session-id
-  const httpTransports = new Map<string, StreamableHTTPServerTransport>();
+  const sendTooLarge = (req: http.IncomingMessage, res: http.ServerResponse): void => {
+    res.on("finish", () => req.destroy());
+    sendJsonRpcError(res, 413, `Request body exceeds ${guards.maxBodyBytes} bytes`, { Connection: "close" });
+  };
+
+  // StreamableHTTP sessions, keyed by mcp-session-id. Bounded: at most
+  // MCP_MAX_SESSIONS (least-recently-used evicted) and closed after
+  // MCP_SESSION_IDLE_MS without a request.
+  const httpTransports = new Map<string, { transport: StreamableHTTPServerTransport; lastSeen: number }>();
+
+  const closeSession = (sid: string): void => {
+    const entry = httpTransports.get(sid);
+    httpTransports.delete(sid);
+    entry?.transport.close().catch(() => undefined);
+  };
+
+  const sweep = setInterval(() => {
+    const cutoff = Date.now() - guards.sessionIdleMs;
+    for (const [sid, entry] of httpTransports) {
+      if (entry.lastSeen < cutoff) closeSession(sid);
+    }
+  }, Math.min(60_000, guards.sessionIdleMs));
+  sweep.unref();
+
+  const evictLeastRecentlyUsed = (): boolean => {
+    let oldest: string | undefined;
+    let oldestSeen = Infinity;
+    for (const [sid, entry] of httpTransports) {
+      if (entry.lastSeen < oldestSeen) { oldest = sid; oldestSeen = entry.lastSeen; }
+    }
+    if (!oldest) return false;
+    closeSession(oldest);
+    return true;
+  };
+
+  const getSession = (sid: string | undefined): StreamableHTTPServerTransport | undefined => {
+    if (!sid) return undefined;
+    const entry = httpTransports.get(sid);
+    if (entry) entry.lastSeen = Date.now();
+    return entry?.transport;
+  };
 
   const handleStreamableHttp = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
+    // DNS-rebinding protection: reject before a Server is ever built.
+    if (!isAllowedHost(req.headers.host, guards) || !isAllowedOrigin(req.headers.origin, guards)) {
+      sendJsonRpcError(res, 403, "Forbidden");
+      return;
+    }
+
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
     // GET (server→client notification stream) and DELETE (session teardown)
     // are routed to the existing session's transport.
     if (req.method === "GET" || req.method === "DELETE") {
-      const transport = sessionId ? httpTransports.get(sessionId) : undefined;
+      const transport = getSession(sessionId);
       if (!transport) {
         // A bare GET of this URL — someone pasting it into a browser, a registry
         // validator, an uptime check — is the single most common way this server
@@ -510,26 +614,38 @@ export async function runServer(): Promise<void> {
       return;
     }
 
-    const body = await readJsonBody(req);
-    let transport = sessionId ? httpTransports.get(sessionId) : undefined;
+    const declared = Number.parseInt(String(req.headers["content-length"] ?? ""), 10);
+    if (Number.isFinite(declared) && declared > guards.maxBodyBytes) {
+      sendTooLarge(req, res);
+      return;
+    }
+    const read = await readJsonBody(req);
+    if (read.tooLarge) {
+      sendTooLarge(req, res);
+      return;
+    }
+    const body = read.body;
+    let transport = getSession(sessionId);
 
     if (!transport) {
       if (sessionId || !isInitializeRequest(body)) {
-        res.writeHead(400, { "Content-Type": "application/json" }).end(JSON.stringify({
-          jsonrpc: "2.0",
-          error: { code: -32000, message: "Bad Request: no valid session ID for a non-initialize request" },
-          id: null,
-        }));
+        sendJsonRpcError(res, 400, "Bad Request: no valid session ID for a non-initialize request");
+        return;
+      }
+
+      if (httpTransports.size >= guards.maxSessions && !evictLeastRecentlyUsed()) {
+        sendJsonRpcError(res, 503, "Too many sessions; retry shortly", { "Retry-After": "30" });
         return;
       }
 
       // New session: the SDK assigns the id on initialize and reports it via onsessioninitialized.
-      transport = new StreamableHTTPServerTransport({
+      const created = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sid) => { httpTransports.set(sid, transport!); },
+        onsessioninitialized: (sid) => { httpTransports.set(sid, { transport: created, lastSeen: Date.now() }); },
       });
-      transport.onclose = () => {
-        if (transport!.sessionId) httpTransports.delete(transport!.sessionId);
+      transport = created;
+      created.onclose = () => {
+        if (created.sessionId) httpTransports.delete(created.sessionId);
       };
 
       const server = buildServer({
@@ -564,7 +680,7 @@ export async function runServer(): Promise<void> {
   };
 
   const httpServer = http.createServer(async (req, res) => {
-    const url = new URL(req.url ?? "/", `http://localhost:${port}`);
+    const url = new URL(req.url ?? "/", "http://localhost");
     const ip = clientIp(req);
 
     // Finding C5: baseline security headers on every response. Set with
@@ -831,11 +947,9 @@ export async function runServer(): Promise<void> {
     res.writeHead(404).end("Not found");
   });
 
-  await new Promise<void>((resolve) => httpServer.listen(port, resolve));
-  logger.info(`${SERVER_NAME} ready (http)`, {
-    url: `http://localhost:${port}`,
-    mcp: `http://localhost:${port}/sse`,
-    site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
-    tools: [...toolsByName.keys()],
+  httpServer.on("close", () => {
+    clearInterval(sweep);
+    for (const sid of [...httpTransports.keys()]) closeSession(sid);
   });
+  return httpServer;
 }

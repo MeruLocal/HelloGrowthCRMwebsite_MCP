@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { toolsByName } from "../index.js";
@@ -108,5 +110,21 @@ describe("bearer authorization", () => {
     process.env.MCP_ADMIN_TOKEN = "abcdef";
     expect(isAuthorized("Bearer abcde")).toBe(false);
     expect(isAuthorized("Bearer abcdefg")).toBe(false);
+  });
+
+  it("same-length wrong token, different-length token and empty values are false without throwing", () => {
+    process.env.MCP_ADMIN_TOKEN = "abcdef";
+    expect(isAuthorized("Bearer abcdeX")).toBe(false);
+    expect(() => isAuthorized("Bearer " + "x".repeat(500))).not.toThrow();
+    expect(isAuthorized("Bearer " + "x".repeat(500))).toBe(false);
+    expect(isAuthorized("Bearer")).toBe(false);
+    expect(isAuthorized("Bearer ")).toBe(false);
+    expect(isAuthorized("Bearer abcdef")).toBe(true);
+  });
+
+  it("compares digests, not raw buffers — no length branch on the token", () => {
+    const src = readFileSync(join(__dirname, "..", "access.ts"), "utf8");
+    expect(src).not.toMatch(/length\s*!==/);
+    expect(src).toMatch(/createHash\("sha256"\)/);
   });
 });

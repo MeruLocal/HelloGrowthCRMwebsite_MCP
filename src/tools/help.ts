@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getSupabase } from "../lib/supabase.js";
+import { dbError, isNotFound } from "./db-error.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 // ── help_list_categories ──────────────────────────────────────────────────────
@@ -21,10 +22,10 @@ export const helpListCategories = defineTool({
         .from("help_categories")
         .select("*")
         .order("title");
-      if (error) return fail(`Error: ${error.message}`);
+      if (error) return dbError("help_list_categories", error);
       return ok({ count: data?.length ?? 0, categories: data });
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("help_list_categories", e);
     }
   },
 });
@@ -63,10 +64,10 @@ export const helpListArticles = defineTool({
       }
 
       const { data, error } = await query;
-      if (error) return fail(`Error: ${error.message}`);
+      if (error) return dbError("help_list_articles", error);
       return ok({ count: data?.length ?? 0, offset: args.offset, articles: data });
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("help_list_articles", e);
     }
   },
 });
@@ -96,10 +97,10 @@ export const helpGetArticle = defineTool({
         .select("*")
         .eq("slug", args.slug)
         .single();
-      if (error) return fail(`Article not found or error: ${error.message}`);
+      if (error) return isNotFound(error) ? fail("Article not found.") : dbError("help_get_article", error);
       return ok(data);
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("help_get_article", e);
     }
   },
 });
@@ -131,10 +132,10 @@ export const helpSearch = defineTool({
         .select("slug, title, category_slug, estimated_minutes, intro")
         .or(`title.ilike.%${args.query}%,intro.ilike.%${args.query}%`)
         .limit(args.limit);
-      if (error) return fail(`Search error: ${error.message}`);
+      if (error) return dbError("help_search", error);
       return ok({ query: args.query, count: data?.length ?? 0, results: data });
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("help_search", e);
     }
   },
 });

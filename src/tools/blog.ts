@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getSupabase } from "../lib/supabase.js";
+import { dbError, isNotFound } from "./db-error.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 // ── blog_list ────────────────────────────────────────────────────────────────
@@ -37,10 +38,10 @@ export const blogList = defineTool({
       }
 
       const { data, error, count } = await query;
-      if (error) return fail(`Supabase error: ${error.message}`);
+      if (error) return dbError("blog_list", error);
       return ok({ total: count, offset: args.offset, limit: args.limit, posts: data });
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("blog_list", e);
     }
   },
 });
@@ -70,10 +71,10 @@ export const blogGet = defineTool({
         .select("*")
         .eq("slug", args.slug)
         .single();
-      if (error) return fail(`Post not found or error: ${error.message}`);
+      if (error) return isNotFound(error) ? fail("Post not found.") : dbError("blog_get", error);
       return ok(data);
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("blog_get", e);
     }
   },
 });
@@ -106,10 +107,10 @@ export const blogSearch = defineTool({
         .or(`title.ilike.%${args.query}%,excerpt.ilike.%${args.query}%,content.ilike.%${args.query}%`)
         .order("published_at", { ascending: false })
         .limit(args.limit);
-      if (error) return fail(`Search error: ${error.message}`);
+      if (error) return dbError("blog_search", error);
       return ok({ query: args.query, count: data?.length ?? 0, results: data });
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("blog_search", e);
     }
   },
 });
@@ -264,11 +265,11 @@ export const blogGetCategories = defineTool({
         .select("category")
         .not("category", "is", null)
         .order("category");
-      if (error) return fail(`Error: ${error.message}`);
+      if (error) return dbError("blog_get_categories", error);
       const categories = [...new Set((data ?? []).map((r) => r.category as string))].filter(Boolean);
       return ok({ count: categories.length, categories });
     } catch (e) {
-      return fail((e as Error).message);
+      return dbError("blog_get_categories", e);
     }
   },
 });

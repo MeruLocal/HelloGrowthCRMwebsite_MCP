@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Entry point. Loads .env, then starts the stdio MCP server.
+ * Entry point. Loads .env, then starts the MCP server on the transport chosen
+ * by TRANSPORT: "http" (default — Streamable HTTP on PORT, endpoint /sse) or
+ * "stdio".
  */
 
 import "dotenv/config";

@@ -83,10 +83,10 @@ npm install
 npm run build
 ```
 
-Run it on stdio:
+Run it on stdio (the binary defaults to HTTP, so say so):
 
 ```bash
-node dist/index.js
+TRANSPORT=stdio node dist/index.js
 ```
 
 Or dev-mode (no build step, uses `tsx`):
@@ -95,7 +95,10 @@ Or dev-mode (no build step, uses `tsx`):
 npm run dev
 ```
 
-The server speaks MCP over **stdio**. Any MCP-capable client can launch it.
+With `TRANSPORT=stdio` the server speaks MCP over **stdio** and any MCP-capable
+client can launch it. Without it, `node dist/index.js` starts the Streamable
+HTTP server on `PORT` (default 3008). A stdio session gets the same public tool
+set as HTTP unless `MCP_STDIO_TRUSTED=1` **and** `MCP_ADMIN_TOKEN` are both set.
 
 ### Claude Desktop / Claude Code
 
@@ -108,6 +111,7 @@ Add the following to your `claude_desktop_config.json` (or the equivalent `mcpSe
       "command": "node",
       "args": ["/absolute/path/to/HelloGrowthCRMwebsite_MCP/dist/index.js"],
       "env": {
+        "TRANSPORT": "stdio",
         "DEFAULT_TARGET_URL": "https://hellogrowthcrm.com",
         "DEFAULT_ACCESS_LOG": "/var/log/nginx/access.log",
         "CRAWLER_USER_AGENT": "mcp-bot-crawler/1.0 (+https://hellogrowthcrm.com/bot-info)"
@@ -277,7 +281,17 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 | `RATE_LIMIT_MAX_REQUESTS` | `60` | Max requests per window per client IP. |
 | `UPSTASH_REDIS_REST_URL` | — | Optional: shared rate-limit store (set with the token) so buckets are shared across scaled instances instead of per-process. |
 | `UPSTASH_REDIS_REST_TOKEN` | — | Optional: token for the shared rate-limit store. |
-| `TRUST_PROXY_HEADERS` | `true` | Honour `CF-Connecting-IP`/last `X-Forwarded-For` hop for the rate-limit key. Set `false` only when exposed with no proxy in front. |
+| `TRANSPORT` | `http` | `http` (Streamable HTTP on `PORT`, endpoint `/sse`) or `stdio`. |
+| `MCP_STDIO_TRUSTED` | unset | `1` elevates a **stdio** session to the full tool set (still requires `MCP_ADMIN_TOKEN` to be set). Without it stdio gets the same public tools as HTTP. Exposes write tools — only for operator use. |
+| `TRUST_PROXY_HEADERS` | `false` | Honour forwarded headers for the rate-limit key — and only when the TCP peer is in `TRUSTED_PROXY_CIDRS`. Production behind Apache on the same host sets `true`. |
+| `TRUSTED_PROXY_CIDRS` | `127.0.0.1/32,::1/128` | Peers whose `X-Forwarded-For` (and, with the next setting, `CF-Connecting-IP`) is believed. XFF is walked from the right, skipping trusted hops. |
+| `TRUST_CLOUDFLARE` | `false` | Also honour `CF-Connecting-IP` from a trusted peer. Set only when the origin is reachable through Cloudflare alone. |
+| `OUTBOUND_BUDGET_PER_MIN` / `OUTBOUND_BUDGET_PER_HOUR` | `30` / `300` | Outbound fetches an anonymous client may trigger (each redirect hop counts). Authenticated sessions are exempt. |
+| `PUBLIC_MAX_PAGES_PER_CALL` | `5` | Public per-call cap for `crawl_pages` `limit`, `scan_website_bots` `sampleSize`, `check_ai_extractability` URLs and sitemap child expansion. |
+| `MCP_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1],mcp.hellogrowthcrm.com` | `Host` values `/sse` accepts (an entry without a port matches any port). Anything else gets 403 (DNS-rebinding protection). |
+| `MCP_ALLOWED_ORIGINS` | localhost origins + `https://mcp.hellogrowthcrm.com` | Browser `Origin` values `/sse` accepts; requests without `Origin` pass. `*` disables the Origin check. |
+| `MCP_MAX_BODY_BYTES` | `1048576` | Larger request bodies get 413 before parsing. |
+| `MCP_MAX_SESSIONS` / `MCP_SESSION_IDLE_MS` | `1000` / `1800000` | Session cap (least-recently-used evicted) and idle timeout. |
 | `ENABLE_MCP_ANALYTICS` | `false` | Master switch for MCP/SSE analytics — must be `true` to send. |
 | `GA4_MEASUREMENT_ID` | — | GA4 stream id for MCP/SSE analytics (optional). |
 | `GA4_API_SECRET` | — | GA4 Measurement Protocol API secret (optional). |
