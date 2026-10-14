@@ -37,7 +37,7 @@
 import { z } from "zod";
 
 import { safeFetch } from "../core/safe-fetch.js";
-import { toolsByName } from "./index.js";
+import { PAGED_LIST_TOOLS, toolsByName } from "./index.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const SITE = "https://hellogrowthcrm.com";
@@ -60,7 +60,20 @@ async function callTool(
 
   const result = await tool.handle(parsed.data);
   const text = result.content[0]?.text ?? "{}";
-  return JSON.parse(text) as Record<string, unknown>;
+  const first = JSON.parse(text) as Record<string, unknown>;
+
+  // Paged list tools (src/tools/paginate.ts): walk every page so the corpus
+  // is complete, concatenating the paged array.
+  const key = PAGED_LIST_TOOLS[name];
+  if (!key || args.cursor !== undefined) return first;
+  const all = asArray(first[key]);
+  let page = first.page as { next_cursor?: string | null } | undefined;
+  while (page?.next_cursor) {
+    const next = await callTool(name, { ...args, cursor: page.next_cursor, limit: 200 });
+    all.push(...asArray(next[key]));
+    page = next.page as typeof page;
+  }
+  return { ...first, [key]: all };
 }
 
 function asArray(value: unknown): Record<string, unknown>[] {

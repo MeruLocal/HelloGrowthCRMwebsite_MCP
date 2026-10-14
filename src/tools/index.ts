@@ -24,6 +24,10 @@ import { generateLlmsTxt, checkLlmsTxt } from "./llms-txt.js";
 // ── GEO/AEO diagnostics ───────────────────────────────────────────────────────
 import { checkAiExtractability, validateSitemaps } from "./geo-diagnostics.js";
 
+import { withPaging } from "./paginate.js";
+// ── Getting started ───────────────────────────────────────────────────────────
+import { getStarted } from "./get-started.js";
+
 // ── Blog ──────────────────────────────────────────────────────────────────────
 import {
   blogList,
@@ -309,7 +313,35 @@ export const tools: RegisteredTool[] = [
   // Solutions (WhatsApp use cases, Managed RevOps)
   solutionsListWhatsappUseCases,
   solutionsGetManagedRevops,
+
+  // Getting started (signup / demo / contact / pricing links)
+  getStarted,
 ];
+
+/**
+ * Large list tools are paged (src/tools/paginate.ts): tool name → the key of
+ * the array that is paged in its JSON payload.
+ */
+export const PAGED_LIST_TOOLS: Readonly<Record<string, string>> = {
+  integrations_list: "items",
+  integrations_list_categories: "categories",
+  content_list_tools: "tools",
+  features_list: "features",
+  templates_list: "templates",
+  glossary_list_terms: "terms",
+  media_list_videos: "videos",
+  guides_list: "guides",
+  alternatives_list: "alternatives",
+  list_allowed_bots: "bots",
+  faqs_get_site: "groups",
+  switch_list_competitors: "switch_pages",
+  content_list_case_studies: "case_studies",
+};
+
+for (let i = 0; i < tools.length; i += 1) {
+  const key = PAGED_LIST_TOOLS[tools[i]!.definition.name];
+  if (key) tools[i] = withPaging(tools[i]!, key);
+}
 
 // Attach MCP annotations (readOnlyHint / destructiveHint / idempotentHint /
 // openWorldHint) to every definition. Throws at startup if a tool is missing
