@@ -23,7 +23,7 @@ import { defineTool, ok, fail } from "./tool-types.js";
 // This is a READ-MIRROR: data is copied verbatim from website files, never invented.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-17";
+export const SYNCED_AT = "2026-06-17";
 const SITE = "https://hellogrowthcrm.com";
 
 /** Canonical public-facing integration count (derived from the merged catalog total). */

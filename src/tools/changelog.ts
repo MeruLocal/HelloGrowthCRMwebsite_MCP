@@ -9,7 +9,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // Routes: /changelog and /whats-new (src/app/(public)/changelog, src/app/(public)/whats-new)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+export const SYNCED_AT = "2026-06-11";
 const SITE = "https://hellogrowthcrm.com";
 
 // Full tag union from changelog-types.ts. Current curated data only uses

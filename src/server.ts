@@ -44,6 +44,7 @@ import {
   type RateLimitStore,
 } from "./utils/rate-limit-store.js";
 import { getSupabase } from "./lib/supabase.js";
+import { mirrorFreshness } from "./data/freshness.js";
 import {
   buildSafeMeta,
   trackMcpMessage,
@@ -755,14 +756,21 @@ export async function runServer(): Promise<void> {
         return;
       }
 
-      // Liveness probe. Deliberately cheap and uncached: it must reflect the
+      // Liveness and health. Both are cheap and uncached: they must reflect the
       // process answering right now, not a CDN copy of a healthy past.
+      //
+      // /healthz is pure liveness: "ok" whenever the process answers.
+      // /health adds content freshness (roadmap 2.3, src/data/freshness.ts) and
+      // reports "degraded" when any mirrored block is older than
+      // MIRROR_MAX_AGE_DAYS. Both stay HTTP 200: stale content is not a dead
+      // process, and a 503 would get a healthy server restarted.
       if (url.pathname === "/healthz" || url.pathname === "/health") {
+        const content = url.pathname === "/health" ? mirrorFreshness() : undefined;
         send(
           200,
           "application/json; charset=utf-8",
           `${JSON.stringify({
-            status: "ok",
+            status: content?.status === "stale" ? "degraded" : "ok",
             version: SERVER_VERSION,
             mcp_spec: MCP_SPEC_REVISION,
             uptimeSeconds: Math.floor(process.uptime()),
@@ -777,6 +785,19 @@ export async function runServer(): Promise<void> {
             // This server routes /sse. It has never routed /mcp — the previous
             // value sent probes to a 404.
             endpoint: "/sse",
+            ...(content
+              ? {
+                  content: {
+                    status: content.status,
+                    max_age_days: content.max_age_days,
+                    oldest_block: content.oldest.block,
+                    oldest_synced_at: content.oldest.synced_at,
+                    oldest_age_days: content.oldest.age_days,
+                    stale_blocks: content.stale_blocks.map((b) => b.block),
+                    blocks: Object.fromEntries(content.blocks.map((b) => [b.block, b.synced_at])),
+                  },
+                }
+              : {}),
           })}\n`,
           "no-store",
         );

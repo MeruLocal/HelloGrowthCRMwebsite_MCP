@@ -7,7 +7,7 @@ import { defineTool, ok } from "./tool-types.js";
 // Source: hellocrmwebsite/src/lib/faq-data.ts — SYNCED_AT 2026-07-08
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-07-08";
+export const SYNCED_AT = "2026-07-08";
 
 /**
  * In site-faqs.ts the pricing answer is the placeholder PRICING_FAQ_PLACEHOLDER

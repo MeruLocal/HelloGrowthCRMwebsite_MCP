@@ -15,7 +15,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // on the website page itself.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GUIDES_SYNCED_AT = "2026-06-11";
+export const GUIDES_SYNCED_AT = "2026-06-11";
 
 type GuideCategory =
   | "capture-organize"

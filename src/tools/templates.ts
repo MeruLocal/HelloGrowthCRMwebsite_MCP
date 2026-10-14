@@ -15,7 +15,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // the website page itself.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TEMPLATES_SYNCED_AT = "2026-06-11";
+export const TEMPLATES_SYNCED_AT = "2026-06-11";
 
 type TemplateCategory =
   | "pipeline"

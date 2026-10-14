@@ -26,7 +26,7 @@ import { defineTool, ok, fail } from "./tool-types.js";
 // answers truncated to their opening sentences), never invented.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-07-08";
+export const SYNCED_AT = "2026-07-08";
 const SITE = "https://hellogrowthcrm.com";
 
 type AutonomyLevel = "autonomous" | "supervised" | "assistive";

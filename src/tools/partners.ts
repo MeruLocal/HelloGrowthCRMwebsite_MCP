@@ -9,7 +9,7 @@ import { defineTool, ok } from "./tool-types.js";
 // Route verified: /partners exists under src/app/(public)/.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-06-11";
+export const SYNCED_AT = "2026-06-11";
 
 const PROGRAM_OVERVIEW = {
   url: "https://hellogrowthcrm.com/partners",

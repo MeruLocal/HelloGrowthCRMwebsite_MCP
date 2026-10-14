@@ -13,7 +13,7 @@ import { defineTool, ok } from "./tool-types.js";
 // Routes verified: /videos and /testimonials exist under src/app/(public)/.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-07-08"; // last verified against website master
+export const SYNCED_AT = "2026-07-08"; // last verified against website master
 
 // Mirrors HOME_YOUTUBE_VIDEOS (28 seeded videos, synced from the @HelloGrowthCRM
 // channel — long-form uploads only, Shorts excluded; uploadDate approximate where
