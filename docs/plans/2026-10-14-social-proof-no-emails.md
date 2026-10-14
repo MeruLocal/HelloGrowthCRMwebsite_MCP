@@ -1,6 +1,6 @@
 # Plan: analytics_social_proof must not return subscriber emails
 
-**Severity:** P1 · **Effort:** S · **Server:** website MCP, `origin/main` 7312627
+**Severity:** P0 (corrected 2026-10-14: skill §4 S6 rates personal data from an ungated public tool P0) · **Effort:** S · **Server:** website MCP, `origin/main` 7312627
 
 ## Finding
 - `analytics_social_proof` (`src/tools/analytics.ts:24-46`) is public: it is listed in `READ_ONLY_CLOSED` (`src/tools/annotations.ts:73`) and is not in `PII_READ_TOOLS`.
