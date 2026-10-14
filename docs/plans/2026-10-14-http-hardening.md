@@ -11,9 +11,14 @@
 - **Internal error text leaks.**
   - `tools/call` catch returns `Internal error in <tool>: ${err.message}` (`:150`).
   - Resource reads return `Error fetching resource: ${e.message}` (`:256`), which can carry Supabase or Postgres messages.
-- The rate limiter (`:365-410`, keyed by `resolveClientIp`) stays as it is.
+- ~~The rate limiter (`:365-410`, keyed by `resolveClientIp`) stays as it is.~~ → **Correction (2026-10-14 re-audit):** the limiter key is spoofable. Forwarded headers are trusted by default from any peer (`TRUST_PROXY_HEADERS` defaults to true, and `CF-Connecting-IP` is taken verbatim). Measured: `FAIL X.rate_limit`. That fix is planned separately in #71, which should land before or with this plan.
+- **Correction (2026-10-14):** besides `server.ts`, public Supabase-backed read tools return the raw Supabase or Postgres error text: `blog_list` (`src/tools/blog.ts:40`), `blog_search` (`:109`), `blog_get_categories` (`:267`), `help_list_categories` (`src/tools/help.ts:24`), `help_list_articles` (`:66`) and `help_search` (`:134`). `blog_get`/`help_get_article` also append it to "not found". That is the schema-enumeration leak `newsletter_get_stats` already fixed (`src/tools/newsletter.ts:170-178`). Apply the same pattern: log server-side and return a generic message. Add one test per tool with a mocked Supabase error.
 
-Measured: `audit-live-mcp.mjs` against a local main build gives 0 fail · 4 warn · 14 pass. Its `privacy` check ("error responses do not echo caller arguments") passes, but it does not exercise handler exceptions. I did not run load or large-body tests.
+Measured: `audit-live-mcp.mjs` against a local main build gives 0 fail · 4 warn · 14 pass. **Re-measured 2026-10-14 with the new script:** 5 fail · 9 warn · 29 pass. Three of the FAILs are this plan:
+- `X.rebinding`: `Origin: http://evil.example` and `Host: evil.example` are both accepted with HTTP 200.
+- `X.body_cap`: a 2.5 MB body is accepted with HTTP 200.
+
+`X.session_cap` passed: a session flood was throttled to 0 of 25 accepted, but only by the request rate limit. Its `privacy` check ("error responses do not echo caller arguments") passes, but it does not exercise handler exceptions. I did not run load or large-body tests.
 
 ## Proposed fix
 1. **Host/Origin allowlist.**
