@@ -13,6 +13,7 @@ import { CHANGELOG_URI, buildServer } from "../server.js";
 import { toolsByName } from "../tools/index.js";
 import { TOOL_TITLES } from "../tools/titles.js";
 import { OUTPUT_SCHEMAS } from "../tools/output-schemas.js";
+import { PRIVILEGED_TOOLS } from "../tools/access.js";
 
 async function connect(): Promise<Client> {
   const server = buildServer({ authorized: false });
@@ -60,6 +61,7 @@ describe("3.2 outputSchema + structuredContent", () => {
   it("only public, registered tools carry an outputSchema", () => {
     for (const name of Object.keys(OUTPUT_SCHEMAS)) {
       expect(toolsByName.get(name)?.definition.outputSchema, name).toBeDefined();
+      expect(PRIVILEGED_TOOLS.has(name), name).toBe(false);
     }
   });
 

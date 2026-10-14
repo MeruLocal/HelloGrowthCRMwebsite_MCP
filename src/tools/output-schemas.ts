@@ -5,7 +5,7 @@
  * a fixed JSON shape, not all of them. A declared outputSchema obliges the
  * server to return matching `structuredContent`, which server.ts attaches
  * centrally by parsing the tool's JSON text (the text block stays, for clients
- * that predate structured output). output-schemas.test.ts calls every tool
+ * that predate structured output). src/__tests__/protocol-polish.test.ts calls every tool
  * listed here through an SDK client, which validates the result against the
  * schema, for each argument variant.
  *
@@ -35,8 +35,9 @@ function listOf(key: string, extra: Record<string, unknown> = {}, required: stri
 export const OUTPUT_SCHEMAS: Readonly<Record<string, OutputSchema>> = {
   pricing_get_plans: {
     type: "object",
-    // `region` selects one or both blocks, so neither is required.
+    // `region` selects one or both blocks: at least one must be present.
     properties: { global_usd: obj, india_inr: obj },
+    anyOf: [{ required: ["global_usd"] }, { required: ["india_inr"] }],
   },
   company_get_profile: {
     type: "object",

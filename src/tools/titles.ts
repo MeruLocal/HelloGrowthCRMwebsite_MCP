@@ -4,7 +4,7 @@
  * MCP clients show `title` in their UI instead of the raw snake_case name, and
  * the Claude Connectors Directory requires one on every tool. Every registered
  * tool must have an entry; applyToolTitles() throws at startup otherwise, and
- * titles.test.ts checks the map has no stale entries.
+ * src/__tests__/protocol-polish.test.ts checks the map has no stale entries.
  */
 
 import type { RegisteredTool } from "./tool-types.js";
