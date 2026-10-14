@@ -301,6 +301,12 @@ const GOOGLE_SITE_VERIFICATION_BODY = "google-site-verification: google7c8140a49
 const TOOL_COUNT = toolsByName.size;
 const RESOURCE_COUNT = RESOURCES.length;
 
+// Roadmap task 0.4: feedback goes to a mailbox and the public issue tracker,
+// never to an in-server tool (an authless write tool was cut: it would invite
+// spam and personal data onto a read-only endpoint).
+export const FEEDBACK_EMAIL = "mcp@hellogrowthcrm.com";
+export const FEEDBACK_URL = "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/issues";
+
 const GOOGLE_TAG_ID = "G-TRJT49XKH5";
 const AHREFS_ANALYTICS_KEY = "typKHgOUagJygUMAlJyQKA";
 const HOME_PAGE_HTML = `<!doctype html>
@@ -350,6 +356,7 @@ const HOME_PAGE_HTML = `<!doctype html>
     <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required, and the public endpoint returns no personal data. This is not a CRM API and it performs no CRM actions — never send CRM credentials here.</p>
     <p>Content-management tools and the tools that read newsletter subscribers or contact-form submissions are not served on this endpoint; they require an authenticated session.</p>
     <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a></p>
+    <p>Feedback, or a tool gave a wrong answer? Email <a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a> or <a href="${FEEDBACK_URL}">open an issue</a>.</p>
   </main>
 </body>
 </html>
@@ -374,7 +381,11 @@ class IpRateLimiter {
   }
 }
 
-export async function runServer(): Promise<void> {
+/**
+ * Start the server. Returns the HTTP server in HTTP mode (so tests can bind to
+ * port 0 and close it again), or undefined in stdio mode.
+ */
+export async function runServer(): Promise<http.Server | undefined> {
   const transport = (process.env.TRANSPORT ?? "http").toLowerCase();
 
   if (transport === "stdio") {
@@ -387,7 +398,7 @@ export async function runServer(): Promise<void> {
       site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
       tools: [...toolsByName.keys()],
     });
-    return;
+    return undefined;
   }
 
   // Streamable HTTP transport, served at /sse
@@ -826,4 +837,5 @@ export async function runServer(): Promise<void> {
     site: process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
     tools: [...toolsByName.keys()],
   });
+  return httpServer;
 }
