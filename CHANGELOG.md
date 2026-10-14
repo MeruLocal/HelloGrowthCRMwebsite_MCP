@@ -9,6 +9,23 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **`title` on every tool** (88 of 88), so clients show "Pricing plans"
+  instead of `pricing_get_plans`. Source: `src/tools/titles.ts`.
+- **`outputSchema` + `structuredContent`** on 12 fixed-shape tools
+  (`pricing_get_plans`, `company_get_profile`, `features_list`, the mirror list
+  tools …). The JSON text block is unchanged; `structuredContent` is the same
+  object. Schemas pin top-level fields only and allow extra fields.
+- **`hellogrowth://changelog` resource:** this file, readable in-protocol.
+
+### Changed
+
+- `initialize` now declares `tools.listChanged: false` explicitly. The tool
+  list is fixed for the life of a session, so there is nothing to notify.
+
 ## [2.0.0] — 2026-08-31
 
 ### Removed — BREAKING

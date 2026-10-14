@@ -15,6 +15,8 @@ export interface McpToolAnnotations {
 
 export interface McpToolDefinition {
   name: string;
+  /** Human-readable name for client UIs; set from src/tools/titles.ts. */
+  title?: string;
   description: string;
   inputSchema: {
     type: "object";
@@ -23,6 +25,16 @@ export interface McpToolDefinition {
     additionalProperties?: boolean;
   };
   annotations?: McpToolAnnotations;
+  /**
+   * JSON Schema of `structuredContent`. Set from src/tools/output-schemas.ts;
+   * the server then attaches structuredContent to every successful result.
+   */
+  outputSchema?: {
+    type: "object";
+    properties?: Record<string, unknown>;
+    required?: string[];
+    [key: string]: unknown;
+  };
 }
 
 export interface McpTextContent {
@@ -32,6 +44,7 @@ export interface McpTextContent {
 
 export interface McpCallResult {
   content: McpTextContent[];
+  structuredContent?: Record<string, unknown>;
   isError?: boolean;
 }
 

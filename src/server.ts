@@ -8,6 +8,7 @@
 
 import http from "http";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 // NOSONAR — the low-level `Server` is intentionally used for this advanced,
 // resource-heavy MCP setup (the SDK explicitly supports `Server` for advanced
 // use cases).
@@ -24,6 +25,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { toolsByName } from "./tools/index.js";
+import { structuredFrom } from "./tools/output-schemas.js";
 import { buildWellKnownManifest } from "./well-known.js";
 import {
   isAuthorized,
@@ -56,6 +58,22 @@ import {
   SYNCED_AT,
 } from "./data/website-mirror.js";
 
+/**
+ * Dev handoff C2: this server's own CHANGELOG.md as an MCP resource, so an
+ * agent can read what changed without leaving the protocol. Read from the
+ * package root at request time; the Dockerfile and package.json `files` ship it.
+ */
+export const CHANGELOG_URI = "hellogrowth://changelog";
+const CHANGELOG_WEB_URL = "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP/blob/main/CHANGELOG.md";
+
+async function readChangelog(): Promise<string> {
+  try {
+    return await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
+  } catch {
+    return `# Changelog\n\nThe changelog file is not bundled with this build. Read it at ${CHANGELOG_WEB_URL}\n`;
+  }
+}
+
 // Module scope (not inside buildServer) so /version can report the count.
 const RESOURCES = [
   { uri: "hellocrmwebsite://blog/recent", name: "Recent Blog Posts", description: "Last 20 blog posts from hellogrowthcrm.com", mimeType: "application/json" },
@@ -67,6 +85,7 @@ const RESOURCES = [
   { uri: "hellocrmwebsite://site/countries", name: "Country Markets", description: "8 country-specific market hubs with currency, locale, and pricing summary", mimeType: "application/json" },
   { uri: "hellocrmwebsite://site/company", name: "Company Profile", description: "Legal entities, registered address, social profiles, and brand info", mimeType: "application/json" },
   { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
+  { uri: CHANGELOG_URI, name: "MCP Server Changelog", description: "What changed in this MCP server, release by release (CHANGELOG.md), so an agent can read what is new in-protocol", mimeType: "text/markdown" },
 ];
 
 export function buildServer(opts: { authorized?: boolean } = {}): Server { // NOSONAR — advanced low-level Server (see import note)
@@ -83,7 +102,11 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
       version: SERVER_VERSION,
       description: SERVER_DESCRIPTION,
     },
-    { capabilities: { tools: {}, resources: {} } },
+    // Roadmap 3.4 decision: listChanged is declared false on purpose. A
+    // session's tool list is fixed at initialize (public or authorized) and
+    // never changes while it is open, so there is nothing to notify. Revisit
+    // only if tools can appear or disappear inside a live session.
+    { capabilities: { tools: { listChanged: false }, resources: {} } },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -137,6 +160,18 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
 
       try {
         const result = await tool.handle(parsed.data);
+        // Roadmap 3.2: a tool that declares an outputSchema must return
+        // matching structuredContent. Derived here from the JSON text so the
+        // two can never disagree; the text block stays for older clients.
+        if (tool.definition.outputSchema && !result.isError && !result.structuredContent) {
+          const structured = structuredFrom(result.content[0]?.text);
+          if (structured) return { ...result, structuredContent: structured };
+          logger.error("Tool with outputSchema returned non-JSON output", { tool: req.params.name });
+          return {
+            content: [{ type: "text", text: `Internal error in ${req.params.name}: output was not structured.` }],
+            isError: true,
+          };
+        }
         return result;
       } catch (err) {
         logger.error("Tool handler threw", {
@@ -164,6 +199,10 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
 
   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
     const uri = req.params.uri;
+
+    if (uri === CHANGELOG_URI) {
+      return { contents: [{ uri, mimeType: "text/markdown", text: await readChangelog() }] };
+    }
 
     if (uri === "hellocrmwebsite://site/seo-rules") {
       const text = `# SEO Rules (Guardrails)\n\n1. Always link to canonical host: \`https://hellogrowthcrm.com\` (never \`www\`).\n2. Never add internal links to legacy redirect sources.\n3. Add new indexable routes to sitemap unless intentionally excluded.\n4. Do not include redirecting URLs in sitemap entries.\n5. Keep one logical h1 per page.\n6. Every non-decorative image must have meaningful alt text.\n7. Use absolute canonical URLs in metadata.\n8. Keep paginated archives indexable and canonicalized per page.\n9. For out-of-range pagination, redirect to a valid page.\n10. Blog post OpenGraph type must be \`article\`.\n11. Static marketing pages should prefer force-static or ISR when possible.\n12. Avoid duplicate database reads between page render and metadata generation.\n13. Prefer lightweight OG/WebP assets for heavy pages.\n14. Keep Organization.sameAs current across major profiles.\n15. Add structured data only when truthful and complete.\n16. Do not ship broken hreflang references.\n17. Keep internal links crawlable (avoid JS-only critical nav links).\n18. Validate changes with typecheck + lint before merge.`;

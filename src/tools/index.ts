@@ -166,6 +166,8 @@ import {
 
 import type { RegisteredTool } from "./tool-types.js";
 import { applyToolAnnotations } from "./annotations.js";
+import { applyToolTitles } from "./titles.js";
+import { applyOutputSchemas } from "./output-schemas.js";
 
 export const tools: RegisteredTool[] = [
   // Bot detection
@@ -315,6 +317,10 @@ export const tools: RegisteredTool[] = [
 // openWorldHint) to every definition. Throws at startup if a tool is missing
 // an entry, so an unannotated tool can never be served.
 applyToolAnnotations(tools);
+// Roadmap Phase 3: a title on every tool (3.1) and an outputSchema on the
+// fixed-shape tools (3.2). Both throw at startup on a missing/stale entry.
+applyToolTitles(tools);
+applyOutputSchemas(tools);
 
 export const toolsByName: Map<string, RegisteredTool> = new Map(
   tools.map((t) => [t.definition.name, t]),
