@@ -17,6 +17,7 @@ import { z } from "zod";
 
 import { PoliteCrawler } from "../core/crawler.js";
 import { isDisallowed } from "../core/robots-parser.js";
+import { OUTBOUND_BUDGET_WARNING, capWarning, publicPageCap } from "../utils/outbound-budget.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const DEFAULT_MAX_TEXT = 8_000; // chars of readable text returned per page
@@ -249,7 +250,7 @@ const CrawlInput = z.object({
     .min(1)
     .max(25)
     .default(10)
-    .describe("How many sitemap pages to fetch and summarise."),
+    .describe("How many sitemap pages to fetch and summarise (public endpoint: at most 5)."),
   pathPrefix: z
     .string()
     .optional()
@@ -268,7 +269,7 @@ export const crawlPages = defineTool({
   definition: {
     name: "crawl_pages",
     description:
-      "Discover pages from the sitemap and return a compact content summary (title, meta description, top headings, and a short text excerpt) for each. Respects robots.txt. Returns one small object per page so many pages fit in a model's context.",
+      "Discover pages from the sitemap and return a compact content summary (title, meta description, top headings, and a short text excerpt) for each. Respects robots.txt. Returns one small object per page so many pages fit in a model's context. On the public endpoint a call fetches at most 5 pages and each client has an outbound fetch budget; partial results say so in warnings.",
     inputSchema: {
       type: "object",
       properties: {
@@ -300,6 +301,8 @@ export const crawlPages = defineTool({
 
     const crawler = new PoliteCrawler();
     const warnings: string[] = [];
+    const limit = publicPageCap(args.limit);
+    if (limit.capped) warnings.push(capWarning("limit", args.limit, limit.value));
 
     const robots = await crawler.fetchRobots(origin);
     if (!robots) warnings.push("Could not fetch or parse /robots.txt");
@@ -316,7 +319,7 @@ export const crawlPages = defineTool({
 
     const pages: unknown[] = [];
     for (const entry of entries) {
-      if (pages.length >= args.limit) break;
+      if (pages.length >= limit.value || crawler.budgetExhausted) break;
 
       let path: string;
       try {
@@ -330,6 +333,7 @@ export const crawlPages = defineTool({
       if (robots && isDisallowed(robots, crawler.identity, path)) continue;
 
       const res = await crawler.fetchText(entry.loc);
+      if (crawler.budgetExhausted) break;
       if (!res || res.status >= 400) {
         warnings.push(`Skipped ${entry.loc} (HTTP ${res?.status ?? "error"})`);
         continue;
@@ -348,6 +352,8 @@ export const crawlPages = defineTool({
             : data.text,
       });
     }
+
+    if (crawler.budgetExhausted) warnings.push(OUTBOUND_BUDGET_WARNING);
 
     return ok({
       targetUrl: target,

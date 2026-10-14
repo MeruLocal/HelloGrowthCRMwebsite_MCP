@@ -26,6 +26,7 @@ import { z } from "zod";
 
 import { PoliteCrawler } from "../core/crawler.js";
 import { safeFetch } from "../core/safe-fetch.js";
+import { OUTBOUND_BUDGET_WARNING, capWarning, publicPageCap } from "../utils/outbound-budget.js";
 import { isDisallowed } from "../core/robots-parser.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -97,7 +98,7 @@ const ExtractabilityInput = z.object({
     .array(z.string().url())
     .min(1)
     .max(25)
-    .describe("Absolute URLs to check. Use your most important landing pages."),
+    .describe("Absolute URLs to check (public endpoint: the first 5). Use your most important landing pages."),
 });
 
 export const checkAiExtractability = defineTool({
@@ -123,9 +124,13 @@ export const checkAiExtractability = defineTool({
   async handle(args) {
     const crawler = new PoliteCrawler();
     const robotsCache = new Map<string, Awaited<ReturnType<PoliteCrawler["fetchRobots"]>>>();
+    const warnings: string[] = [];
+    const cap = publicPageCap(args.urls.length);
+    if (cap.capped) warnings.push(capWarning("urls", args.urls.length, cap.value));
 
     const pages = [];
-    for (const url of args.urls) {
+    for (const url of args.urls.slice(0, cap.value)) {
+      if (crawler.budgetExhausted) break;
       let target: URL;
       try {
         target = new URL(url);
@@ -178,6 +183,7 @@ export const checkAiExtractability = defineTool({
           ? "No <main>-extraction problems found."
           : `${broken} of ${pages.length} page(s) have content that a <main>-preferring extractor cannot see. The content exists — it is just outside <main>.`,
       pages,
+      ...(crawler.budgetExhausted ? { warnings: [...warnings, OUTBOUND_BUDGET_WARNING] } : warnings.length ? { warnings } : {}),
     });
   },
 });
@@ -323,10 +329,14 @@ export const validateSitemaps = defineTool({
     const childUrls = parseSitemapIndex(index.body);
 
     const children: SitemapResult[] = [];
+    let budgetExhausted = false;
     for (const child of childUrls) {
-      children.push(
-        (await timedFetch(child, args.timeoutMs, crawler.identity)).result,
-      );
+      const r = (await timedFetch(child, args.timeoutMs, crawler.identity)).result;
+      if (r.error === "budget_exhausted") {
+        budgetExhausted = true;
+        break;
+      }
+      children.push(r);
     }
 
     const failed = children.filter((c) => !c.ok);
@@ -344,6 +354,9 @@ export const validateSitemaps = defineTool({
               .map((f) => `${f.url} → ${f.error} after ${f.elapsedMs}ms`)
               .join("; ")}). Every URL inside them is undiscoverable via sitemap.`,
       children,
+      ...(budgetExhausted
+        ? { warnings: [`Checked ${children.length} of ${childUrls.length} child sitemaps. ${OUTBOUND_BUDGET_WARNING}`] }
+        : {}),
     });
   },
 });

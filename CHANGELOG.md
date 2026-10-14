@@ -29,6 +29,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   address, caps the body and returns generic error codes.
 - **`generate_robots_txt`** rejects line breaks in sitemap URLs, user agents and
   paths, so a value cannot inject extra robots.txt directives.
+- **Rate-limit key no longer trusts client-supplied headers by default.**
+  `TRUST_PROXY_HEADERS` now defaults to `false`; forwarded headers are believed
+  only from peers in `TRUSTED_PROXY_CIDRS` (default `127.0.0.1/32,::1/128`), and
+  `CF-Connecting-IP` only with `TRUST_CLOUDFLARE=true`. **Deploy note:** behind
+  Apache, production must set `TRUST_PROXY_HEADERS=true` (and
+  `TRUST_CLOUDFLARE=true` if Apache forwards it) or every caller shares one bucket.
+- **Outbound budget for anonymous callers:** each network fetch costs one unit
+  (`OUTBOUND_BUDGET_PER_MIN`=30, `OUTBOUND_BUDGET_PER_HOUR`=300 per client), and
+  public calls fetch at most `PUBLIC_MAX_PAGES_PER_CALL`=5 pages
+  (`crawl_pages`, `scan_website_bots`, `check_ai_extractability`, sitemap
+  children). Exhaustion returns a partial result with a warning.
+- **HTTP transport hardening (`/sse`):** Host and Origin allowlists
+  (`MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS`; 403 otherwise), a 1 MB body cap
+  (413), at most 1000 sessions (least-recently-used evicted) with a 30-minute
+  idle timeout, and generic tool/resource error messages with an error id.
+  Public blog/help read tools no longer return Supabase error text.
+- **Admin token comparison** hashes both sides (SHA-256) before
+  `timingSafeEqual`, so there is no early return on a length mismatch.
+- **stdio is no longer trusted implicitly.** A stdio session gets the public
+  tool set unless `MCP_STDIO_TRUSTED=1` **and** `MCP_ADMIN_TOKEN` are set.
+  Operators who relied on stdio exposing the write tools must add
+  `MCP_STDIO_TRUSTED=1`. `smithery.yaml` and `server.json` now launch with
+  `TRANSPORT=stdio` (the binary still defaults to HTTP, so Docker/production
+  is unchanged).
 - **`analytics_social_proof` returns counts only** (`confirmed_subscribers`,
   `new_last_30_days`). It no longer returns masked emails or subscribe times.
   `limit` is accepted and ignored.

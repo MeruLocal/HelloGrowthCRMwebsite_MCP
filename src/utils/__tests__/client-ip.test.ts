@@ -1,87 +1,140 @@
 import { describe, expect, it } from "vitest";
-import { resolveClientIp } from "../client-ip.js";
 
-const SOCKET = "10.0.0.1";
+import { parseCidrList } from "../cidr.js";
+import { clientIpConfigFromEnv, clientIpMode, resolveClientIp, type ClientIpConfig } from "../client-ip.js";
 
-describe("resolveClientIp", () => {
-  it("prefers CF-Connecting-IP over anything the caller sent", () => {
+const LOCAL_PROXY = "127.0.0.1";
+const STRANGER = "203.0.113.9";
+
+const proxy = (extra: Partial<ClientIpConfig> = {}): ClientIpConfig => ({
+  trustProxy: true,
+  trustedProxies: parseCidrList("127.0.0.1/32,::1/128"),
+  trustCloudflare: false,
+  cloudflareRanges: parseCidrList("198.51.100.0/24,2001:db8:cf::/48"),
+  ...extra,
+});
+
+describe("resolveClientIp — defaults (no env)", () => {
+  const def = clientIpConfigFromEnv({});
+
+  it("is direct mode", () => {
+    expect(clientIpMode(def)).toBe("direct");
+  });
+
+  it("ignores CF-Connecting-IP and XFF and uses the socket", () => {
     const ip = resolveClientIp(
-      {
-        "cf-connecting-ip": "203.0.113.9",
-        "x-forwarded-for": "1.2.3.4, 203.0.113.9",
-      },
-      SOCKET,
-      true,
+      { "cf-connecting-ip": "198.51.100.1", "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
+      STRANGER,
+      def,
     );
-    expect(ip).toBe("203.0.113.9");
+    expect(ip).toBe(STRANGER);
   });
 
-  /**
-   * The bypass this file exists to close. Cloudflare APPENDS the real client IP
-   * to any incoming X-Forwarded-For, so the first entry is whatever the caller
-   * sent. Keying the rate limiter on it let an attacker mint a fresh bucket per
-   * request just by rotating the header.
-   */
-  it("ignores a spoofed leading X-Forwarded-For entry", () => {
-    const ip = resolveClientIp(
-      { "x-forwarded-for": "1.2.3.4, 203.0.113.9" },
-      SOCKET,
-      true,
+  it("does so even from localhost — trust is opt-in", () => {
+    expect(resolveClientIp({ "x-forwarded-for": "5.6.7.8" }, LOCAL_PROXY, def)).toBe(LOCAL_PROXY);
+  });
+});
+
+describe("resolveClientIp — trusted proxy", () => {
+  it("a trusted peer with XFF '1.2.3.4, 5.6.7.8' → 5.6.7.8 (right-most)", () => {
+    expect(resolveClientIp({ "x-forwarded-for": "1.2.3.4, 5.6.7.8" }, LOCAL_PROXY, proxy())).toBe("5.6.7.8");
+  });
+
+  it("an untrusted peer with the same headers → its own address", () => {
+    expect(resolveClientIp({ "x-forwarded-for": "1.2.3.4, 5.6.7.8" }, STRANGER, proxy())).toBe(STRANGER);
+  });
+
+  it("recognises the IPv4-mapped socket address Node reports", () => {
+    expect(resolveClientIp({ "x-forwarded-for": "5.6.7.8" }, "::ffff:127.0.0.1", proxy())).toBe("5.6.7.8");
+  });
+
+  it("skips hops that are themselves trusted proxies", () => {
+    const cfg = proxy({ trustedProxies: parseCidrList("127.0.0.1/32,10.0.0.0/8") });
+    expect(resolveClientIp({ "x-forwarded-for": "1.1.1.1, 5.6.7.8, 10.1.1.1" }, LOCAL_PROXY, cfg)).toBe("5.6.7.8");
+  });
+
+  it("gives the same key however the caller varies the left of the header", () => {
+    const keys = ["9.9.9.9, 5.6.7.8", "8.8.8.8, 5.6.7.8", "7.7.7.7, 6.6.6.6, 5.6.7.8"].map((x) =>
+      resolveClientIp({ "x-forwarded-for": x }, LOCAL_PROXY, proxy()),
     );
-    expect(ip).toBe("203.0.113.9");
-    expect(ip).not.toBe("1.2.3.4");
+    expect(new Set(keys)).toEqual(new Set(["5.6.7.8"]));
   });
 
-  it("gives the same bucket key however the attacker varies the prefix", () => {
-    const keys = [
-      "9.9.9.9, 203.0.113.9",
-      "8.8.8.8, 203.0.113.9",
-      "7.7.7.7, 6.6.6.6, 203.0.113.9",
-    ].map((xff) => resolveClientIp({ "x-forwarded-for": xff }, SOCKET, true));
-    expect(new Set(keys).size).toBe(1);
-    expect(keys[0]).toBe("203.0.113.9");
+  it("falls back to the socket when no forwarded header is usable", () => {
+    expect(resolveClientIp({}, LOCAL_PROXY, proxy())).toBe(LOCAL_PROXY);
+    expect(resolveClientIp({ "x-forwarded-for": "127.0.0.1" }, LOCAL_PROXY, proxy())).toBe(LOCAL_PROXY);
+  });
+});
+
+describe("resolveClientIp — Cloudflare", () => {
+  it("CF-Connecting-IP is ignored without TRUST_CLOUDFLARE", () => {
+    expect(resolveClientIp({ "cf-connecting-ip": "198.51.100.1" }, LOCAL_PROXY, proxy())).toBe(LOCAL_PROXY);
   });
 
-  it("handles a single-hop X-Forwarded-For", () => {
+  it("CF-Connecting-IP is honoured when the delivering XFF hop is a Cloudflare range", () => {
+    const cfg = proxy({ trustCloudflare: true });
+    expect(clientIpMode(cfg)).toBe("proxy+cloudflare");
     expect(
-      resolveClientIp({ "x-forwarded-for": "203.0.113.9" }, SOCKET, true),
-    ).toBe("203.0.113.9");
+      resolveClientIp({ "cf-connecting-ip": ["192.0.2.55"], "x-forwarded-for": "10.9.9.9, 198.51.100.7" }, LOCAL_PROXY, cfg),
+    ).toBe("192.0.2.55");
   });
 
-  it("tolerates whitespace and empty segments", () => {
+  it("CF-Connecting-IP is honoured when there is no XFF and the socket peer is Cloudflare", () => {
+    const cfg = proxy({ trustCloudflare: true, trustedProxies: parseCidrList("198.51.100.0/24") });
+    expect(resolveClientIp({ "cf-connecting-ip": "192.0.2.55" }, "198.51.100.7", cfg)).toBe("192.0.2.55");
+  });
+
+  it("forged CF-Connecting-IP via a non-Cloudflare path is ignored", () => {
+    const cfg = proxy({ trustCloudflare: true });
+    // no XFF: the local proxy peer is not a Cloudflare range
+    expect(resolveClientIp({ "cf-connecting-ip": "192.0.2.55" }, LOCAL_PROXY, cfg)).toBe(LOCAL_PROXY);
+    // XFF whose right-most hop is a direct caller, not Cloudflare
     expect(
-      resolveClientIp({ "x-forwarded-for": " 1.2.3.4 ,  , 203.0.113.9 " }, SOCKET, true),
-    ).toBe("203.0.113.9");
+      resolveClientIp({ "cf-connecting-ip": "192.0.2.55", "x-forwarded-for": "198.51.100.7, 203.0.113.50" }, LOCAL_PROXY, cfg),
+    ).toBe("203.0.113.50");
   });
 
-  it("accepts a header array, as Node may supply", () => {
+  it("CF-Connecting-IP is ignored when no Cloudflare ranges are configured", () => {
+    const cfg = proxy({ trustCloudflare: true, cloudflareRanges: [] });
     expect(
-      resolveClientIp({ "cf-connecting-ip": ["203.0.113.9"] }, SOCKET, true),
-    ).toBe("203.0.113.9");
+      resolveClientIp({ "cf-connecting-ip": "192.0.2.55", "x-forwarded-for": "198.51.100.7" }, LOCAL_PROXY, cfg),
+    ).toBe("198.51.100.7");
   });
 
-  it("falls back to the socket address when no forwarded header is present", () => {
-    expect(resolveClientIp({}, SOCKET, true)).toBe(SOCKET);
-  });
-
-  it("ignores forwarded headers entirely when trustProxy is false", () => {
-    // The mirror-image vulnerability: trusting forwarded headers with no proxy
-    // in front means any client can set its own bucket key.
-    const ip = resolveClientIp(
-      { "cf-connecting-ip": "203.0.113.9", "x-forwarded-for": "1.2.3.4" },
-      SOCKET,
-      false,
-    );
-    expect(ip).toBe(SOCKET);
-  });
-
-  it("returns 'unknown' rather than undefined when nothing is available", () => {
-    expect(resolveClientIp({}, undefined, true)).toBe("unknown");
-  });
-
-  it("does not fall through to the socket when a forwarded header is usable", () => {
+  it("a malformed CF-Connecting-IP from Cloudflare falls back to XFF", () => {
+    const cfg = proxy({ trustCloudflare: true });
     expect(
-      resolveClientIp({ "x-forwarded-for": "203.0.113.9" }, SOCKET, true),
-    ).not.toBe(SOCKET);
+      resolveClientIp({ "cf-connecting-ip": "garbage", "x-forwarded-for": "192.0.2.9, 198.51.100.7" }, LOCAL_PROXY, cfg),
+    ).toBe("198.51.100.7");
+  });
+
+  it("XFF entries that are not IPs are skipped", () => {
+    expect(resolveClientIp({ "x-forwarded-for": "192.0.2.9, garbage" }, LOCAL_PROXY, proxy())).toBe("192.0.2.9");
+    expect(resolveClientIp({ "x-forwarded-for": "garbage" }, LOCAL_PROXY, proxy())).toBe(LOCAL_PROXY);
+  });
+
+  it("CF-Connecting-IP from an untrusted peer is ignored even with TRUST_CLOUDFLARE", () => {
+    const cfg = proxy({ trustCloudflare: true });
+    expect(resolveClientIp({ "cf-connecting-ip": "198.51.100.1" }, STRANGER, cfg)).toBe(STRANGER);
+  });
+});
+
+describe("resolveClientIp — env parsing", () => {
+  it("reads the three settings", () => {
+    const cfg = clientIpConfigFromEnv({
+      TRUST_PROXY_HEADERS: "true",
+      TRUSTED_PROXY_CIDRS: "10.0.0.0/8",
+      TRUST_CLOUDFLARE: "1",
+      CLOUDFLARE_CIDRS: "198.51.100.0/24",
+    });
+    expect(cfg.cloudflareRanges).toHaveLength(1);
+    expect(cfg.trustProxy).toBe(true);
+    expect(cfg.trustCloudflare).toBe(true);
+    expect(resolveClientIp({ "x-forwarded-for": "5.6.7.8" }, "10.2.3.4", cfg)).toBe("5.6.7.8");
+    expect(resolveClientIp({ "x-forwarded-for": "5.6.7.8" }, LOCAL_PROXY, cfg)).toBe(LOCAL_PROXY);
+  });
+
+  it("returns 'unknown' when there is no socket address", () => {
+    expect(resolveClientIp({}, undefined, proxy())).toBe("unknown");
   });
 });

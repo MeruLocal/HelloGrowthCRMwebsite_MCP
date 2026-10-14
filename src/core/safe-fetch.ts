@@ -27,6 +27,8 @@ import type { LookupFunction } from "node:net";
 
 import { Agent, request } from "undici";
 
+import { chargeCurrentCaller } from "../utils/outbound-budget.js";
+
 export type SafeFetchError =
   | "bad_url"
   | "bad_scheme"
@@ -40,6 +42,12 @@ export interface SafeFetchOptions {
   maxBytes?: number;
   maxRedirects?: number;
   headers?: Record<string, string>;
+  /**
+   * Called once per network request (each redirect hop counts) after the
+   * address is vetted. Return false to stop with `budget_exhausted`.
+   * Defaults to charging the current caller's outbound budget.
+   */
+  beforeRequest?: () => Promise<boolean> | boolean;
 }
 
 export type SafeFetchResult =
@@ -52,7 +60,7 @@ export type SafeFetchResult =
       finalUrl: string;
       contentType: string | null;
     }
-  | { ok: false; error: SafeFetchError };
+  | { ok: false; error: SafeFetchError | "budget_exhausted" };
 
 export const DEFAULT_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -220,6 +228,9 @@ export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Pr
       const vetted = await vet(next, current);
       if (typeof vetted === "string") return { ok: false, error: vetted };
       if (controller.signal.aborted) return { ok: false, error: "timeout" };
+      if (!(await (opts.beforeRequest ?? chargeCurrentCaller)())) {
+        return { ok: false, error: "budget_exhausted" };
+      }
 
       const agent = pinnedAgent(vetted);
       try {

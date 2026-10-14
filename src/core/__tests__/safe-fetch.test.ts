@@ -78,6 +78,8 @@ describe("safeFetch", () => {
   const prev = process.env.SAFE_FETCH_ALLOW_PRIVATE;
 
   beforeAll(async () => {
+    process.env.OUTBOUND_BUDGET_PER_MIN = "10000";
+    process.env.OUTBOUND_BUDGET_PER_HOUR = "10000";
     server = http.createServer((req, res) => {
       const u = new URL(req.url ?? "/", "http://x");
       if (u.pathname === "/ok") return res.end("hello");

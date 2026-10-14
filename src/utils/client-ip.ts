@@ -1,41 +1,70 @@
 /**
- * Resolve the client IP used as the rate-limiter bucket key.
+ * Resolve the client IP used as the rate-limiter (and outbound-budget) key.
  *
- * ── Why this file exists ────────────────────────────────────────────────────
- * The previous implementation was:
+ * ── History ─────────────────────────────────────────────────────────────────
+ * 1. The first version took X-Forwarded-For[0], which is caller-controlled:
+ *    rotating it minted a fresh bucket per request.
+ * 2. The second took CF-Connecting-IP, then the right-most XFF hop — but
+ *    trusted them by default from ANY peer. A caller that reaches Node without
+ *    a header-rewriting proxy in front still picks its own bucket, because
+ *    CF-Connecting-IP was taken verbatim and the right-most XFF hop is its own
+ *    value. Measured: rotating either header gave 7/7 HTTP 200 past a limit of
+ *    5 (audit FAIL X.rate_limit).
  *
- *   req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ?? req.socket.remoteAddress
+ * ── Trust model (now) ───────────────────────────────────────────────────────
+ * Forwarded headers are honoured only when ALL of these hold:
+ *   - TRUST_PROXY_HEADERS=true (default FALSE — production must opt in), and
+ *   - the TCP peer (req.socket.remoteAddress) is inside TRUSTED_PROXY_CIDRS
+ *     (default 127.0.0.1/32,::1/128 — a reverse proxy on the same host).
+ * Then:
+ *   - CF-Connecting-IP is used only when TRUST_CLOUDFLARE=true as well AND the
+ *     hop that delivered it (the right-most X-Forwarded-For hop, or the socket
+ *     peer when there is no XFF) is inside CLOUDFLARE_CIDRS. A forged
+ *     CF-Connecting-IP arriving via any non-Cloudflare path is ignored.
+ *   - Otherwise X-Forwarded-For is walked from the RIGHT, skipping hops that
+ *     are themselves trusted proxies; the first untrusted hop is the client.
+ * Anything else → the socket address.
  *
- * Taking `[0]` of X-Forwarded-For is client-controlled, and this server sits
- * behind Cloudflare. Cloudflare **appends** the real client IP to any incoming
- * X-Forwarded-For rather than replacing it, so a request sent as:
- *
- *   X-Forwarded-For: 1.2.3.4
- *
- * arrives at the origin as:
- *
- *   X-Forwarded-For: 1.2.3.4, <real client IP>
- *
- * …and `[0]` is the attacker's value. Rotating that header gives every request
- * a fresh bucket, so the rate limit could be bypassed entirely — while still
- * looking correctly configured. That is a worse failure than having no limiter,
- * because it reads as protection that is not there.
- *
- * ── Resolution order ────────────────────────────────────────────────────────
- * 1. `CF-Connecting-IP` — set by Cloudflare, overwritten on every request, so a
- *    client cannot forge it through the edge.
- * 2. The **last** entry of `X-Forwarded-For` — the hop appended by the closest
- *    trusted proxy. Client-supplied values sit to the left of it.
- * 3. `req.socket.remoteAddress`.
- *
- * Set `TRUST_PROXY_HEADERS=false` when the server is exposed directly with no
- * proxy in front: then no forwarded header is honoured at all, and only the
- * socket address is used. Trusting them without a proxy is the mirror-image
- * vulnerability.
+ * Production (Cloudflare → Apache on the same host → Node) is expected to set
+ * TRUST_PROXY_HEADERS=true and, if Apache passes CF-Connecting-IP through,
+ * TRUST_CLOUDFLARE=true. Ops must confirm the topology before deploy: with
+ * the defaults behind a proxy, every caller shares the proxy's bucket.
  */
+
+import { isIP } from "node:net";
+
+import { ipInCidrs, normalizeIp, parseCidrList, type Cidr } from "./cidr.js";
 
 export interface ClientIpHeaders {
   [key: string]: string | string[] | undefined;
+}
+
+export interface ClientIpConfig {
+  trustProxy: boolean;
+  trustedProxies: readonly Cidr[];
+  trustCloudflare: boolean;
+  /** Cloudflare's published edge ranges; CF-Connecting-IP is believed only from these. */
+  cloudflareRanges: readonly Cidr[];
+}
+
+export type ClientIpMode = "direct" | "proxy" | "proxy+cloudflare";
+
+const DEFAULT_TRUSTED_PROXY_CIDRS = "127.0.0.1/32,::1/128";
+
+const truthy = (v: string | undefined): boolean => ["1", "true", "yes"].includes((v ?? "").trim().toLowerCase());
+
+export function clientIpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ClientIpConfig {
+  return {
+    trustProxy: truthy(env.TRUST_PROXY_HEADERS),
+    trustedProxies: parseCidrList(env.TRUSTED_PROXY_CIDRS ?? DEFAULT_TRUSTED_PROXY_CIDRS),
+    trustCloudflare: truthy(env.TRUST_CLOUDFLARE),
+    cloudflareRanges: parseCidrList(env.CLOUDFLARE_CIDRS ?? ""),
+  };
+}
+
+export function clientIpMode(config: ClientIpConfig): ClientIpMode {
+  if (!config.trustProxy) return "direct";
+  return config.trustCloudflare ? "proxy+cloudflare" : "proxy";
 }
 
 function firstValue(value: string | string[] | undefined): string | undefined {
@@ -45,28 +74,39 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 
 /**
  * @param headers        Incoming request headers (lower-cased keys, as Node supplies).
- * @param socketAddress  `req.socket.remoteAddress`.
- * @param trustProxy     Honour forwarded headers. Defaults to the
- *                       `TRUST_PROXY_HEADERS` env var (default: true).
+ * @param socketAddress  `req.socket.remoteAddress` — the TCP peer.
+ * @param config         Trust settings; defaults to the environment.
  */
 export function resolveClientIp(
   headers: ClientIpHeaders,
   socketAddress?: string,
-  trustProxy: boolean = (process.env.TRUST_PROXY_HEADERS ?? "true").toLowerCase() !== "false",
+  config: ClientIpConfig = clientIpConfigFromEnv(),
 ): string {
-  if (trustProxy) {
-    // Cloudflare sets this itself and overwrites any client-supplied value.
-    const cf = firstValue(headers["cf-connecting-ip"])?.trim();
-    if (cf) return cf;
+  const peer = socketAddress ? normalizeIp(socketAddress) : undefined;
+  if (!peer) return "unknown";
 
-    // Take the LAST hop, not the first: everything to its left is caller-supplied.
-    const xff = firstValue(headers["x-forwarded-for"]);
-    if (xff) {
-      const hops = xff.split(",").map((h) => h.trim()).filter(Boolean);
-      const last = hops.at(-1);
-      if (last) return last;
+  if (!config.trustProxy || !ipInCidrs(peer, config.trustedProxies)) return peer;
+
+  const xff = firstValue(headers["x-forwarded-for"]);
+  // Valid IPs only: a garbage entry must never become a rate-limit key.
+  const hops = xff ? xff.split(",").map((h) => normalizeIp(h)).filter((h) => isIP(h) !== 0) : [];
+
+  if (config.trustCloudflare) {
+    // The hop that handed us the request must itself be Cloudflare.
+    const deliverer = hops.length > 0 ? hops[hops.length - 1] : peer;
+    const cf = firstValue(headers["cf-connecting-ip"])?.trim();
+    if (cf && ipInCidrs(deliverer, config.cloudflareRanges)) {
+      const ip = normalizeIp(cf);
+      if (isIP(ip) !== 0) return ip;
     }
   }
 
-  return socketAddress ?? "unknown";
+  // Walk from the right: everything left of the first untrusted hop is
+  // caller-supplied and worthless.
+  for (let i = hops.length - 1; i >= 0; i -= 1) {
+    const hop = hops[i]!;
+    if (!ipInCidrs(hop, config.trustedProxies)) return hop;
+  }
+
+  return peer;
 }

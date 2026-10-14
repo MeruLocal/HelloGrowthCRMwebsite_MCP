@@ -20,6 +20,12 @@
       },
       "environmentVariables": [
         {
+          "name": "TRANSPORT",
+          "description": "Transport to speak. Registry installs use stdio; the binary's own default is http.",
+          "isRequired": false,
+          "default": "stdio"
+        },
+        {
           "name": "DEFAULT_TARGET_URL",
           "description": "Base URL used by scan_website_bots and generate_robots_txt when no url argument is given.",
           "isRequired": false,
@@ -71,6 +77,11 @@
           "description": "Bearer token that unlocks the content-write and personal-data tools. When unset, those tools are not served at all (fail-closed).",
           "isRequired": false,
           "isSecret": true
+        },
+        {
+          "name": "MCP_STDIO_TRUSTED",
+          "description": "Set to 1 (with MCP_ADMIN_TOKEN) to give a stdio session the content-write and personal-data tools. Unset, stdio gets the public tool set.",
+          "isRequired": false
         }
       ]
     }

@@ -13,6 +13,7 @@
  */
 
 import { safeFetch, type SafeFetchResult } from "./safe-fetch.js";
+import { publicPageCap } from "../utils/outbound-budget.js";
 
 import { RateLimiter } from "../utils/rate-limiter.js";
 import {
@@ -36,6 +37,8 @@ export class PoliteCrawler {
   private readonly limiter: RateLimiter;
   private readonly timeoutMs: number;
   private readonly maxSitemapPages: number;
+  /** Set once a fetch is refused for the caller's outbound budget. */
+  budgetExhausted = false;
 
   constructor(opts: CrawlerOptions = {}) {
     this.userAgent =
@@ -78,7 +81,10 @@ export class PoliteCrawler {
         accept: "text/plain, text/html, application/xml;q=0.9, */*;q=0.5",
       },
     });
-    if (!res.ok) logger.warn("fetch refused or failed", { host, error: res.error });
+    if (!res.ok) {
+      if (res.error === "budget_exhausted") this.budgetExhausted = true;
+      logger.warn("fetch refused or failed", { host, error: res.error });
+    }
     return res;
   }
 
@@ -101,9 +107,11 @@ export class PoliteCrawler {
     // Sitemap index?
     if (/<sitemapindex/i.test(res.body)) {
       const children = parseSitemapIndex(res.body);
+      // Public callers expand at most PUBLIC_MAX_PAGES_PER_CALL child sitemaps.
+      const childCap = publicPageCap(children.length).value;
       const all: SitemapEntry[] = [];
-      for (const c of children) {
-        if (all.length >= this.maxSitemapPages) break;
+      for (const c of children.slice(0, childCap)) {
+        if (all.length >= this.maxSitemapPages || this.budgetExhausted) break;
         const childRes = await this.fetchText(c);
         if (childRes && childRes.status < 400) {
           all.push(...parseSitemap(childRes.body));
@@ -128,7 +136,7 @@ export class PoliteCrawler {
     const out: { url: string; status: number }[] = [];
     const cap = Math.min(limit, this.maxSitemapPages);
     for (const entry of entries) {
-      if (out.length >= cap) break;
+      if (out.length >= cap || this.budgetExhausted) break;
       const url = entry.loc;
       if (!sameHost(url, baseUrl)) continue;
       if (robots && isDisallowed(robots, this.userAgent, new URL(url).pathname)) {

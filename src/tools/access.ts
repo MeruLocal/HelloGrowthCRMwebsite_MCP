@@ -17,7 +17,7 @@
  * var can therefore never re-open the hole.
  */
 
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 import { TOOL_ANNOTATIONS } from "./annotations.js";
 
@@ -75,10 +75,14 @@ export function isAuthorized(authorizationHeader: string | undefined): boolean {
   const presented = match?.[1]?.trim();
   if (!presented) return false;
 
-  const a = Buffer.from(presented, "utf8");
-  const b = Buffer.from(expected, "utf8");
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+  // Compare fixed-length digests: both are 32 bytes, so there is no length
+  // branch to time (an early return on a length mismatch leaked the token's
+  // length) and timingSafeEqual cannot throw.
+  return timingSafeEqual(sha256(presented), sha256(expected));
+}
+
+function sha256(value: string): Buffer {
+  return createHash("sha256").update(value, "utf8").digest();
 }
 
 /** Tool names served to an unauthenticated caller. */
