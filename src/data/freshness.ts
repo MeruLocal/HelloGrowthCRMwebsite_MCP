@@ -117,6 +117,7 @@ export function mirrorFreshness(
   // Oldest = an unusable date first (it cannot be trusted at all), then the
   // largest age.
   const oldest = [...ages].sort((a, b) => {
+    if (a.age_days === null && b.age_days === null) return 0;
     if (a.age_days === null) return -1;
     if (b.age_days === null) return 1;
     return b.age_days - a.age_days;

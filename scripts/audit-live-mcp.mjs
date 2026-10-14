@@ -216,8 +216,9 @@ JSON.stringify(echo.json ?? {}).includes(CANARY)
 // the per-block verdict; older servers are checked through company_get_profile.
 const MAX_AGE_DAYS = Number(process.env.MIRROR_MAX_AGE_DAYS) > 0 ? Number(process.env.MIRROR_MAX_AGE_DAYS) : 10;
 const ageDays = (ymd) => {
+  if (typeof ymd !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
   const t = Date.parse(`${ymd}T00:00:00Z`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd ?? "") || Number.isNaN(t)) return null;
+  if (Number.isNaN(t)) return null;
   const now = new Date();
   return Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - t) / 86_400_000);
 };

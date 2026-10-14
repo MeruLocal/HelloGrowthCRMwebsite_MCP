@@ -80,12 +80,14 @@ describe("mirrorFreshness", () => {
     expect(() => mirrorFreshness(NOW, 10, [])).toThrow();
   });
 
-  it("reports the real mirror as stale today (the condition this gate exists for)", () => {
-    // The oldest block was last synced in June 2026. If this starts failing
-    // because someone synced the mirror, delete it: that is the goal.
-    const r = mirrorFreshness(NOW);
-    expect(r.status).toBe("stale");
-    expect(r.oldest.age_days).toBeGreaterThan(DEFAULT_MAX_AGE_DAYS);
+  it("checks every real mirror block with the default limit", () => {
+    // Mechanism, not today's data: passes before and after a mirror sync, and
+    // the explicit limit keeps MIRROR_MAX_AGE_DAYS in the env from leaking in.
+    const r = mirrorFreshness(NOW, DEFAULT_MAX_AGE_DAYS);
+    expect(r.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(r.blocks).toHaveLength(MIRROR_BLOCKS.length);
+    expect(["fresh", "stale"]).toContain(r.status);
+    expect(r.max_age_days).toBe(DEFAULT_MAX_AGE_DAYS);
   });
 });
 
