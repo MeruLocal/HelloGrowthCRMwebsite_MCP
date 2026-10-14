@@ -160,20 +160,58 @@ export function withPaging(tool: RegisteredTool, arrayKey: string): RegisteredTo
   };
 }
 
+const CAP_NOTE = "truncated by the server; narrow the request or use paging arguments (limit / cursor)";
+
+/**
+ * Cap one text block. JSON text is never cut mid-token: the largest array is
+ * trimmed at an item boundary, with a `_truncated` note; if that cannot fit, a
+ * small valid JSON object says so. Non-JSON text keeps the plain cut + note.
+ */
+function capText(text: string, maxChars: number): string {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return text.slice(0, maxChars) + `\n…[truncated by the server at ${maxChars} characters; narrow the request or use paging arguments]`;
+  }
+  const render = (v: unknown): string => JSON.stringify(v, null, 2);
+  const fallback = (): string =>
+    render({ _truncated: true, original_chars: text.length, note: CAP_NOTE });
+
+  // Locate the largest array: the value itself or a top-level property.
+  let key: string | null = null;
+  let arr: unknown[] | null = null;
+  if (Array.isArray(parsed)) arr = parsed;
+  else if (parsed && typeof parsed === "object") {
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (Array.isArray(v) && (!arr || v.length > arr.length)) { key = k; arr = v; }
+    }
+  }
+  if (!arr || arr.length === 0) return fallback();
+
+  const build = (n: number): string => {
+    const kept = arr!.slice(0, n);
+    const meta = { _truncated: true, returned: n, original_count: arr!.length, note: CAP_NOTE };
+    return render(key === null ? { items: kept, ...meta } : { ...(parsed as Record<string, unknown>), [key]: kept, ...meta });
+  };
+  let lo = 0;
+  let hi = arr.length - 1;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (build(mid).length <= maxChars) lo = mid;
+    else hi = mid - 1;
+  }
+  const out = build(lo);
+  return out.length <= maxChars ? out : fallback();
+}
+
 /** Backstop for every tool: cut any text block over CENTRAL_MAX_CHARS, with a note. */
 export function capToolResult(result: McpCallResult, maxChars = CENTRAL_MAX_CHARS): McpCallResult {
   if (!result.content.some((c) => c.type === "text" && c.text.length > maxChars)) return result;
   return {
     ...result,
     content: result.content.map((c) =>
-      c.type === "text" && c.text.length > maxChars
-        ? {
-            ...c,
-            text:
-              c.text.slice(0, maxChars) +
-              `\n…[truncated by the server at ${maxChars} characters; narrow the request or use paging arguments]`,
-          }
-        : c,
+      c.type === "text" && c.text.length > maxChars ? { ...c, text: capText(c.text, maxChars) } : c,
     ),
   };
 }

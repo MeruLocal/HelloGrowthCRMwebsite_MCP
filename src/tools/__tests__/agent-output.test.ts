@@ -156,4 +156,30 @@ describe("paginate (#73)", () => {
     expect(out.content[0]!.text.length).toBeLessThan(100_200);
     expect(out.content[0]!.text).toMatch(/truncated by the server/);
   });
+
+  it("capped JSON still parses: trimmed at an item boundary", () => {
+    const rows = Array.from({ length: 5000 }, (_, i) => ({ id: i, name: `row-${i}`, pad: "z".repeat(40) }));
+    const text = JSON.stringify({ status: "ok", rows }, null, 2);
+    const out = capToolResult({ content: [{ type: "text", text }] }, 20_000).content[0]!.text;
+    expect(out.length).toBeLessThanOrEqual(20_000);
+    const parsed = JSON.parse(out);
+    expect(parsed.status).toBe("ok");
+    expect(parsed._truncated).toBe(true);
+    expect(parsed.original_count).toBe(5000);
+    expect(parsed.rows.length).toBe(parsed.returned);
+    expect(parsed.rows.length).toBeGreaterThan(0);
+    expect(parsed.rows.length).toBeLessThan(5000);
+    expect(parsed.rows[parsed.rows.length - 1]).toEqual(rows[parsed.rows.length - 1]);
+  });
+
+  it("capped top-level JSON array and non-array JSON both stay valid JSON", () => {
+    const arr = JSON.stringify(Array.from({ length: 3000 }, (_, i) => ({ i, p: "q".repeat(30) })));
+    const a = JSON.parse(capToolResult({ content: [{ type: "text", text: arr }] }, 10_000).content[0]!.text);
+    expect(a._truncated).toBe(true);
+    expect(Array.isArray(a.items)).toBe(true);
+    const blob = JSON.stringify({ text: "w".repeat(50_000) });
+    const b = JSON.parse(capToolResult({ content: [{ type: "text", text: blob }] }, 10_000).content[0]!.text);
+    expect(b._truncated).toBe(true);
+    expect(b.note).toMatch(/narrow the request/);
+  });
 });
