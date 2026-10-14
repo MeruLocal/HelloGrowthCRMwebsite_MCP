@@ -11,7 +11,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 //   (25 US city landing pages; uniform USD offer) — SYNCED_AT 2026-07-08
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-07-08";
+export const SYNCED_AT = "2026-07-08";
 
 // ── WhatsApp CRM use cases ───────────────────────────────────────────────────
 

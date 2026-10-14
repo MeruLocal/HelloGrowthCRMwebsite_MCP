@@ -209,6 +209,37 @@ JSON.stringify(echo.json ?? {}).includes(CANARY)
   ? fail("privacy", "an error response echoed the caller's argument back — arguments must never be reflected or logged")
   : pass("privacy", "error responses do not echo caller arguments");
 
+// ── 9. Content freshness (roadmap 2.3, issue #40) ────────────────────────────
+// Mirrored website content carries a SYNCED_AT date. Stale content quoted as
+// current is a truth defect even when every protocol check passes, so this is
+// a FAIL, not a WARN. Servers that report `content` on /health are trusted for
+// the per-block verdict; older servers are checked through company_get_profile.
+const MAX_AGE_DAYS = Number(process.env.MIRROR_MAX_AGE_DAYS) > 0 ? Number(process.env.MIRROR_MAX_AGE_DAYS) : 10;
+const ageDays = (ymd) => {
+  const t = Date.parse(`${ymd}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd ?? "") || Number.isNaN(t)) return null;
+  const now = new Date();
+  return Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - t) / 86_400_000);
+};
+let content = null;
+try { content = JSON.parse((await http("/health")).text).content ?? null; } catch { /* no /health JSON */ }
+if (content) {
+  const where = `oldest block "${content.oldest_block}" synced ${content.oldest_synced_at} (${content.oldest_age_days ?? "?"} days; limit ${content.max_age_days})`;
+  content.status === "fresh"
+    ? pass("freshness", `mirrored content is fresh: ${where}`)
+    : fail("freshness", `mirrored content is STALE: ${where}; stale blocks: ${(content.stale_blocks ?? []).join(", ")}`);
+} else {
+  warn("freshness", "/health does not report content freshness; falling back to company_get_profile.synced_at");
+  const prof = await rpc({ jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "company_get_profile", arguments: {} } }, sid);
+  let syncedAt = null;
+  try { syncedAt = JSON.parse(prof.json?.result?.content?.[0]?.text ?? "{}").synced_at ?? null; } catch { /* not JSON */ }
+  const age = ageDays(syncedAt);
+  if (age === null) fail("freshness", `could not read a valid synced_at from company_get_profile (got ${JSON.stringify(syncedAt)})`);
+  else if (age < 0) fail("freshness", `company_get_profile.synced_at ${syncedAt} is in the future`);
+  else if (age > MAX_AGE_DAYS) fail("freshness", `company_get_profile.synced_at ${syncedAt} is ${age} days old (limit ${MAX_AGE_DAYS})`);
+  else pass("freshness", `company_get_profile.synced_at ${syncedAt} is ${age} days old (limit ${MAX_AGE_DAYS})`);
+}
+
 // ── report ───────────────────────────────────────────────────────────────────
 const order = { FAIL: 0, WARN: 1, PASS: 2 };
 results.sort((a, b) => order[a.level] - order[b.level]);

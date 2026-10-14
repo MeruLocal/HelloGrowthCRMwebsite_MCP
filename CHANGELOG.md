@@ -9,6 +9,18 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **Content freshness on `GET /health`.** The response now carries a `content`
+  object (oldest mirrored block, its `synced_at`, age in days, the limit and the
+  stale blocks). When any block is older than `MIRROR_MAX_AGE_DAYS` (default
+  10), top-level `status` is `"degraded"` instead of `"ok"`. The HTTP status
+  stays 200. `GET /healthz` is unchanged and stays pure liveness. Existing
+  fields are unchanged; `content` is additive.
+- `npm run audit:live` FAILs when mirrored content is stale.
+
 ## [2.0.0] — 2026-08-31
 
 ### Removed — BREAKING

@@ -12,7 +12,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // relatedLinks (mirrored as `related`).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GLOSSARY_SYNCED_AT = "2026-07-08"; // last verified against website master
+export const GLOSSARY_SYNCED_AT = "2026-07-08"; // last verified against website master
 
 interface GlossaryEntry {
   slug: string;

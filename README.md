@@ -274,6 +274,7 @@ All knobs live in `.env` (see [`.env.example`](.env.example)):
 | `UPSTASH_REDIS_REST_URL` | — | Optional: shared rate-limit store (set with the token) so buckets are shared across scaled instances instead of per-process. |
 | `UPSTASH_REDIS_REST_TOKEN` | — | Optional: token for the shared rate-limit store. |
 | `TRUST_PROXY_HEADERS` | `true` | Honour `CF-Connecting-IP`/last `X-Forwarded-For` hop for the rate-limit key. Set `false` only when exposed with no proxy in front. |
+| `MIRROR_MAX_AGE_DAYS` | `10` | Mirrored website content older than this makes `GET /health` report `"status": "degraded"` (still HTTP 200) and `npm run audit:live` FAIL. `GET /healthz` is pure liveness. |
 | `ENABLE_MCP_ANALYTICS` | `false` | Master switch for MCP/SSE analytics — must be `true` to send. |
 | `GA4_MEASUREMENT_ID` | — | GA4 stream id for MCP/SSE analytics (optional). |
 | `GA4_API_SECRET` | — | GA4 Measurement Protocol API secret (optional). |

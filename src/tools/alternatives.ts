@@ -9,7 +9,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // Source: hellocrmwebsite/src/app/(public)/ directory listing — SYNCED_AT 2026-07-08
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYNCED_AT = "2026-07-08"; // last verified against website master
+export const SYNCED_AT = "2026-07-08"; // last verified against website master
 const SITE = "https://hellogrowthcrm.com";
 
 // ── Standalone *-alternative page routes under src/app/(public)/ ─────────────
