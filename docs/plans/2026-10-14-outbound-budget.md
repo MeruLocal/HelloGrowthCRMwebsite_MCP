@@ -1,6 +1,6 @@
 # Plan: cap outbound crawling for anonymous callers
 
-**Severity:** P1 · **Effort:** S · **Server:** website MCP, `origin/main` 7312627
+**Severity:** P0 (corrected 2026-10-14: skill §4 S3 rates amplification from a public tool P0; `crawl_pages` is public) · **Effort:** S · **Server:** website MCP, `origin/main` 7312627
 
 ## Finding
 - `crawl_pages` allows `limit` up to 25 (`src/tools/fetch-page-content.ts`, schema `max(25)`).
@@ -38,7 +38,7 @@ Not measured: I did not run load against any target. The numbers above come from
 
 ## Risks / rollout
 - Public users get smaller crawls, so the tool descriptions must say so.
-- Behind Cloudflare, the IP comes from `resolveClientIp` (right-most XFF hop only when `TRUST_PROXY=1`). If the proxy is misconfigured, every caller shares one budget. Check `TRUST_PROXY` in production before rollout.
+- ~~Behind Cloudflare, the IP comes from `resolveClientIp` (right-most XFF hop only when `TRUST_PROXY=1`).~~ → **Correction (2026-10-14):** there is no `TRUST_PROXY`. `resolveClientIp` (`src/utils/client-ip.ts`) honours `CF-Connecting-IP`, then the right-most XFF hop, by default from any peer (`TRUST_PROXY_HEADERS`, default `true`). So a budget keyed on it is bypassable by rotating either header, measured as `FAIL X.rate_limit`. **This plan depends on #71**, which fixes the key. If the proxy trust is misconfigured, every caller shares one budget, so check it in production before rollout.
 - Depends on the call-context base commit. Order it after the SSRF plan so both touch `fetchText` once.
 - Founder decision: the default caps (5 pages per call, 30 fetches per minute).
 
