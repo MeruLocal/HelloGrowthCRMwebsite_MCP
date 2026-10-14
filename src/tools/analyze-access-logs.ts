@@ -8,7 +8,8 @@
 import { z } from "zod";
 
 import { aggregate } from "../core/aggregator.js";
-import { parseAccessLog, parseAccessLogFile } from "../core/log-parser.js";
+import { parseAccessLog } from "../core/log-parser.js";
+import { READ_FAILED, readResolved, resolveLogPath } from "../core/log-access.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const Input = z.object({
@@ -16,7 +17,7 @@ const Input = z.object({
     .string()
     .optional()
     .describe(
-      "Absolute or relative path to an access log file. Falls back to DEFAULT_ACCESS_LOG.",
+      "Operator-only: path to a log file inside LOG_DIR (authenticated sessions only). Omit it to use the server's DEFAULT_ACCESS_LOG.",
     ),
   logText: z
     .string()
@@ -36,11 +37,11 @@ export const analyzeAccessLogs = defineTool({
   definition: {
     name: "analyze_access_logs",
     description:
-      "Parse a Combined/Common-format access log file (or raw text) and return per-bot summaries with risk scores, allow status, and recommended actions.",
+      "Parse Combined/Common-format access-log text (logText) and return per-bot summaries with risk scores, allow status, and recommended actions. Without logText it analyses the server's configured default log. Reading other server files (logPath) is limited to authenticated operator sessions.",
     inputSchema: {
       type: "object",
       properties: {
-        logPath: { type: "string", description: "Path to an access log file." },
+        logPath: { type: "string", description: "Operator-only (authenticated sessions): a log file inside LOG_DIR." },
         logText: { type: "string", description: "Raw log content." },
         topN: {
           type: "integer",
@@ -53,25 +54,26 @@ export const analyzeAccessLogs = defineTool({
     },
   },
   async handle(args) {
-    const path = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
     let parsed;
+    let source: string;
     if (args.logText) {
       parsed = parseAccessLog(args.logText);
-    } else if (path) {
-      try {
-        parsed = await parseAccessLogFile(path);
-      } catch (err) {
-        return fail(`Could not read log file ${path}: ${(err as Error).message}`);
-      }
+      source = "inline-text";
     } else {
-      return fail(
-        "Provide either `logPath` or `logText`, or set DEFAULT_ACCESS_LOG.",
-      );
+      const resolved = await resolveLogPath(args.logPath);
+      if (resolved.kind === "denied") return fail(resolved.message);
+      if (resolved.kind === "none") {
+        return fail("Provide `logText` (the log content), or set DEFAULT_ACCESS_LOG on the server.");
+      }
+      const text = await readResolved(resolved.path);
+      if (text === null) return fail(READ_FAILED);
+      parsed = parseAccessLog(text);
+      source = resolved.label;
     }
 
     const summaries = aggregate(parsed.entries).slice(0, args.topN);
     return ok({
-      source: args.logText ? "inline-text" : path,
+      source,
       totalLines: parsed.entries.length,
       skippedLines: parsed.skipped,
       bots: summaries,

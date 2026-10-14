@@ -11,7 +11,7 @@
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, sep } from "node:path";
 
 import type { BotSummary } from "../utils/types.js";
 
@@ -151,20 +151,37 @@ const EXTENSIONS: Record<ReportFormat, string> = {
   csv: "csv",
 };
 
+/** A plain file name: no directories, no leading dot, no traversal. */
+export const REPORT_FILENAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+
+export class UnsafeReportFilenameError extends Error {
+  constructor() {
+    super("Unsafe report filename");
+    this.name = "UnsafeReportFilenameError";
+  }
+}
+
 /**
  * Write a rendered report to `REPORT_OUTPUT_DIR` (default `./reports`).
- * Returns the absolute path of the file written.
+ * Returns the absolute path of the file written. `filename` must be a plain
+ * base name; anything that could leave the directory throws
+ * UnsafeReportFilenameError and nothing is written.
  */
 export async function writeReport(
   body: string,
   format: ReportFormat,
   filename?: string,
 ): Promise<string> {
-  const dir = resolve(process.env.REPORT_OUTPUT_DIR ?? "./reports");
-  await mkdir(dir, { recursive: true });
-
   const name = filename ?? defaultFilename(format);
+  if (!REPORT_FILENAME_PATTERN.test(name) || name.includes("..")) {
+    throw new UnsafeReportFilenameError();
+  }
+
+  const dir = resolve(process.env.REPORT_OUTPUT_DIR ?? "./reports");
   const target = resolve(dir, name);
+  if (!target.startsWith(dir + sep)) throw new UnsafeReportFilenameError();
+
+  await mkdir(dir, { recursive: true });
   await writeFile(target, body, "utf8");
   return target;
 }

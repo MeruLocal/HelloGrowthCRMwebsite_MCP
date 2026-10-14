@@ -6,11 +6,11 @@
  * or whatever the user's robots.txt currently permits.
  */
 
-import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
 import { KNOWN_BOTS } from "../data/known-bots.js";
 import { isDisallowed, parseRobotsTxt } from "../core/robots-parser.js";
+import { ROBOTS_READ_FAILED, readResolved, resolveRobotsPath } from "../core/log-access.js";
 import { defineTool, ok } from "./tool-types.js";
 
 const Input = z.object({
@@ -18,8 +18,13 @@ const Input = z.object({
     .string()
     .optional()
     .describe(
-      "Optional path to a robots.txt file. If provided, allowed = not Disallowed for that bot's UA.",
+      "Operator-only (authenticated sessions): a robots.txt file inside LOG_DIR.",
     ),
+  robotsTxt: z
+    .string()
+    .max(500_000)
+    .optional()
+    .describe("robots.txt content. If provided, allowed = not Disallowed for that bot's UA."),
   category: z
     .enum([
       "search",
@@ -40,11 +45,12 @@ export const listAllowedBots = defineTool({
   definition: {
     name: "list_allowed_bots",
     description:
-      "List bots that should be allowed. If a robots.txt is given, the answer reflects what that file actually permits.",
+      "List bots that should be allowed. If robots.txt content is given, the answer reflects what that file actually permits.",
     inputSchema: {
       type: "object",
       properties: {
-        robotsTxtPath: { type: "string" },
+        robotsTxtPath: { type: "string", description: "Operator-only (authenticated sessions): a robots.txt file inside LOG_DIR." },
+        robotsTxt: { type: "string", maxLength: 500000, description: "robots.txt content to evaluate." },
         category: {
           type: "string",
           enum: [
@@ -65,15 +71,18 @@ export const listAllowedBots = defineTool({
   },
   async handle(args) {
     let robots = null;
-    if (args.robotsTxtPath) {
-      try {
-        const text = await readFile(args.robotsTxtPath, "utf8");
+    let source: string | undefined;
+    if (args.robotsTxt !== undefined) {
+      robots = parseRobotsTxt(args.robotsTxt);
+      source = "inline-text";
+    } else {
+      const resolved = await resolveRobotsPath(args.robotsTxtPath);
+      if (resolved.kind === "denied") return ok({ warning: resolved.message, bots: [] });
+      if (resolved.kind === "path") {
+        const text = await readResolved(resolved.path);
+        if (text === null) return ok({ warning: ROBOTS_READ_FAILED, bots: [] });
         robots = parseRobotsTxt(text);
-      } catch (err) {
-        return ok({
-          warning: `Could not read robots.txt: ${(err as Error).message}`,
-          bots: [],
-        });
+        source = resolved.label;
       }
     }
 
@@ -106,7 +115,7 @@ export const listAllowedBots = defineTool({
       }));
 
     return ok({
-      source: args.robotsTxtPath ?? "policy:default-curated",
+      source: source ?? "policy:default-curated",
       count: bots.length,
       bots,
     });

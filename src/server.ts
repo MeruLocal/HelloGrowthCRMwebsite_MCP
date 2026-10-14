@@ -31,6 +31,7 @@ import {
   adminTokenConfigured,
   PRIVILEGED_TOOLS,
 } from "./tools/access.js";
+import { publicInputSchema, runWithCallContext } from "./tools/call-context.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
 import {
@@ -69,7 +70,7 @@ const RESOURCES = [
   { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
 ];
 
-export function buildServer(opts: { authorized?: boolean } = {}): Server { // NOSONAR — advanced low-level Server (see import note)
+export function buildServer(opts: { authorized?: boolean; clientIp?: string } = {}): Server { // NOSONAR — advanced low-level Server (see import note)
   // Finding C0: privileged tools (writes + personal-data reads) are served only
   // to a session that presented a valid bearer token. Unauthenticated sessions
   // never see them in tools/list and cannot reach them via tools/call.
@@ -90,7 +91,12 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
     return {
       tools: [...toolsByName.values()]
         .filter((t) => authorized || !isPrivileged(t.definition.name))
-        .map((t) => t.definition),
+        // Public sessions never see arguments that name a server-side path.
+        .map((t) =>
+          authorized
+            ? t.definition
+            : { ...t.definition, inputSchema: publicInputSchema(t.definition.inputSchema) },
+        ),
     };
   });
 
@@ -136,7 +142,12 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
       }
 
       try {
-        const result = await tool.handle(parsed.data);
+        // Handlers read authorisation from this context (call-context.ts);
+        // anything outside it is treated as public.
+        const result = await runWithCallContext(
+          { authorized, clientIp: opts.clientIp },
+          () => tool.handle(parsed.data),
+        );
         return result;
       } catch (err) {
         logger.error("Tool handler threw", {
@@ -523,6 +534,7 @@ export async function runServer(): Promise<void> {
 
       const server = buildServer({
         authorized: isAuthorized(req.headers.authorization),
+        clientIp: clientIp(req),
       });
       await server.connect(transport);
     }

@@ -7,10 +7,12 @@
  *   - Enforces a per-host delay (CRAWL_DELAY_MS).
  *   - Honours an absolute HTTP timeout.
  *   - Sends an honest, identifiable User-Agent (configurable).
- *   - Never follows redirects to a different host without explicit opt-in.
+ *   - Every fetch goes through safeFetch: private/loopback/metadata addresses
+ *     are refused, every redirect hop is re-vetted (max 3), and bodies are
+ *     capped. See src/core/safe-fetch.ts.
  */
 
-import { request } from "undici";
+import { safeFetch, type SafeFetchResult } from "./safe-fetch.js";
 
 import { RateLimiter } from "../utils/rate-limiter.js";
 import {
@@ -54,36 +56,30 @@ export class PoliteCrawler {
 
   /** Fetch a URL with our polite settings. Returns null on any error. */
   async fetchText(url: string): Promise<{ status: number; body: string } | null> {
+    const res = await this.fetchResult(url);
+    return res.ok ? { status: res.status, body: res.body } : null;
+  }
+
+  /** Like fetchText, but keeps the generic error code (blocked_address, timeout, …). */
+  async fetchResult(url: string): Promise<SafeFetchResult> {
     let host: string;
     try {
       host = new URL(url).host;
     } catch {
-      logger.warn("Invalid URL", { url });
-      return null;
+      return { ok: false, error: "bad_url" };
     }
 
     await this.limiter.wait(host);
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      const res = await request(url, {
-        method: "GET",
-        signal: controller.signal,
-        headers: {
-          "user-agent": this.userAgent,
-          accept: "text/plain, text/html, application/xml;q=0.9, */*;q=0.5",
-        },
-        maxRedirections: 3,
-      });
-      const body = await res.body.text();
-      return { status: res.statusCode, body };
-    } catch (err) {
-      logger.warn("fetchText failed", { url, err: (err as Error).message });
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
+    const res = await safeFetch(url, {
+      timeoutMs: this.timeoutMs,
+      headers: {
+        "user-agent": this.userAgent,
+        accept: "text/plain, text/html, application/xml;q=0.9, */*;q=0.5",
+      },
+    });
+    if (!res.ok) logger.warn("fetch refused or failed", { host, error: res.error });
+    return res;
   }
 
   /** Fetch and parse /robots.txt for a site. */

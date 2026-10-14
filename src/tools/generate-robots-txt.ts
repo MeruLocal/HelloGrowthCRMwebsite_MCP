@@ -14,8 +14,20 @@ import { KNOWN_BOTS } from "../data/known-bots.js";
 import type { BotSignature } from "../utils/types.js";
 import { defineTool, ok } from "./tool-types.js";
 
+/** A robots.txt value must stay on its own line: no CR/LF smuggling extra directives. */
+const singleLine = (v: string): boolean => !/[\r\n]/.test(v);
+const httpUrl = z
+  .string()
+  .url()
+  .refine((v) => /^https?:\/\//i.test(v) && singleLine(v), {
+    message: "must be an http(s) URL on a single line",
+  });
+const directiveValue = z
+  .string()
+  .refine(singleLine, { message: "must not contain line breaks" });
+
 const Input = z.object({
-  siteUrl: z.string().url().optional(),
+  siteUrl: httpUrl.optional(),
   blockAi: z
     .boolean()
     .default(false)
@@ -33,11 +45,11 @@ const Input = z.object({
     .default(true)
     .describe("Disallow Internet-wide security scanners (Shodan, Censys)."),
   extraDisallowUserAgents: z
-    .array(z.string())
+    .array(directiveValue)
     .default([])
     .describe("Additional bot User-Agent tokens to Disallow."),
   extraDisallowPaths: z
-    .array(z.string())
+    .array(directiveValue)
     .default([
       "/api/",
       "/dashboard/",
@@ -58,7 +70,7 @@ const Input = z.object({
     .optional()
     .describe("Optional Crawl-delay applied to all bots."),
   sitemapUrls: z
-    .array(z.string().url())
+    .array(httpUrl)
     .default(["https://hellogrowthcrm.com/sitemap-index.xml"])
     .describe("Sitemap URLs to declare. Defaults to hellogrowthcrm.com's sitemap index."),
 });

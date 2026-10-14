@@ -15,7 +15,8 @@ import { z } from "zod";
 
 import { aggregate } from "../core/aggregator.js";
 import { PoliteCrawler } from "../core/crawler.js";
-import { parseAccessLogFile } from "../core/log-parser.js";
+import { parseAccessLog } from "../core/log-parser.js";
+import { readResolved, resolveLogPath } from "../core/log-access.js";
 import type { ScanResult } from "../utils/types.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -36,7 +37,7 @@ const Input = z.object({
     .string()
     .optional()
     .describe(
-      "Optional access log to correlate with the live scan. Falls back to DEFAULT_ACCESS_LOG when omitted.",
+      "Operator-only (authenticated sessions): a log file inside LOG_DIR to correlate with the live scan. Falls back to DEFAULT_ACCESS_LOG when omitted.",
     ),
 });
 
@@ -51,7 +52,7 @@ export const scanWebsiteBots = defineTool({
       properties: {
         targetUrl: { type: "string", format: "uri" },
         sampleSize: { type: "integer", minimum: 0, maximum: 100, default: 10 },
-        logPath: { type: "string" },
+        logPath: { type: "string", description: "Operator-only (authenticated sessions): a log file inside LOG_DIR." },
       },
       additionalProperties: false,
     },
@@ -90,17 +91,14 @@ export const scanWebsiteBots = defineTool({
     );
 
     // Correlate with access logs if provided.
-    const logPath = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
     let detectedBots: ScanResult["detectedBots"] = [];
-    if (logPath) {
-      try {
-        const parsed = await parseAccessLogFile(logPath);
-        detectedBots = aggregate(parsed.entries, robots);
-      } catch (err) {
-        warnings.push(
-          `Could not read access log ${logPath}: ${(err as Error).message}`,
-        );
-      }
+    const resolved = await resolveLogPath(args.logPath);
+    if (resolved.kind === "denied") {
+      warnings.push(resolved.message);
+    } else if (resolved.kind === "path") {
+      const text = await readResolved(resolved.path);
+      if (text === null) warnings.push("Could not read the log file.");
+      else detectedBots = aggregate(parseAccessLog(text).entries, robots);
     } else {
       warnings.push(
         "No access log supplied — historical bot detection skipped. Only live discovery was performed.",

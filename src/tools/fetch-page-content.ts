@@ -208,8 +208,8 @@ export const fetchPageContent = defineTool({
       );
     }
 
-    const res = await crawler.fetchText(args.url);
-    if (!res) return fail(`Fetch failed (network error or timeout) for ${args.url}`);
+    const res = await crawler.fetchResult(args.url);
+    if (!res.ok) return fail(`Fetch failed (${res.error}) for ${args.url}`);
     if (res.status >= 400) return fail(`HTTP ${res.status} for ${args.url}`);
 
     const data = extract(res.body, args.url);
