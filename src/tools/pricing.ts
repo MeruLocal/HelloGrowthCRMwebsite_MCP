@@ -9,8 +9,8 @@ import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirr
 // REWRITTEN 2026-08-06. The previous GLOBAL_PLANS was a full plan generation
 // behind the website and was quoting plans that no longer exist:
 //
-//   • "Professional" was renamed to "Growth" and its monthly rate moved
-//     $12 → $13. AI credits were 2,500/user/mo, not 50,000.
+//   • "Professional" was renamed to "Growth" at $10/user/mo annual ($12/month).
+//     AI credits are 2,500/user/mo, not 50,000.
 //   • The Free tier caps tightened: 150 leads / 20 accounts / 100 tasks /
 //     2 templates (this file claimed 200 / 50 / 500 / 5).
 //   • "Growth Engine" and "RevOps Partner" are NOT CRM plan tiers. They are
@@ -57,7 +57,7 @@ const GLOBAL_PLANS = [
     name: "Growth",
     slug: "growth",
     price_annual: "$10/user/month (billed annually)",
-    price_monthly: "$13/user/month",
+    price_monthly: "$12/user/month",
     billing: "Annual billing · Unlimited users · 14-day free trial",
     best_for: "Growing US sales teams",
     ai_credits: "2,500 per user/month",
@@ -249,7 +249,7 @@ const PRICING_FAQ = [
   { q: "Is there a money-back guarantee?", a: "Yes — a 14-day money-back window on annual plans (7-day on monthly renewals), pro-rated on India annual plans. See the refund policy at /legal/refunds." },
   { q: "Can I switch plans anytime?", a: "Yes. You can upgrade or downgrade at any time." },
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
-  { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($13 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
+  { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($12 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
   { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. All India prices include GST. Call pricing_get_country_plans for a specific market." },
   { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
