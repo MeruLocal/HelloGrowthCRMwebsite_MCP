@@ -95,6 +95,35 @@ npm run dev
 
 The server speaks MCP over **stdio**. Any MCP-capable client can launch it.
 
+## Code Discovery with Graphify
+
+Graphify builds a local AST for token-efficient code queries. Use it to answer questions like "who calls this function" in ~2K tokens instead of 183K tokens from grep—71× reduction per query.
+
+### Setup
+
+Install Graphify:
+
+```bash
+pip install graphifyy
+```
+
+Build the knowledge graph:
+
+```bash
+graphify update .
+```
+
+### Usage
+
+Query the graph:
+
+```bash
+graphify query "What calls the function X?"
+graphify explain "Symbol Y"
+```
+
+Alternatively, run `/graphify` in Claude Code to query interactively.
+
 ### Claude Desktop / Claude Code
 
 Add the following to your `claude_desktop_config.json` (or the equivalent `mcpServers` block in your client):
