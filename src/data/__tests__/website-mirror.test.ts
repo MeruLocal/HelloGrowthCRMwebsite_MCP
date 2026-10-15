@@ -78,7 +78,7 @@ describe("COUNTRY_PRICING", () => {
   it("quotes the Growth CRM plan per user, not the Managed RevOps retainer", () => {
     const usa = COUNTRY_PRICING.find((p) => p.countrySlug === "usa")!;
     expect(usa.growthPriceShort).toBe("$10/user/mo");
-    expect(usa.growthPriceMonthly).toBe("$13/user/mo monthly");
+    expect(usa.growthPriceMonthly).toBe("$12/user/mo monthly");
     // Regression guard: the retainer figures must never reappear here.
     for (const row of COUNTRY_PRICING) {
       expect(row.growthPriceShort, `${row.countrySlug} looks like a retainer`).not.toMatch(
