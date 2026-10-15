@@ -11,3 +11,6 @@ coverage/
 !/reports/.gitkeep
 *.tsbuildinfo
 vitest.config.ts.timestamp-*.mjs
+
+# Graphify knowledge graph (machine-local)
+/graphify-out/
