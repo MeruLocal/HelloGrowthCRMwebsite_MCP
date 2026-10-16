@@ -1,0 +1,2780 @@
+{
+  "pack_version": "1.0.0-draft",
+  "as_of": "2026-10-12",
+  "status": "DRAFT - research output, not yet served by the MCP. See docs/research/LLM_MESSAGE_RESEARCH_2026-10.md",
+  "rules": "Only records with serve=true may be shown to an LLM. industries serve=true means status live (dedicated screens exist in the app). Beta records are configuration presets whose runtime seeding is unverified (Q-L27). Facts are code-read from hellocrm origin/master 0f93fde57f and hellocrmwebsite origin/master c4972b4d3 on 2026-10-12.",
+  "global": {
+    "identity": {
+      "product": "HelloGrowthCRM",
+      "publisher": "Soor LLC (Delaware)",
+      "operating_entity": "Meru Technosoft Pvt Ltd",
+      "servers": [
+        "Website MCP (public product information and bot governance; no customer data)",
+        "CRM MCP (per-customer key; separate; not announced)"
+      ]
+    },
+    "positioning": "Multi-channel AI CRM with industry presets. WhatsApp is one channel among many, not the positioning.",
+    "pricing": {
+      "plans": [
+        "Free Forever",
+        "Growth",
+        "Enterprise (custom)"
+      ],
+      "growth_usd": {
+        "monthly": 12,
+        "annual_per_month": 10,
+        "annual_rule": "10 months paid"
+      },
+      "growth_inr": {
+        "per_user_month": 899,
+        "gst_pct": 18,
+        "billed_month_incl_gst": 1060.82,
+        "annual_total_excl_gst": 8990
+      },
+      "free": "pending_decision",
+      "existing_customer_rule": "An organisation keeps the price current when it was created.",
+      "billing_currencies": [
+        "INR",
+        "USD"
+      ]
+    },
+    "common_modules_note": "No industry preset switches off: leads and pipeline, accounts, tasks and Task Boards, activities, inbox and messaging, calls, email, scheduler, analytics and reports, invoices and payments, customer portal, settings. Plan, role and flag gates still apply.",
+    "modules_off_semantics": "Industry \"modules off\" is a default; a tenant can switch a module on. The legal and CA compliance locks are the exception.",
+    "ai_personas": {
+      "Aasha": 15,
+      "Zara": 7,
+      "Nova": 12
+    },
+    "lead_vocabulary_variants": 17,
+    "accounting_integrations": {
+      "live": [
+        "QuickBooks Online",
+        "MYOB AccountRight (Australia)"
+      ],
+      "beta": [
+        "Zoho Books"
+      ],
+      "present": [
+        "ClearTax (India GST)"
+      ],
+      "unconfirmed": [
+        "Xero (has connect and push-invoice code but sits under Coming Soon in Settings)"
+      ],
+      "note": "Tally.so is a forms tool, not Tally Prime."
+    },
+    "integrations": {
+      "working": 259,
+      "breakdown": "170 live + 5 backend-ready + 84 curated",
+      "scaffolded": 371,
+      "catalogue_total": 630,
+      "wording": "259+ working integrations",
+      "basis": "figures as stated in the integrations-catalog-data.ts comment; the website derives the public count and it moves as integrations ship",
+      "recounted": false
+    }
+  },
+  "industries": [
+    {
+      "id": "industry:ecommerce",
+      "key": "ecommerce",
+      "label": "Ecommerce",
+      "status": "beta",
+      "depth_tier": "borderline",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 8,
+        "has_config": false,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Customer",
+        "deal": "Order",
+        "contact": "Contact",
+        "pipeline": "Orders Pipeline"
+      },
+      "pipeline": [],
+      "fields": [],
+      "scheduler_events": [],
+      "task_boards": [],
+      "persona": null,
+      "modules_off_by_default": [],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Ecommerce: Has some dedicated screens plus a configured pipeline. Leads are called \"Customer\".",
+      "summary_words": 13,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:retail",
+      "key": "retail",
+      "label": "Retail",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 40,
+        "has_config": false,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Customer",
+        "deal": "Deal",
+        "contact": "Contact",
+        "pipeline": "Sales Pipeline"
+      },
+      "pipeline": [],
+      "fields": [],
+      "scheduler_events": [],
+      "task_boards": [],
+      "persona": null,
+      "modules_off_by_default": [],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Retail: Has dedicated screens in the app, not just a preset. Leads are called \"Customer\".",
+      "summary_words": 15,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:real_estate",
+      "key": "real_estate",
+      "label": "Real Estate",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 4,
+        "dedicated_dir_files": 28,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Prospect",
+        "deal": "Booking",
+        "contact": "Co-buyer",
+        "pipeline": "Property Pipeline"
+      },
+      "pipeline": [
+        "New Enquiry",
+        "Site Visit Scheduled",
+        "Site Visited",
+        "Negotiation",
+        "Loan Applied",
+        "Booked",
+        "Lost"
+      ],
+      "fields": [
+        "Budget",
+        "Property Type",
+        "BHK Preference",
+        "Preferred Location",
+        "Loan Required",
+        "Channel Partner",
+        "Site Visit Date"
+      ],
+      "scheduler_events": [
+        "Site Visit",
+        "Follow-Up Call",
+        "Negotiation Meeting"
+      ],
+      "task_boards": [
+        "Site Visits",
+        "Bookings"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "products",
+        "linkedin_cadences",
+        "support_tickets",
+        "knowledge_base",
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Use the word \"customer\" or \"client\" — always \"Prospect\" before booking, \"Buyer\" after.",
+        "Suggest email outreach as primary — WhatsApp and calls convert better in Indian RE."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Real Estate: Has dedicated screens in the app, not just a preset. Leads are called \"Prospect\". Pipeline: New Enquiry > Site Visit Scheduled > Site Visited > Negotiation > Loan Applied > Booked > Lost.",
+      "summary_words": 35,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:education",
+      "key": "education",
+      "label": "Education",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 73,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Student",
+        "deal": "Admission",
+        "contact": "Parent",
+        "pipeline": "Admissions Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Demo Class Scheduled",
+        "Demo Done",
+        "Fee Discussion",
+        "Enrolled",
+        "Dropped"
+      ],
+      "fields": [
+        "Entity Type",
+        "Course / Program",
+        "Batch Preference",
+        "Academic Year",
+        "Parent Name",
+        "Parent Phone",
+        "Scholarship Eligible",
+        "Fee Amount",
+        "Department",
+        "Designation",
+        "Date of Joining",
+        "Institute / University",
+        "Partnership Type",
+        "Contract Renewal Date"
+      ],
+      "scheduler_events": [
+        "Demo Class",
+        "Parent Follow-Up",
+        "Staff Meeting",
+        "Partner Review"
+      ],
+      "task_boards": [
+        "Admissions",
+        "Fee Collection",
+        "Staff Management",
+        "Vendor Management"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "deals",
+        "products",
+        "ai_proposals",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "gamification",
+        "field_visits",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [
+        "Use sales-heavy language (\"close the deal\") — prefer \"confirm admission\" or \"secure the seat\".",
+        "Ignore parents in the conversation — they are co-decision-makers for students.",
+        "Confuse entity types — always check if a record is a Student, Staff, or Partner before responding."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Education: Has dedicated screens in the app, not just a preset. Leads are called \"Student\". Pipeline: Enquiry > Demo Class Scheduled > Demo Done > Fee Discussion > Enrolled > Dropped.",
+      "summary_words": 31,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:recruitment",
+      "key": "recruitment",
+      "label": "HR / Recruitment",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 67,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Candidate",
+        "deal": "Application",
+        "contact": "Hiring Manager",
+        "pipeline": "Hiring Pipeline"
+      },
+      "pipeline": [
+        "Applied",
+        "Screening",
+        "Interview Round 1",
+        "Interview Round 2",
+        "Offer Rolled Out",
+        "Placed",
+        "Rejected"
+      ],
+      "fields": [
+        "Current CTC",
+        "Expected CTC",
+        "Notice Period (days)",
+        "Skills",
+        "Current Company",
+        "Client Company",
+        "Position Applied"
+      ],
+      "scheduler_events": [
+        "Screening Call",
+        "Interview",
+        "Offer Discussion"
+      ],
+      "task_boards": [
+        "Interview Tracker",
+        "Offer Management"
+      ],
+      "persona": "Zara",
+      "modules_off_by_default": [
+        "deals",
+        "products",
+        "ai_proposals",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "support_tickets",
+        "knowledge_base"
+      ],
+      "ai_never": [
+        "Confuse \"Application\" (the deal) with \"Resume\" (a document).",
+        "Skip logging interview outcomes — they drive pipeline analytics."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "HR / Recruitment: Has dedicated screens in the app, not just a preset. Leads are called \"Candidate\". Pipeline: Applied > Screening > Interview Round 1 > Interview Round 2 > Offer Rolled Out > Placed > Rejected.",
+      "summary_words": 37,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:insurance",
+      "key": "insurance",
+      "label": "Insurance",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 2,
+        "dedicated_dir_files": 41,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Prospect",
+        "deal": "Policy",
+        "contact": "Nominee",
+        "pipeline": "Policy Pipeline"
+      },
+      "pipeline": [
+        "New Lead",
+        "Needs Analysis",
+        "Proposal Sent",
+        "Premium Negotiation",
+        "Policy Issued",
+        "Renewal Due",
+        "Lapsed"
+      ],
+      "fields": [
+        "Policy Type",
+        "Sum Assured",
+        "Annual Premium",
+        "Policy Expiry Date",
+        "Insurance Provider",
+        "Policy Number",
+        "Nominee Name"
+      ],
+      "scheduler_events": [
+        "Review Meeting",
+        "Renewal Follow-Up"
+      ],
+      "task_boards": [
+        "Renewals",
+        "New Policies"
+      ],
+      "persona": "Zara",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "ai_proposals",
+        "linkedin_cadences",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [
+        "Promise specific returns or sum-assured amounts — regulatory risk.",
+        "Refer to a prospect as \"customer\" before the policy is active."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Insurance: Has dedicated screens in the app, not just a preset. Leads are called \"Prospect\". Pipeline: New Lead > Needs Analysis > Proposal Sent > Premium Negotiation > Policy Issued > Renewal Due > Lapsed.",
+      "summary_words": 35,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:doctors_clinic",
+      "key": "doctors_clinic",
+      "label": "Doctors / Clinic",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 16,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Patient",
+        "deal": "Deal",
+        "contact": "Attendant",
+        "pipeline": "Patient Pipeline"
+      },
+      "pipeline": [
+        "New Patient",
+        "Appointment Booked",
+        "Consultation Done",
+        "Treatment Ongoing",
+        "Follow-Up Due",
+        "Discharged / Closed"
+      ],
+      "fields": [
+        "Age",
+        "Gender",
+        "Chief Complaint",
+        "Department",
+        "Referred By",
+        "Last Visit Date",
+        "Next Appointment"
+      ],
+      "scheduler_events": [
+        "Consultation",
+        "Follow-Up",
+        "Procedure"
+      ],
+      "task_boards": [
+        "Clinic Tasks"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "deals",
+        "products",
+        "quotations",
+        "ai_proposals",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Suggest, record, or interpret diagnoses, prescriptions, or medical advice.",
+        "Log raw health data or symptoms in public/shared notes.",
+        "Use sales language (\"close\", \"convert\", \"win\") — prefer \"schedule\", \"confirm\", \"complete\".",
+        "Suggest, arrange, calculate, or record ANY commission, cut, referral fee, kickback, rebate, incentive, or revenue-share for referring, recommending, or receiving a patient. Indian Medical Council Reg. 6.4 bars \"cut practice\" and Ch. 7 makes it professional misconduct. Referral tracking is for attribution and follow-up ONLY — never money.",
+        "Ask a patient to leave a public review or rating (Google, JustDial, Practo, social media), route \"happy\" patients to a review link, or display/amplify patient testimonials. Soliciting or advertising patient reviews violates IMC 2002. Patient feedback stays PRIVATE and internal (NPS) — for quality improvement only, never published."
+      ],
+      "compliance": null,
+      "region": {
+        "blocked": [
+          "US",
+          "CA"
+        ],
+        "reason": "no HIPAA programme"
+      },
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Doctors / Clinic: Has dedicated screens in the app, not just a preset. Leads are called \"Patient\". Pipeline: New Patient > Appointment Booked > Consultation Done > Treatment Ongoing > Follow-Up Due > Discharged / Closed. Not offered to clinics in the US or Canada.",
+      "summary_words": 45,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:matrimony",
+      "key": "matrimony",
+      "label": "Matrimony",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 20,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Profile",
+        "deal": "Match",
+        "contact": "Family Member",
+        "pipeline": "Matchmaking Pipeline"
+      },
+      "pipeline": [
+        "New Profile",
+        "Profile Shared",
+        "Interest Shown",
+        "Family Meeting Scheduled",
+        "Family Meeting Done",
+        "Engaged",
+        "Not Interested"
+      ],
+      "fields": [
+        "Age",
+        "Gender",
+        "Religion / Community",
+        "Profession",
+        "Annual Income",
+        "City",
+        "Horoscope Required"
+      ],
+      "scheduler_events": [
+        "Family Meeting",
+        "Profile Discussion Call"
+      ],
+      "task_boards": [
+        "Matchmaking Tasks"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "deals",
+        "products",
+        "quotations",
+        "ai_proposals",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Use transactional or sales language (\"close the deal\", \"convert\").",
+        "Share one profile's personal details (income, health, family info) with another profile without explicit consent.",
+        "Pressure families into quick decisions — patience is the trust signal."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Matrimony: Has dedicated screens in the app, not just a preset. Leads are called \"Profile\". Pipeline: New Profile > Profile Shared > Interest Shown > Family Meeting Scheduled > Family Meeting Done > Engaged > Not Interested.",
+      "summary_words": 37,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:financial_services",
+      "key": "financial_services",
+      "label": "Financial Services",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 20,
+        "dedicated_dir_files": 10,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Applicant",
+        "deal": "Application",
+        "contact": "Co-applicant",
+        "pipeline": "Loan Pipeline"
+      },
+      "pipeline": [
+        "Application Received",
+        "KYC Pending",
+        "Credit Check",
+        "Sanction Pending",
+        "Sanctioned",
+        "Disbursed",
+        "Rejected"
+      ],
+      "fields": [
+        "Loan Type",
+        "Loan Amount",
+        "CIBIL Score",
+        "Monthly Income",
+        "Lender",
+        "Application Date",
+        "Sanction Amount"
+      ],
+      "scheduler_events": [
+        "KYC Meeting",
+        "Follow-Up Call"
+      ],
+      "task_boards": [
+        "KYC Tracker",
+        "Loan Processing"
+      ],
+      "persona": "Zara",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "ai_proposals",
+        "linkedin_cadences",
+        "market_radar",
+        "nps_automation",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [
+        "Share or log actual PAN or Aadhaar numbers in notes — use masked references only.",
+        "Promise approval before credit check is complete."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Financial Services: Has dedicated screens in the app, not just a preset. Leads are called \"Applicant\". Pipeline: Application Received > KYC Pending > Credit Check > Sanction Pending > Sanctioned > Disbursed > Rejected.",
+      "summary_words": 34,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:travel_agency",
+      "key": "travel_agency",
+      "label": "Travel Agency",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 1,
+        "dedicated_dir_files": 25,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Traveller",
+        "deal": "Booking",
+        "contact": "Co-traveller",
+        "pipeline": "Booking Pipeline"
+      },
+      "pipeline": [
+        "Enquiry Received",
+        "Itinerary Shared",
+        "Booking Confirmed",
+        "Payment Received",
+        "Pre-departure Done",
+        "Trip Completed"
+      ],
+      "fields": [
+        "Destination(s)",
+        "Travel Start Date",
+        "Travel End Date",
+        "Pax Count",
+        "Budget",
+        "Trip Type",
+        "Lead Source"
+      ],
+      "scheduler_events": [
+        "Trip Consultation",
+        "Itinerary Review",
+        "Document Collection"
+      ],
+      "task_boards": [
+        "Booking Pipeline",
+        "Document Tracker"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Guarantee visa approval, refund eligibility, or exact exchange rates — these depend on third parties (embassies, airlines, insurers) outside the agency's control.",
+        "Log passport numbers or visa document numbers in shared/public notes — reference \"document received\" status only.",
+        "Use high-pressure sales language (\"book now or lose it\") — prefer factual urgency (\"seats/rooms confirm on payment\")."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Travel Agency: Has dedicated screens in the app, not just a preset. Leads are called \"Traveller\". Pipeline: Enquiry Received > Itinerary Shared > Booking Confirmed > Payment Received > Pre-departure Done > Trip Completed.",
+      "summary_words": 34,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:interior_design",
+      "key": "interior_design",
+      "label": "Architecture & Interior Design",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 14,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Project",
+        "contact": "Consultant",
+        "pipeline": "Project Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Site Survey",
+        "Concept Design",
+        "BOQ Approval",
+        "In Execution",
+        "Handover",
+        "Closed Won",
+        "Closed Lost"
+      ],
+      "fields": [
+        "Practice Mode",
+        "Project Type",
+        "Project Area (sq ft)",
+        "Expected Start Date",
+        "Expected Completion Date",
+        "Client Budget",
+        "Current Milestone",
+        "Delay Reason",
+        "Project Category (CoA)",
+        "Estimated Construction Cost",
+        "Actual Construction Cost",
+        "CoA Fee Rate (%)",
+        "Fee Basis",
+        "Built-up Area (sq ft)"
+      ],
+      "scheduler_events": [
+        "Site Survey",
+        "Design Presentation",
+        "Progress Review"
+      ],
+      "task_boards": [
+        "Project Phases",
+        "Material / BOQ",
+        "Statutory Approvals"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "material_tracking",
+        "lms"
+      ],
+      "ai_never": [
+        "Use standard \"lead\" or \"deal\" language — always Client / Project.",
+        "Recommend recurring billing patterns — architecture and interior work is stage/milestone-based.",
+        "Conflate Consultants or Contractors (the project team) with Clients (buyers).",
+        "Draft, suggest, or generate advertising, publicity, or solicitation content for the practice — the Architects (Professional Conduct) Regulations, 1989 make an architect advertising professional services professional misconduct. A brochure sent to a *named, identified* prospect (send_brochure) is the only permitted analogue.",
+        "Suggest a fee below the CoA Scale of Charges minimum — the scale is a statutory floor, not a negotiating position.",
+        "Advise on structural adequacy, load-bearing capacity, or code compliance as fact — defer to the licensed structural consultant and the sanctioning authority, and surface the consultant/approval record instead."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Architecture & Interior Design: Has dedicated screens in the app, not just a preset. Leads are called \"Client\". Pipeline: Enquiry > Site Survey > Concept Design > BOQ Approval > In Execution > Handover > Closed Won > Closed Lost.",
+      "summary_words": 40,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:gym_fitness",
+      "key": "gym_fitness",
+      "label": "Gym & Fitness",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 17,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Enquiry",
+        "deal": "Membership Sale",
+        "contact": "Emergency Contact",
+        "pipeline": "Membership Pipeline"
+      },
+      "pipeline": [
+        "New Enquiry",
+        "Trial Booked",
+        "Trial Done",
+        "Membership Sold",
+        "Renewal Due",
+        "Lapsed"
+      ],
+      "fields": [
+        "Goal",
+        "Membership Plan",
+        "Membership Value",
+        "Sessions Remaining",
+        "Membership Expiry",
+        "Assigned Trainer",
+        "Referral Source"
+      ],
+      "scheduler_events": [
+        "Trial Session",
+        "Consultation",
+        "Follow-Up Call"
+      ],
+      "task_boards": [
+        "Member Journey"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "material_tracking",
+        "lms"
+      ],
+      "ai_never": [
+        "Suggest generic cold-email blasts — use WhatsApp personal check-ins instead.",
+        "Expose one member's fitness goals or health data in another member's records.",
+        "Mark a membership as lapsed without verifying the renewal date.",
+        "Give dietary, nutritional or medical ADVICE. The Nutrition & Diet Plans",
+        "section stores guidance a qualified trainer wrote; you may summarise or",
+        "reference what is stored, and you must never generate a diet, calculate"
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Gym & Fitness: Has dedicated screens in the app, not just a preset. Leads are called \"Enquiry\". Pipeline: New Enquiry > Trial Booked > Trial Done > Membership Sold > Renewal Due > Lapsed.",
+      "summary_words": 34,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:logistics_freight",
+      "key": "logistics_freight",
+      "label": "Logistics & Freight",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 13,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Shipper",
+        "deal": "Shipment",
+        "contact": "Consignee",
+        "pipeline": "Shipment Pipeline"
+      },
+      "pipeline": [
+        "Rate Request",
+        "Rate Shared",
+        "Booking Confirmed",
+        "In Transit",
+        "Out for Delivery",
+        "Delivered",
+        "Exception"
+      ],
+      "fields": [
+        "Origin City",
+        "Destination City",
+        "Shipment Mode",
+        "Weight (kg)",
+        "Volume (CBM)",
+        "LR / AWB Number",
+        "Rate per kg",
+        "Expected Delivery Date",
+        "Insurance Required"
+      ],
+      "scheduler_events": [
+        "Rate Meeting",
+        "Pickup Slot",
+        "Delivery Follow-Up"
+      ],
+      "task_boards": [
+        "Shipment Tracker",
+        "Exception Management"
+      ],
+      "persona": "Zara",
+      "modules_off_by_default": [
+        "deals",
+        "products",
+        "ai_proposals",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Logistics & Freight: Has dedicated screens in the app, not just a preset. Leads are called \"Shipper\". Pipeline: Rate Request > Rate Shared > Booking Confirmed > In Transit > Out for Delivery > Delivered > Exception.",
+      "summary_words": 37,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:freight_forwarding",
+      "key": "freight_forwarding",
+      "label": "Freight Forwarding",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 19,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Enquiry",
+        "deal": "Forwarding Job",
+        "contact": "Consignee",
+        "pipeline": "Enquiry Pipeline"
+      },
+      "pipeline": [
+        "Enquiry Received",
+        "Rating & Costing",
+        "Quotation Sent",
+        "Quote Accepted",
+        "Job Opened",
+        "Job Delivered",
+        "Lost / No Booking"
+      ],
+      "fields": [
+        "Direction",
+        "Transport Mode",
+        "Incoterm",
+        "Origin (Port / City)",
+        "Destination (Port / City)",
+        "Commodity",
+        "Gross Weight (kg)",
+        "Volume (CBM)",
+        "Equipment",
+        "Cargo Ready Date",
+        "Hazardous (IMO/DG)"
+      ],
+      "scheduler_events": [
+        "Rate Meeting",
+        "Cargo Pickup Slot",
+        "Customs Appointment"
+      ],
+      "task_boards": [
+        "Job Operations",
+        "Documents & Customs"
+      ],
+      "persona": "Zara",
+      "modules_off_by_default": [
+        "products",
+        "ai_proposals",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [
+        "Give binding customs-classification, duty, valuation or trade-compliance advice as legal fact — HS codes, sanctions and licensing are the trader's own compliance call; suggest they confirm with their customs broker / CHA.",
+        "Promise a freight rate, a sailing, a transit time or an ETA as guaranteed. Carrier schedules slip, rates move with the market, and a quoted rate is only valid while its tariff is.",
+        "State or imply cargo is insured, or advise on the extent of cover or of a carrier's liability — liability is limited by the governing convention and the cover is the cargo owner's own contract.",
+        "Treat a job as profitable before its buy charges and accruals are complete, or as closed before POD and invoicing.",
+        "Advise declaring cargo, weight or value as anything other than what the shipper has stated. Mis-declaration is an offence, not an optimisation."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": true,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Freight Forwarding: Has dedicated screens in the app, not just a preset. Leads are called \"Enquiry\". Pipeline: Enquiry Received > Rating & Costing > Quotation Sent > Quote Accepted > Job Opened > Job Delivered > Lost / No Booking.",
+      "summary_words": 40,
+      "not_for": [
+        "visa, customs or admission outcome predictions (AI is configured not to give them)"
+      ],
+      "serve": true
+    },
+    {
+      "id": "industry:legal_services",
+      "key": "legal_services",
+      "label": "Legal Services",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 17,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Matter",
+        "contact": "Counterparty",
+        "pipeline": "Matter Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Consultation",
+        "Engagement Signed",
+        "Matter Active",
+        "Awaiting Court",
+        "Closed / Disposed",
+        "Declined / Withdrawn"
+      ],
+      "fields": [
+        "Matter Type",
+        "Court / Forum",
+        "Case Number",
+        "Next Hearing Date",
+        "Limitation Date",
+        "Opposing Counsel",
+        "Retainer Client"
+      ],
+      "scheduler_events": [
+        "Client Consultation",
+        "Hearing Preparation",
+        "Document Review"
+      ],
+      "task_boards": [
+        "Active Matters",
+        "Compliance & Limitation"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "products",
+        "material_tracking",
+        "exhibition_voice_transcription",
+        "lead_finder",
+        "marketradar",
+        "campaigns",
+        "landing_pages",
+        "linkedin_cadences",
+        "field_visits"
+      ],
+      "ai_never": [],
+      "compliance": {
+        "hard_locked_modules": [
+          "lead_finder",
+          "marketradar",
+          "campaigns",
+          "landing_pages"
+        ],
+        "rule": "Bar Council of India Rules, Rule 36 (an advocate may not solicit work or advertise)",
+        "keyed_to": "tenant industry type, not country"
+      },
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Legal Services: Has dedicated screens in the app, not just a preset. Leads are called \"Client\". Pipeline: Enquiry > Consultation > Engagement Signed > Matter Active > Awaiting Court > Closed / Disposed > Declined / Withdrawn. Outbound-acquisition tools (lead finder, market radar, campaigns, landing pages) are locked for compliance.",
+      "summary_words": 50,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:event_management",
+      "key": "event_management",
+      "label": "Event Management",
+      "status": "beta",
+      "depth_tier": "borderline",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 9,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Event",
+        "contact": "Vendor",
+        "pipeline": "Event Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Requirement Gathering",
+        "Proposal Sent",
+        "Site Visit",
+        "Negotiation",
+        "Booking Confirmed",
+        "Lost"
+      ],
+      "fields": [
+        "Event Type",
+        "Event Date",
+        "Guest Count",
+        "Budget",
+        "Preferred Venue",
+        "Venue Booked"
+      ],
+      "scheduler_events": [
+        "Client Consultation",
+        "Venue Site Visit",
+        "Vendor Briefing"
+      ],
+      "task_boards": [
+        "Event Pipeline",
+        "Vendor Coordination"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "lms",
+        "material_tracking"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Event Management: Has some dedicated screens plus a configured pipeline. Leads are called \"Client\". Pipeline: Enquiry > Requirement Gathering > Proposal Sent > Site Visit > Negotiation > Booking Confirmed > Lost.",
+      "summary_words": 32,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:ca_accounting",
+      "key": "ca_accounting",
+      "label": "CA / Accounting",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 14,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Enquiry",
+        "deal": "Engagement",
+        "contact": "Client",
+        "pipeline": "Engagement Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Docs Requested",
+        "Docs Received",
+        "Work In Progress",
+        "Review",
+        "Filed / Delivered",
+        "Lost"
+      ],
+      "fields": [
+        "Service Type",
+        "PAN Number",
+        "GSTIN",
+        "TAN Number",
+        "Entity Type",
+        "CIN",
+        "Financial Year",
+        "Due Date",
+        "Retainer Client"
+      ],
+      "scheduler_events": [
+        "Client Meeting",
+        "Document Collection",
+        "Review Call"
+      ],
+      "task_boards": [
+        "Tax Filings",
+        "Audit Work"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "material_tracking",
+        "linkedin_cadences",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "lead_finder",
+        "marketradar",
+        "campaigns",
+        "landing_pages"
+      ],
+      "ai_never": [
+        "Give tax positions, interpretations, eligibility opinions, or filing advice — surface the due date and the document / work status only; the CA gives the professional advice.",
+        "State a statutory due date from memory — read it from the compliance-rules table; due dates shift with CBDT / CBIC notifications and extensions.",
+        "Draft, suggest wording for, or send a reply to an income-tax or GST notice — flag it for the CA and log only that a notice was received.",
+        "Log or output raw PAN, Aadhaar, GSTIN, or TAN — use masked references only (e.g. \"PAN ••••••1234\").",
+        "Solicit business — no cold outreach, no testimonial or review requests, no \"follow us\" prompts, no fee quotes in any public-facing copy, and no push marketing of exclusive (audit / attestation) services. The ICAI Code of Ethics bars a CA from advertising or soliciting professional work.",
+        "Use sales language (\"close\", \"convert\", \"win\", a \"deal pipeline\") with a CA — they serve clients through engagements, not deals; the board is an Engagement Pipeline of workflow stages, not a sales funnel."
+      ],
+      "compliance": {
+        "hard_locked_modules": [
+          "lead_finder",
+          "marketradar",
+          "campaigns",
+          "landing_pages"
+        ],
+        "rule": "ICAI Code of Ethics, Clause 6/7, Part I, First Schedule (a chartered accountant may not solicit clients or advertise)",
+        "keyed_to": "tenant industry type, not country"
+      },
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": "PAN, GSTIN, TAN and CIN fields",
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "CA / Accounting: Has dedicated screens in the app, not just a preset. Leads are called \"Enquiry\". Pipeline: Enquiry > Docs Requested > Docs Received > Work In Progress > Review > Filed / Delivered > Lost. Outbound-acquisition tools (lead finder, market radar, campaigns, landing pages) are locked for compliance.",
+      "summary_words": 50,
+      "not_for": [],
+      "serve": true
+    },
+    {
+      "id": "industry:construction",
+      "key": "construction",
+      "label": "Construction",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Prospect",
+        "deal": "Project",
+        "contact": "Contact",
+        "pipeline": "Project Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Site Assessment",
+        "Estimate Shared",
+        "Negotiation",
+        "Contract Signed",
+        "In Progress",
+        "Completed",
+        "Lost"
+      ],
+      "fields": [
+        "Project Type",
+        "Project Value",
+        "Project Location",
+        "Estimated Timeline (months)",
+        "Site Area (sq ft)",
+        "Advance Paid"
+      ],
+      "scheduler_events": [
+        "Site Visit",
+        "Client Meeting",
+        "Progress Review"
+      ],
+      "task_boards": [
+        "Projects",
+        "Procurement"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "lms"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Construction: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Prospect\". Pipeline: Enquiry > Site Assessment > Estimate Shared > Negotiation > Contract Signed > In Progress > Completed > Lost.",
+      "summary_words": 35,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:pharma_distribution",
+      "key": "pharma_distribution",
+      "label": "Pharma & Medical",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 12,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Doctor or Chemist",
+        "deal": "Order",
+        "contact": "Retailer",
+        "pipeline": "Distribution Pipeline"
+      },
+      "pipeline": [
+        "New Contact",
+        "First Visit",
+        "Sample Given",
+        "Order Placed",
+        "Regular Customer",
+        "Inactive"
+      ],
+      "fields": [
+        "Contact Type",
+        "Specialisation",
+        "Drug Licence No.",
+        "Credit Limit"
+      ],
+      "scheduler_events": [
+        "Doctor Visit",
+        "Retailer Visit",
+        "CME / Product Demo"
+      ],
+      "task_boards": [
+        "Field Visits",
+        "Orders"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "exhibition_voice_transcription",
+        "lms",
+        "ai_proposals"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": "Drug Licence number field",
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Pharma & Medical: Has dedicated screens in the app, not just a preset. Leads are called \"Doctor or Chemist\". Pipeline: New Contact > First Visit > Sample Given > Order Placed > Regular Customer > Inactive.",
+      "summary_words": 36,
+      "not_for": [
+        "a pharmacy POS (it models field sales to doctors and chemists)"
+      ],
+      "serve": true
+    },
+    {
+      "id": "industry:restaurant_fnb",
+      "key": "restaurant_fnb",
+      "label": "Restaurant / F&B",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 16,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Guest",
+        "deal": "Booking",
+        "contact": "Contact",
+        "pipeline": "Booking Pipeline"
+      },
+      "pipeline": [
+        "New Lead",
+        "Enquiry Received",
+        "Menu Shared",
+        "Tasting Done",
+        "Order Confirmed",
+        "Delivered",
+        "Lost"
+      ],
+      "fields": [
+        "Order Type",
+        "Event Date",
+        "Pax Count",
+        "Budget Per Head",
+        "Dietary Preference",
+        "Advance Paid"
+      ],
+      "scheduler_events": [
+        "Tasting Session",
+        "Client Call",
+        "Delivery"
+      ],
+      "task_boards": [
+        "Catering Orders",
+        "Corporate Accounts"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "lms",
+        "material_tracking"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Restaurant / F&B: Has dedicated screens in the app, not just a preset. Leads are called \"Guest\". Pipeline: New Lead > Enquiry Received > Menu Shared > Tasting Done > Order Confirmed > Delivered > Lost.",
+      "summary_words": 36,
+      "not_for": [
+        "a restaurant POS (it models catering and event orders)"
+      ],
+      "serve": true
+    },
+    {
+      "id": "industry:beauty_wellness",
+      "key": "beauty_wellness",
+      "label": "Beauty & Wellness",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Booking",
+        "contact": "Contact",
+        "pipeline": "Appointment Pipeline"
+      },
+      "pipeline": [
+        "New Enquiry",
+        "Appointment Booked",
+        "First Visit Done",
+        "Package Sold",
+        "Renewal Due",
+        "Lapsed"
+      ],
+      "fields": [
+        "Service Interested In",
+        "Package Purchased",
+        "Package Value",
+        "Sessions Remaining",
+        "Membership Expiry",
+        "Referral Source"
+      ],
+      "scheduler_events": [
+        "Appointment",
+        "Consultation",
+        "Follow-Up Call"
+      ],
+      "task_boards": [
+        "Client Journey"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "material_tracking",
+        "lms"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Beauty & Wellness: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Client\". Pipeline: New Enquiry > Appointment Booked > First Visit Done > Package Sold > Renewal Due > Lapsed.",
+      "summary_words": 35,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:printing_packaging",
+      "key": "printing_packaging",
+      "label": "Printing & Packaging",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Job",
+        "contact": "Contact",
+        "pipeline": "Job Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Sample Requested",
+        "Quote Sent",
+        "Order Confirmed",
+        "In Production",
+        "Dispatched",
+        "Lost"
+      ],
+      "fields": [
+        "Product Type",
+        "Quantity (units)",
+        "Order Value",
+        "Artwork Received",
+        "Expected Delivery Date",
+        "Repeat Order"
+      ],
+      "scheduler_events": [
+        "Client Meeting",
+        "Sample Approval",
+        "Delivery"
+      ],
+      "task_boards": [
+        "Orders"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "lms"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Printing & Packaging: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Client\". Pipeline: Enquiry > Sample Requested > Quote Sent > Order Confirmed > In Production > Dispatched > Lost.",
+      "summary_words": 35,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:textile_apparel",
+      "key": "textile_apparel",
+      "label": "Textile & Apparel",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Buyer",
+        "deal": "Order",
+        "contact": "Contact",
+        "pipeline": "Order Pipeline"
+      },
+      "pipeline": [
+        "New Enquiry",
+        "Sample Sent",
+        "Sample Approved",
+        "Price Negotiation",
+        "Order Confirmed",
+        "In Production",
+        "Shipped",
+        "Lost"
+      ],
+      "fields": [
+        "Product Category",
+        "Order Quantity (meters/pcs)",
+        "Order Value",
+        "Export / Domestic",
+        "Season",
+        "Delivery Date"
+      ],
+      "scheduler_events": [
+        "Buyer Meeting",
+        "Sample Review",
+        "Factory Visit"
+      ],
+      "task_boards": [
+        "Orders",
+        "Buyers"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "exhibition_voice_transcription",
+        "lms"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Textile & Apparel: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Buyer\". Pipeline: New Enquiry > Sample Sent > Sample Approved > Price Negotiation > Order Confirmed > In Production > Shipped > Lost.",
+      "summary_words": 39,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:agri_inputs",
+      "key": "agri_inputs",
+      "label": "Agri Inputs",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Dealer",
+        "deal": "Order",
+        "contact": "Farmer",
+        "pipeline": "Supply Pipeline"
+      },
+      "pipeline": [
+        "New Contact",
+        "Demo / Field Trial",
+        "Sample Given",
+        "Order Placed",
+        "Repeat Buyer",
+        "Seasonal Inactive"
+      ],
+      "fields": [
+        "Contact Type",
+        "Crop Focus",
+        "Acreage (acres)",
+        "Village / Block",
+        "State",
+        "Preferred Product",
+        "Season"
+      ],
+      "scheduler_events": [
+        "Field Visit",
+        "Demo / Kisan Goshti",
+        "Follow-Up Call"
+      ],
+      "task_boards": [
+        "Field Visits",
+        "Dealer Network"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "ai_proposals",
+        "exhibition_voice_transcription",
+        "lms"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Agri Inputs: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Dealer\". Pipeline: New Contact > Demo / Field Trial > Sample Given > Order Placed > Repeat Buyer > Seasonal Inactive.",
+      "summary_words": 36,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:security_facility",
+      "key": "security_facility",
+      "label": "Security & Facility",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Prospect",
+        "deal": "Contract",
+        "contact": "Contact",
+        "pipeline": "Contract Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Site Assessment",
+        "Proposal Sent",
+        "Negotiation",
+        "Contract Signed",
+        "Service Active",
+        "Renewal Due",
+        "Lost"
+      ],
+      "fields": [
+        "Service Type",
+        "Site Location",
+        "No. of Guards / Staff",
+        "Monthly Contract Value",
+        "Contract Start Date",
+        "Contract End Date",
+        "AMC Contract"
+      ],
+      "scheduler_events": [
+        "Site Assessment",
+        "Client Meeting",
+        "Contract Review"
+      ],
+      "task_boards": [
+        "Contracts",
+        "Operations"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "linkedin_cadences",
+        "lead_finder",
+        "exhibition_voice_transcription",
+        "lms"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Security & Facility: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Prospect\". Pipeline: Enquiry > Site Assessment > Proposal Sent > Negotiation > Contract Signed > Service Active > Renewal Due > Lost.",
+      "summary_words": 38,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:ngo_fundraising",
+      "key": "ngo_fundraising",
+      "label": "NGO / Fundraising",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Donor",
+        "deal": "Donation",
+        "contact": "Contact",
+        "pipeline": "Fundraising Pipeline"
+      },
+      "pipeline": [
+        "New Contact",
+        "Outreach Sent",
+        "Interested",
+        "Pledge Made",
+        "Donation Received",
+        "Recurring Donor",
+        "Lapsed"
+      ],
+      "fields": [
+        "Donor Type",
+        "Cause Area",
+        "Pledge Amount",
+        "Donation Date",
+        "80G Certificate Required",
+        "FCRA Eligible",
+        "Recurring Frequency"
+      ],
+      "scheduler_events": [
+        "Donor Meeting",
+        "Awareness Event",
+        "Follow-Up Call"
+      ],
+      "task_boards": [
+        "Donor Pipeline",
+        "CSR Campaigns"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "ai_proposals",
+        "material_tracking",
+        "linkedin_cadences",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": "80G certificate and FCRA eligibility fields",
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "NGO / Fundraising: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Donor\". Pipeline: New Contact > Outreach Sent > Interested > Pledge Made > Donation Received > Recurring Donor > Lapsed.",
+      "summary_words": 36,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:field_service_amc",
+      "key": "field_service_amc",
+      "label": "Field Service / AMC",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Contract",
+        "contact": "Site Contact",
+        "pipeline": "AMC Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Demo / Survey",
+        "Proposal Sent",
+        "Negotiation",
+        "AMC Signed",
+        "Service Active",
+        "Renewal Due",
+        "Lost"
+      ],
+      "fields": [
+        "Equipment Type",
+        "AMC Start Date",
+        "AMC End Date",
+        "Service Frequency",
+        "Technician Assigned",
+        "Site Address",
+        "Contract Value"
+      ],
+      "scheduler_events": [
+        "Site Survey",
+        "Service Call",
+        "Renewal Discussion"
+      ],
+      "task_boards": [
+        "AMC Pipeline",
+        "Service Calls"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "linkedin_cadences",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Field Service / AMC: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Client\". Pipeline: Enquiry > Demo / Survey > Proposal Sent > Negotiation > AMC Signed > Service Active > Renewal Due > Lost.",
+      "summary_words": 40,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:it_services",
+      "key": "it_services",
+      "label": "IT Services / MSP",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Client",
+        "deal": "Project",
+        "contact": "Tech Contact",
+        "pipeline": "Project Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Requirement Call",
+        "Proposal Sent",
+        "POC / Demo",
+        "Contract Signed",
+        "Project Active",
+        "Support / MSP",
+        "Lost"
+      ],
+      "fields": [
+        "Tech Stack",
+        "Project Type",
+        "SLA Tier",
+        "Project Start Date",
+        "Go-Live Date",
+        "Account Manager",
+        "Contract Value"
+      ],
+      "scheduler_events": [
+        "Discovery Call",
+        "Technical Review",
+        "Sprint Demo"
+      ],
+      "task_boards": [
+        "Project Pipeline",
+        "Support Tickets"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "material_tracking",
+        "linkedin_cadences",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "IT Services / MSP: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Client\". Pipeline: Enquiry > Requirement Call > Proposal Sent > POC / Demo > Contract Signed > Project Active > Support / MSP > Lost.",
+      "summary_words": 42,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:hospitality",
+      "key": "hospitality",
+      "label": "Hospitality",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 17,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Guest",
+        "deal": "Booking",
+        "contact": "Booker",
+        "pipeline": "Booking Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Quote Sent",
+        "Tentative Hold",
+        "Booking Confirmed",
+        "Checked In",
+        "Checked Out",
+        "Lost"
+      ],
+      "fields": [
+        "Check-in Date",
+        "Check-out Date",
+        "Room Type",
+        "Adults",
+        "Children",
+        "Booking Source",
+        "Special Requests"
+      ],
+      "scheduler_events": [
+        "Site Inspection",
+        "Pre-Arrival Call",
+        "Group Walkthrough"
+      ],
+      "task_boards": [
+        "Booking Pipeline",
+        "Guest Requests"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "linkedin_cadences",
+        "material_tracking",
+        "exhibition_voice_transcription"
+      ],
+      "ai_never": [
+        "Promise a specific room, rate, upgrade or availability without checking the calendar.",
+        "Store or expose a guest's ID-proof number, card/payment details, or passport data in shared notes.",
+        "Use pushy sales language with guests — prefer \"confirm\", \"assist\", \"arrange\".",
+        "Guarantee a refund, waiver or compensation; those are a manager's decision."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Hospitality: Has dedicated screens in the app, not just a preset. Leads are called \"Guest\". Pipeline: Enquiry > Quote Sent > Tentative Hold > Booking Confirmed > Checked In > Checked Out > Lost.",
+      "summary_words": 34,
+      "not_for": [
+        "a property management system (it models room and event bookings)"
+      ],
+      "serve": true
+    },
+    {
+      "id": "industry:export_trade",
+      "key": "export_trade",
+      "label": "Export & Trade",
+      "status": "beta",
+      "depth_tier": "configuration-only",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 0,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Enquiry",
+        "deal": "Order",
+        "contact": "Buyer",
+        "pipeline": "Export Pipeline"
+      },
+      "pipeline": [
+        "New Enquiry",
+        "Quotation Sent",
+        "Sample Approval",
+        "Negotiation",
+        "Order Confirmed",
+        "Shipped",
+        "Payment Received",
+        "Lost"
+      ],
+      "fields": [
+        "HS Code",
+        "Product Category",
+        "Incoterms",
+        "Port of Loading",
+        "Port of Discharge",
+        "Destination Country",
+        "LC Number",
+        "Payment Terms"
+      ],
+      "scheduler_events": [
+        "Buyer Meeting",
+        "Sample Review Call",
+        "Shipment Coordination"
+      ],
+      "task_boards": [
+        "Export Orders",
+        "Trade Documents"
+      ],
+      "persona": "Zara",
+      "modules_off_by_default": [
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Give binding customs-classification, duty, or trade-compliance advice as legal fact — HS codes, sanctions/embargo screening, and licensing are the exporter's own compliance call; suggest they confirm with a CHA / DGFT / customs broker.",
+        "Promise a delivery date, freight rate, or FX-converted price as guaranteed — these move with carriers and the market.",
+        "Treat a Buyer as \"won\" before payment is received against the agreed terms."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": true,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Export & Trade: A configured pipeline, fields and scheduler preset; no dedicated screens. Leads are called \"Enquiry\". Pipeline: New Enquiry > Quotation Sent > Sample Approval > Negotiation > Order Confirmed > Shipped > Payment Received > Lost.",
+      "summary_words": 38,
+      "not_for": [
+        "visa, customs or admission outcome predictions (AI is configured not to give them)"
+      ],
+      "serve": false
+    },
+    {
+      "id": "industry:study_abroad",
+      "key": "study_abroad",
+      "label": "Study Abroad / Overseas Education",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 26,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Applicant",
+        "deal": "Application",
+        "contact": "Parent",
+        "pipeline": "Admissions Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Profile Evaluated",
+        "Shortlist Shared",
+        "Applications Submitted",
+        "Offer Received",
+        "Visa Lodged",
+        "Enrolled",
+        "Dropped"
+      ],
+      "fields": [
+        "Intended Intake",
+        "Intake Year",
+        "Destination Countries",
+        "Study Level",
+        "Preferred Course",
+        "Academic Score (% / CGPA)",
+        "Backlogs",
+        "Gap Years",
+        "English Test",
+        "English Score",
+        "Annual Budget",
+        "Funding",
+        "Passport Expiry",
+        "Referral Partner"
+      ],
+      "scheduler_events": [
+        "Counselling Session",
+        "Profile Evaluation",
+        "Document Review",
+        "Visa Mock Interview",
+        "Pre-departure Briefing"
+      ],
+      "task_boards": [
+        "Application Tracker",
+        "Document Chase",
+        "Pre-departure"
+      ],
+      "persona": "Aasha",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Guarantee or predict an admission, a scholarship, a visa outcome or a processing time — these are decided by the university and the visa authority alone.",
+        "State a university's fees, ranking or entry requirements that are not in the catalogue.",
+        "Invent SOP, LOR or essay content the student did not supply.",
+        "Disclose one student's records to another student or to a partner.",
+        "Advise on education-loan eligibility — refer the student to the lender.",
+        "Write a passport number or a test-registration number into a message or note."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": true,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Study Abroad / Overseas Education: Has dedicated screens in the app, not just a preset. Leads are called \"Applicant\". Pipeline: Enquiry > Profile Evaluated > Shortlist Shared > Applications Submitted > Offer Received > Visa Lodged > Enrolled > Dropped.",
+      "summary_words": 40,
+      "not_for": [
+        "visa, customs or admission outcome predictions (AI is configured not to give them)"
+      ],
+      "serve": true
+    },
+    {
+      "id": "industry:marketing_agency",
+      "key": "marketing_agency",
+      "label": "Marketing / Digital Agency",
+      "status": "beta",
+      "depth_tier": "borderline",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 5,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Prospect",
+        "deal": "Engagement",
+        "contact": "Client Contact",
+        "pipeline": "New Business Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Discovery Call",
+        "Proposal Sent",
+        "Negotiation",
+        "Signed",
+        "Lost"
+      ],
+      "fields": [
+        "Service Lines",
+        "Engagement Type",
+        "Monthly Budget",
+        "Monthly Ad Spend",
+        "Client Industry",
+        "Website URL",
+        "Current Agency",
+        "Decision Maker Role",
+        "Contract Term (months)",
+        "Expected Start",
+        "Account Manager",
+        "Referral Source"
+      ],
+      "scheduler_events": [
+        "Discovery Call",
+        "Proposal Presentation",
+        "Kick-off Workshop",
+        "Monthly Review"
+      ],
+      "task_boards": [
+        "Deliverables",
+        "Content Calendar",
+        "Campaign Launches"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "material_tracking",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "products"
+      ],
+      "ai_never": [
+        "Promise a specific campaign result, ranking, ROAS or lead volume — report what the connected channels actually show, and flag any channel that is \"not connected\" rather than reporting it as zero.",
+        "Send a client report or invoice on the agency's behalf without explicit approval.",
+        "Mix one client's deliverables, campaign data, contacts or reports into another client's context — every answer is scoped to a single client account."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": false,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Marketing / Digital Agency: Has some dedicated screens plus a configured pipeline. Leads are called \"Prospect\". Pipeline: Enquiry > Discovery Call > Proposal Sent > Negotiation > Signed > Lost.",
+      "summary_words": 30,
+      "not_for": [],
+      "serve": false
+    },
+    {
+      "id": "industry:immigration",
+      "key": "immigration",
+      "label": "Immigration & Visa Consultancy",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "picker_hidden": false,
+      "evidence": {
+        "ui_files": 13,
+        "dedicated_dir_files": 0,
+        "has_config": true,
+        "verified": "code-read; not runtime-verified"
+      },
+      "vocabulary": {
+        "lead": "Applicant",
+        "deal": "Case",
+        "contact": "Family Member",
+        "pipeline": "Case Pipeline"
+      },
+      "pipeline": [
+        "Enquiry",
+        "Eligibility Assessed",
+        "Consultation Done",
+        "Retainer Signed",
+        "Documents in Progress",
+        "Application Lodged",
+        "Visa Granted",
+        "Refused / Withdrawn"
+      ],
+      "fields": [
+        "Visa Category",
+        "Destination Country",
+        "Passport Expiry",
+        "Country of Residence",
+        "English Test",
+        "English Score",
+        "Highest Education",
+        "Work Experience (years)",
+        "Marital Status",
+        "Dependants",
+        "Referral Partner",
+        "Preferred Language"
+      ],
+      "scheduler_events": [
+        "Eligibility Consultation",
+        "Document Review",
+        "Mock Visa Interview",
+        "Filing Session"
+      ],
+      "task_boards": [
+        "Case Tracker",
+        "Document Chase"
+      ],
+      "persona": "Nova",
+      "modules_off_by_default": [
+        "products",
+        "quotations",
+        "linkedin_cadences",
+        "lead_finder",
+        "market_radar",
+        "field_visits",
+        "exhibition_voice_transcription",
+        "material_tracking"
+      ],
+      "ai_never": [
+        "Promise, predict or estimate a visa outcome, an approval chance, or a processing time — these are decided by the authority alone.",
+        "Assess eligibility or give immigration or legal advice; where the destination regulates such advice, refer the applicant to a licensed practitioner.",
+        "Write a passport, national ID or police-clearance number into a message or note — reference \"document received\" status only.",
+        "Disclose one family member's details to another person without that family member's consent.",
+        "Use sales language (\"close\", \"convert\", \"win\") about an applicant or their family's future."
+      ],
+      "compliance": null,
+      "region": null,
+      "cross_border": true,
+      "india_configured_note": null,
+      "sources": [
+        "hellocrm:src/lib/industryConfig.ts",
+        "hellocrm:src/lib/industryTypes.ts",
+        "hellocrm:supabase/functions/_shared/industryAIPacks.ts"
+      ],
+      "summary": "Immigration & Visa Consultancy: Has dedicated screens in the app, not just a preset. Leads are called \"Applicant\". Pipeline: Enquiry > Eligibility Assessed > Consultation Done > Retainer Signed > Documents in Progress > Application Lodged > Visa Granted > Refused / Withdrawn.",
+      "summary_words": 43,
+      "not_for": [
+        "visa, customs or admission outcome predictions (AI is configured not to give them)"
+      ],
+      "serve": true
+    }
+  ],
+  "industries_held": [
+    {
+      "key": "manufacturing",
+      "status": "live",
+      "depth_tier": "deep",
+      "alias_of": null,
+      "reason": "registered and built but hidden from the signup picker; treatment is a founder question (Q-L6)"
+    },
+    {
+      "key": "dental_clinic",
+      "status": "alias",
+      "depth_tier": "alias",
+      "alias_of": "doctors_clinic",
+      "reason": "alias of doctors_clinic"
+    },
+    {
+      "key": "matrimonial",
+      "status": "alias",
+      "depth_tier": "alias",
+      "alias_of": "matrimony",
+      "reason": "alias of matrimony"
+    },
+    {
+      "key": "automotive_service",
+      "status": "roadmap",
+      "depth_tier": "registered-not-built",
+      "alias_of": null,
+      "reason": "registered in the industry list but not built"
+    },
+    {
+      "key": "general",
+      "status": "fallback",
+      "depth_tier": "fallback",
+      "alias_of": null,
+      "reason": "fallback entry; covered by the global block"
+    },
+    {
+      "key": "other",
+      "status": "fallback",
+      "depth_tier": "fallback",
+      "alias_of": null,
+      "reason": "fallback entry; covered by the global block"
+    }
+  ],
+  "countries": [
+    {
+      "id": "country:in",
+      "code": "in",
+      "label": "India",
+      "status": "live",
+      "hub_url": "https://hellogrowthcrm.com/in",
+      "currency_billed": "INR",
+      "currency_listed_on_site": "INR",
+      "local_price_status": "chargeable",
+      "tax_ref_label_only": false,
+      "summary": "India: INR via Razorpay. Growth is Rs 899 per user per month plus 18% GST (Rs 1,060.82 billed); annual Rs 8,990 per user plus GST. Tax label: GST. DPDP consent, portal and purge tooling exists. Languages: WhatsApp AI chat 13 languages, voice agent 11 (Indian languages plus English). AI calling needs a customer-owned Sarvam account.",
+      "summary_words": 55,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": true,
+      "claims_not_to_make": [
+        "GST-inclusive INR price",
+        "any INR figure other than Rs 899 plus 18% GST"
+      ]
+    },
+    {
+      "id": "country:usa",
+      "code": "usa",
+      "label": "United States",
+      "status": "live",
+      "hub_url": "https://hellogrowthcrm.com/usa",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "USD",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "United States: USD via Stripe. Growth is $12 per user per month monthly or $10 per user per month billed annually (an organisation keeps the price that applied when it was created). Tax label: sales tax. SOC 2 Type II examination completed (Soor LLC). Clinics in the US are not offered the clinic industry (no HIPAA programme).",
+      "summary_words": 57,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": true,
+      "claims_not_to_make": [
+        "HIPAA compliant",
+        "clinic CRM for US practices",
+        "ACH or PayPal as accepted methods (unverified)"
+      ]
+    },
+    {
+      "id": "country:uk",
+      "code": "uk",
+      "label": "United Kingdom",
+      "status": "beta",
+      "hub_url": "https://hellogrowthcrm.com/uk",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "GBP",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "United Kingdom: Billed in USD. Local GBP prices on the site are indicative. Tax label: VAT.",
+      "summary_words": 16,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": false,
+      "claims_not_to_make": [
+        "ICO-registered",
+        "GoCardless",
+        "UK VAT filing"
+      ]
+    },
+    {
+      "id": "country:canada",
+      "code": "canada",
+      "label": "Canada",
+      "status": "beta",
+      "hub_url": "https://hellogrowthcrm.com/canada",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "CAD",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "Canada: Billed in USD. Local CAD prices on the site are indicative. Tax label: HST/GST. Clinics in Canada are not offered the clinic industry (no HIPAA programme).",
+      "summary_words": 27,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": false,
+      "claims_not_to_make": [
+        "PIPEDA compliant",
+        "Interac e-Transfer",
+        "HST filing",
+        "clinic CRM"
+      ]
+    },
+    {
+      "id": "country:au",
+      "code": "au",
+      "label": "Australia",
+      "status": "beta",
+      "hub_url": "https://hellogrowthcrm.com/au",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "AUD",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "Australia: Billed in USD today; AUD billing is not yet active. Local AUD prices are indicative. Tax label: GST. Accounting: MYOB (AccountRight) and QuickBooks Online connectors are live.",
+      "summary_words": 28,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": false,
+      "claims_not_to_make": [
+        "Privacy Act compliant",
+        "BPAY",
+        "A$ as chargeable"
+      ]
+    },
+    {
+      "id": "country:uae",
+      "code": "uae",
+      "label": "United Arab Emirates",
+      "status": "beta",
+      "hub_url": "https://hellogrowthcrm.com/uae",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "AED",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "United Arab Emirates: Billed in USD. Local AED prices are indicative. Tax label: VAT. Languages: Arabic is supported on the WhatsApp AI chat only, not on the voice agent.",
+      "summary_words": 29,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": false,
+      "claims_not_to_make": [
+        "Arabic voice",
+        "UAE PDPL compliant",
+        "local e-invoicing"
+      ]
+    },
+    {
+      "id": "country:singapore",
+      "code": "singapore",
+      "label": "Singapore",
+      "status": "beta",
+      "hub_url": "https://hellogrowthcrm.com/singapore",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "SGD",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "Singapore: Billed in USD. Local SGD prices are indicative. Tax label: GST.",
+      "summary_words": 12,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": false,
+      "claims_not_to_make": [
+        "PDPA compliant",
+        "PayNow",
+        "S$ as chargeable"
+      ]
+    },
+    {
+      "id": "country:new-zealand",
+      "code": "new-zealand",
+      "label": "New Zealand",
+      "status": "beta",
+      "hub_url": "https://hellogrowthcrm.com/new-zealand",
+      "currency_billed": "USD",
+      "currency_listed_on_site": "NZD",
+      "local_price_status": "indicative",
+      "tax_ref_label_only": true,
+      "summary": "New Zealand: Billed in USD. Local NZD prices are indicative. Tax label: GST.",
+      "summary_words": 13,
+      "sources": [
+        "mcp:countries_list",
+        "hellocrm:supabase/functions/_shared/billingHandlers/gstinPricing.ts",
+        "hellocrm:src/lib/supportedLanguages.ts",
+        "hellocrmwebsite:src/lib/pricing-constants.ts",
+        "findings.md Loops 11-14"
+      ],
+      "serve": false,
+      "claims_not_to_make": [
+        "Privacy Act 2020 compliant",
+        "POLi",
+        "NZ$ as chargeable"
+      ]
+    }
+  ],
+  "other_markets": {
+    "id": "country:marketing-only",
+    "status": "unconfirmed",
+    "ship": false,
+    "countries": [
+      "Nigeria",
+      "Kenya",
+      "Tanzania",
+      "Philippines",
+      "Indonesia",
+      "Mexico",
+      "Brazil",
+      "Bangladesh",
+      "Pakistan"
+    ],
+    "note": "Marketed on the website but not served by the MCP; no Paystack/M-Pesa code, local-language pages for unsupported languages. Held until Q-L14."
+  }
+}
