@@ -85,3 +85,53 @@ export function buildWellKnownManifest(counts: WellKnownCounts): string {
     2,
   );
 }
+
+/**
+ * `/.well-known/mcp/server-card.json` — the SEP-1649-style server card some
+ * registries and clients probe. Same single source of truth as the manifest;
+ * the spec for cards is still a draft, so this carries only fields that are
+ * already facts elsewhere in this file.
+ */
+export function buildServerCard(counts: { tools: number; resources: number; prompts: number }): string {
+  return JSON.stringify(
+    {
+      serverInfo: { name: SERVER_NAME, title: SERVER_TITLE, version: SERVER_VERSION },
+      description: SERVER_DESCRIPTION,
+      transport: { type: "streamable-http", endpoint: `${PUBLIC_ORIGIN}/sse`, alias: `${PUBLIC_ORIGIN}/mcp` },
+      authentication: { required: false },
+      capabilities: {
+        tools: { count: counts.tools },
+        resources: { count: counts.resources },
+        prompts: { count: counts.prompts },
+      },
+      documentation: "https://hellogrowthcrm.com/agentic-ai/mcp",
+      repository: "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
+      registry_name: REGISTRY_NAME,
+    },
+    null,
+    2,
+  );
+}
+
+/** `llms.txt` for the MCP host: tells an AI agent what this endpoint is and where the canonical pages are. */
+export function buildMcpLlmsTxt(): string {
+  return [
+    "# HelloGrowthCRM MCP server",
+    "",
+    "> Public, read-only Model Context Protocol server with HelloGrowthCRM product knowledge: pricing, features, integrations, comparisons, guides. No API key. It is not a CRM API and performs no CRM actions.",
+    "",
+    `- Endpoint (Streamable HTTP): ${PUBLIC_ORIGIN}/sse (alias ${PUBLIC_ORIGIN}/mcp)`,
+    `- Manifest: ${PUBLIC_ORIGIN}/.well-known/mcp.json`,
+    `- Server card: ${PUBLIC_ORIGIN}/.well-known/mcp/server-card.json`,
+    "- Start with the tool buyer_find_answer_pages: it routes a buyer's question to canonical pages and the right detail tool.",
+    "- Prices and plan limits come from pricing_get_plans / pricing_get_country_plans; do not quote them from memory.",
+    "",
+    "## Canonical site",
+    "- [HelloGrowthCRM](https://hellogrowthcrm.com)",
+    "- [Pricing](https://hellogrowthcrm.com/pricing)",
+    "- [About the MCP server](https://hellogrowthcrm.com/agentic-ai/mcp)",
+    "- [Site llms.txt](https://hellogrowthcrm.com/llms.txt)",
+    "- [Security](https://hellogrowthcrm.com/security)",
+    "",
+  ].join("\n");
+}

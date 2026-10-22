@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "hellogrowthcrm": { "url": "https://mcp.hellogrowthcrm.com/sse" }
+  }
+}

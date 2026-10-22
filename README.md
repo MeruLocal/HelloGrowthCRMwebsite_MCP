@@ -4,6 +4,18 @@ An MCP (Model Context Protocol) server that helps you **discover, identify, and 
 
 It is **polite by design**: it respects `robots.txt`, rate-limits its own fetches, advertises an honest User-Agent, and never tries to bypass any control.
 
+## Ask about HelloGrowthCRM (hosted, no install)
+
+Public, read-only MCP server with HelloGrowthCRM product knowledge — pricing, features, integrations, comparisons, industry pages — plus bot-governance tools. Entry point for buyer questions: `buyer_find_answer_pages`. Prompts: `compare_with_competitor`, `price_for_my_team`, `crm_for_my_industry`, `is_it_secure`.
+
+```bash
+claude mcp add --transport http hellogrowthcrm https://mcp.hellogrowthcrm.com/sse
+```
+
+Configs for Cursor, VS Code and Claude Desktop: [`examples/clients/`](examples/clients/). Discovery: `/.well-known/mcp.json`, `/.well-known/mcp/server-card.json`, `/llms.txt`. Canonical site: https://hellogrowthcrm.com/agentic-ai/mcp
+
+---
+
 ## Features
 
 - **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus 80 more, see [the full catalog](#full-mcp-tool-catalog-88-tools).
