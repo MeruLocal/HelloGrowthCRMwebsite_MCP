@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { aggregate } from "../core/aggregator.js";
 import { parseAccessLog, parseAccessLogFile } from "../core/log-parser.js";
+import { resolveLogPath } from "../utils/safe-paths.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const Input = z.object({
@@ -53,7 +54,13 @@ export const analyzeAccessLogs = defineTool({
     },
   },
   async handle(args) {
-    const path = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
+    // Caller-supplied paths are confined to MCP_LOG_DIR; DEFAULT_ACCESS_LOG is operator-set.
+    let path: string | undefined;
+    try {
+      path = args.logPath ? resolveLogPath(args.logPath) : process.env.DEFAULT_ACCESS_LOG;
+    } catch (err) {
+      return fail((err as Error).message);
+    }
     let parsed;
     if (args.logText) {
       parsed = parseAccessLog(args.logText);
@@ -61,7 +68,7 @@ export const analyzeAccessLogs = defineTool({
       try {
         parsed = await parseAccessLogFile(path);
       } catch (err) {
-        return fail(`Could not read log file ${path}: ${(err as Error).message}`);
+        return fail("Could not read that log file.");
       }
     } else {
       return fail(
@@ -71,7 +78,7 @@ export const analyzeAccessLogs = defineTool({
 
     const summaries = aggregate(parsed.entries).slice(0, args.topN);
     return ok({
-      source: args.logText ? "inline-text" : path,
+      source: args.logText ? "inline-text" : (args.logPath ? "caller-supplied-path" : "default-log"),
       totalLines: parsed.entries.length,
       skippedLines: parsed.skipped,
       bots: summaries,

@@ -16,6 +16,7 @@ import { z } from "zod";
 import { aggregate } from "../core/aggregator.js";
 import { PoliteCrawler } from "../core/crawler.js";
 import { parseAccessLogFile } from "../core/log-parser.js";
+import { resolveLogPath } from "../utils/safe-paths.js";
 import type { ScanResult } from "../utils/types.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -90,16 +91,22 @@ export const scanWebsiteBots = defineTool({
     );
 
     // Correlate with access logs if provided.
-    const logPath = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
     let detectedBots: ScanResult["detectedBots"] = [];
-    if (logPath) {
+    let logPath: string | undefined;
+    let logPathError: string | null = null;
+    try {
+      logPath = args.logPath ? resolveLogPath(args.logPath) : process.env.DEFAULT_ACCESS_LOG;
+    } catch (err) {
+      logPathError = (err as Error).message;
+    }
+    if (logPathError) {
+      warnings.push(logPathError);
+    } else if (logPath) {
       try {
         const parsed = await parseAccessLogFile(logPath);
         detectedBots = aggregate(parsed.entries, robots);
-      } catch (err) {
-        warnings.push(
-          `Could not read access log ${logPath}: ${(err as Error).message}`,
-        );
+      } catch {
+        warnings.push("Could not read that access log.");
       }
     } else {
       warnings.push(

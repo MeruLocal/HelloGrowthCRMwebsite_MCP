@@ -12,6 +12,7 @@
 
 import { request } from "undici";
 
+import { assertPublicUrl } from "../utils/ssrf-guard.js";
 import { RateLimiter } from "../utils/rate-limiter.js";
 import {
   isDisallowed,
@@ -57,8 +58,9 @@ export class PoliteCrawler {
     let host: string;
     try {
       host = new URL(url).host;
-    } catch {
-      logger.warn("Invalid URL", { url });
+      await assertPublicUrl(url);
+    } catch (err) {
+      logger.warn("Refusing URL", { url, err: (err as Error).message });
       return null;
     }
 
@@ -67,17 +69,28 @@ export class PoliteCrawler {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const res = await request(url, {
-        method: "GET",
-        signal: controller.signal,
-        headers: {
-          "user-agent": this.userAgent,
-          accept: "text/plain, text/html, application/xml;q=0.9, */*;q=0.5",
-        },
-        maxRedirections: 3,
-      });
-      const body = await res.body.text();
-      return { status: res.statusCode, body };
+      // Redirects are followed by hand so every hop passes the SSRF guard.
+      let current = url;
+      for (let hop = 0; ; hop += 1) {
+        const res = await request(current, {
+          method: "GET",
+          signal: controller.signal,
+          headers: {
+            "user-agent": this.userAgent,
+            accept: "text/plain, text/html, application/xml;q=0.9, */*;q=0.5",
+          },
+          maxRedirections: 0,
+        });
+        const loc = res.headers.location;
+        if (res.statusCode >= 300 && res.statusCode < 400 && typeof loc === "string" && hop < 3) {
+          await res.body.dump();
+          current = new URL(loc, current).toString();
+          await assertPublicUrl(current);
+          continue;
+        }
+        const body = await res.body.text();
+        return { status: res.statusCode, body };
+      }
     } catch (err) {
       logger.warn("fetchText failed", { url, err: (err as Error).message });
       return null;

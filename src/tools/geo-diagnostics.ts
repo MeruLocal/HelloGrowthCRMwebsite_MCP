@@ -26,6 +26,7 @@ import { z } from "zod";
 
 import { PoliteCrawler } from "../core/crawler.js";
 import { isDisallowed } from "../core/robots-parser.js";
+import { assertPublicUrl } from "../utils/ssrf-guard.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 /** Readable-text length of each candidate region an extractor might choose. */
@@ -234,9 +235,11 @@ async function timedFetch(
   timer.unref?.();
 
   try {
+    await assertPublicUrl(url);
     const res = await fetch(url, {
       headers: { "user-agent": userAgent, accept: "application/xml,text/xml" },
       signal: controller.signal,
+      redirect: "error", // a redirect could land on an internal host
     });
     const body = await res.text();
     return {

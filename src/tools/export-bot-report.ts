@@ -11,13 +11,14 @@ import { z } from "zod";
 import { aggregate } from "../core/aggregator.js";
 import { parseAccessLog, parseAccessLogFile } from "../core/log-parser.js";
 import { renderReport, writeReport } from "../reports/report-generator.js";
+import { resolveLogPath } from "../utils/safe-paths.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const Input = z.object({
   logPath: z.string().optional(),
   logText: z.string().optional(),
   format: z.enum(["json", "markdown", "csv"]).default("markdown"),
-  saveToDisk: z.boolean().default(true),
+  saveToDisk: z.boolean().default(false),
   filename: z.string().optional(),
   targetUrl: z.string().url().optional(),
 });
@@ -38,7 +39,7 @@ export const exportBotReport = defineTool({
           enum: ["json", "markdown", "csv"],
           default: "markdown",
         },
-        saveToDisk: { type: "boolean", default: true },
+        saveToDisk: { type: "boolean", default: false, description: "Writes to the server disk. Honoured only when the operator sets MCP_ALLOW_REPORT_WRITES=1; otherwise the report is returned inline." },
         filename: { type: "string" },
         targetUrl: { type: "string", format: "uri" },
       },
@@ -50,33 +51,47 @@ export const exportBotReport = defineTool({
     if (args.logText) {
       parsed = parseAccessLog(args.logText);
     } else {
-      const path = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
+      let path: string | undefined;
+      try {
+        path = args.logPath ? resolveLogPath(args.logPath) : process.env.DEFAULT_ACCESS_LOG;
+      } catch (err) {
+        return fail((err as Error).message);
+      }
       if (!path) return fail("Provide `logPath` or `logText`.");
       try {
         parsed = await parseAccessLogFile(path);
-      } catch (err) {
-        return fail(`Could not read log file ${path}: ${(err as Error).message}`);
+      } catch {
+        return fail("Could not read that log file.");
       }
     }
 
     const summaries = aggregate(parsed.entries);
     const meta: { targetUrl?: string; source?: string } = {
-      source: args.logText ? "inline-text" : (args.logPath ?? process.env.DEFAULT_ACCESS_LOG ?? "unknown"),
+      source: args.logText ? "inline-text" : (args.logPath ? "caller-supplied-path" : "default-log"),
       targetUrl: args.targetUrl ?? process.env.DEFAULT_TARGET_URL ?? "https://hellogrowthcrm.com",
     };
 
     const body = renderReport(summaries, args.format, meta);
 
+    // The public endpoint is anonymous and this tool is annotated read-only, so
+    // disk writes are opt-in per deployment and the file name is confined.
+    const writesAllowed = process.env.MCP_ALLOW_REPORT_WRITES === "1";
+    const saveToDisk = args.saveToDisk && writesAllowed;
     let savedTo: string | null = null;
-    if (args.saveToDisk) {
-      savedTo = await writeReport(body, args.format, args.filename);
+    if (saveToDisk) {
+      try {
+        savedTo = await writeReport(body, args.format, args.filename);
+      } catch (err) {
+        return fail((err as Error).message);
+      }
     }
 
     return ok({
       format: args.format,
       bots: summaries.length,
       savedTo,
-      report: args.saveToDisk ? undefined : body,
+      report: saveToDisk ? undefined : body,
+      ...(args.saveToDisk && !writesAllowed ? { note: "Saving to disk is disabled on this server; the report is returned inline." } : {}),
     });
   },
 });
