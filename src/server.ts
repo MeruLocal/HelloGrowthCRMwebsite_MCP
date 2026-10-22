@@ -69,6 +69,13 @@ const RESOURCES = [
   { uri: "hellocrmwebsite://site/contacts", name: "Regional Contacts", description: "Support phone, office address, and hours per region", mimeType: "application/json" },
 ];
 
+/** "pricing_get_plans" → "Pricing: Get plans"; "blog_list" → "Blog: List". */
+export function humanizeToolName(name: string): string {
+  const [head = name, ...rest] = name.split("_");
+  const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+  return rest.length ? `${cap(head)}: ${cap(rest.join(" "))}` : cap(head);
+}
+
 export function buildServer(opts: { authorized?: boolean } = {}): Server { // NOSONAR — advanced low-level Server (see import note)
   // Finding C0: privileged tools (writes + personal-data reads) are served only
   // to a session that presented a valid bearer token. Unauthenticated sessions
@@ -90,7 +97,11 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
     return {
       tools: [...toolsByName.values()]
         .filter((t) => authorized || !isPrivileged(t.definition.name))
-        .map((t) => t.definition),
+        .map((t) => ({
+          ...t.definition,
+          // MCP `title`: human-readable name shown by clients instead of snake_case.
+          title: t.definition.annotations?.title ?? humanizeToolName(t.definition.name),
+        })),
     };
   });
 
