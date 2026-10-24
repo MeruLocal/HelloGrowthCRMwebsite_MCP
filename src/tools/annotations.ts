@@ -59,6 +59,8 @@ const READ_ONLY_CLOSED: readonly string[] = [
   "content_get_comparison",
   "content_list_comparisons",
   "content_list_industries",
+  "industries_list_modules",
+  "industries_get_modules",
   "content_list_tools",
   "content_get_seo_rules",
   "pricing_get_plans",
