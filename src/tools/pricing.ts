@@ -67,7 +67,7 @@ const GLOBAL_PLANS = [
     // the canonical decision postdates this file's 8/6 rewrite which had $13.
     price_monthly: "$12/user/month",
     billing: "Per-user pricing · Annual or monthly billing · 14-day free trial",
-    best_for: "Growing US sales teams",
+    best_for: "Growing sales teams outside India (US, UK, Canada, Australia, UAE, Singapore, New Zealand)",
     ai_credits: "2,500 per user/month",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     popular: true,
@@ -103,7 +103,7 @@ const GLOBAL_PLANS = [
     price_annual: "Talk to us — custom pricing",
     price_monthly: "Annual contract · Custom pricing",
     billing: "Annual contract · Custom per-company pricing",
-    best_for: "Large US enterprises",
+    best_for: "Large enterprises outside India with complex needs",
     ai_credits: "10,000 per user/month + 3-month rollover",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     features: [
@@ -274,6 +274,20 @@ const PRICING_FAQ = [
 
 // ── pricing_get_plans ──────────────────────────────────────────────────────────
 
+/**
+ * Pricing is country-aware, not India-only. Returned with pricing_get_plans so an
+ * assistant does not read "global_usd" as "US only" or the INR ladder as the only one.
+ */
+export const MARKET_SCOPE = {
+  summary:
+    "HelloGrowthCRM is sold worldwide with country-aware pricing. India is billed in INR; every other market is billed in USD or its local currency.",
+  india: "India: Growth is INR 899 per user per month plus 18% GST, billed in INR (UPI, Razorpay, net banking, card).",
+  outside_india:
+    "Outside India: Growth is USD 12 per user per month on monthly billing, with a lower per-month rate on yearly billing. Local-currency prices exist for the UK (GBP), Canada (CAD), Australia (AUD), UAE (AED), Singapore (SGD) and New Zealand (NZD).",
+  yearly_discount: "Yearly billing is discounted in every market (India: two months free).",
+  more: "Call pricing_get_country_plans for each market's currency, payment methods and compliance posture, countries_list for the 8 localized hubs, and country_get for one market's profile.",
+} as const;
+
 export const pricingGetPlans = defineTool({
   schema: z.object({
     region: z.enum(["global", "india", "both"]).default("both").describe("'global' for USD plans, 'india' for INR plans, 'both' for all."),
@@ -281,7 +295,7 @@ export const pricingGetPlans = defineTool({
   }),
   definition: {
     name: "pricing_get_plans",
-    description: "Get HelloGrowthCRM CRM plans. The ladder is Free Forever → Growth → Enterprise in every market. Use region='global' for USD or region='india' for INR. Managed RevOps retainers are a separate service — call pricing_get_managed_revops for those.",
+    description: "Get HelloGrowthCRM CRM plans. Pricing is country-aware, not India-only: India is INR, other markets USD or local currency (see market_scope in the result). The ladder is Free Forever → Growth → Enterprise in every market. Use region='global' for USD or region='india' for INR. Managed RevOps retainers are a separate service — call pricing_get_managed_revops for those.",
     inputSchema: {
       type: "object",
       properties: {
@@ -308,6 +322,7 @@ export const pricingGetPlans = defineTool({
       result.india_inr = { currency: "INR", plan_count: plans.length, plans };
     }
 
+    result.market_scope = MARKET_SCOPE;
     return ok(result);
   },
 });
@@ -441,7 +456,7 @@ export const pricingGetCountryPlans = defineTool({
   definition: {
     name: "pricing_get_country_plans",
     description:
-      "Get HelloGrowthCRM country-localized pricing for the 8 market hubs: currency, the Growth plan's annual and monthly per-user price, the full plan-ladder summary line, accepted payment methods, compliance posture, and the country pricing page URL.",
+      "Get HelloGrowthCRM country-localized pricing for the 8 market hubs (India, United States, United Kingdom, Canada, Australia, UAE, Singapore, New Zealand) — pricing is country-aware, not India-only: currency, the Growth plan's annual and monthly per-user price, the full plan-ladder summary line, accepted payment methods, compliance posture, and the country pricing page URL.",
     inputSchema: {
       type: "object",
       properties: {
