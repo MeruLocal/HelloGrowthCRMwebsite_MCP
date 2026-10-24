@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool, fail, ok } from "./tool-types.js";
+import { CAPABILITY_CATALOGUE, CATALOGUE_SOURCE, CATALOGUE_VERIFIED_AT } from "../data/capability-catalogue.js";
 
 // ── Static feature data ───────────────────────────────────────────────────────
 
@@ -17,7 +18,29 @@ interface Feature {
   t3: PlanAvailability;
   learnMoreHref?: string;
   aliases?: string[];
+  /** Set on verified-catalogue entries only (src/data/capability-catalogue.ts). */
+  availability_note?: string;
+  limitations?: string[];
 }
+
+/** Every category features_list accepts; the verified catalogue adds the last eight. */
+const FEATURE_CATEGORIES = [
+  "Core CRM",
+  "Commerce & Communication",
+  "Project, AI & Customer",
+  "Intelligence Module",
+  "Customer Module",
+  "Support Module",
+  "Admin, Integrations & Service",
+  "Calling & AI Voice",
+  "Ads, Lead Sources & Tracking",
+  "Messaging & Inbox",
+  "Productivity, Documents & Scheduling",
+  "Field, Inventory & Operations",
+  "Commerce, Finance & HR",
+  "Reporting & Prospecting",
+  "Platform, Security & Developers",
+] as const;
 
 function slugify(value: string): string {
   return value
@@ -924,7 +947,29 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
   },
 ];
 
-const FEATURES: Feature[] = RAW_FEATURES.map((f) => ({ ...f, slug: slugify(f.title) }));
+// Verified-catalogue entries carry `availability_note` instead of the legacy
+// free/t1/t2/t3 flags (those describe managed-service packages, not CRM plans),
+// so they are excluded from plan-tier filtering below.
+const CATALOGUE_FEATURES: Feature[] = CAPABILITY_CATALOGUE.map((c) => ({
+  slug: slugify(c.title),
+  title: c.title,
+  category: c.category,
+  summary: c.summary,
+  bullets: c.bullets,
+  free: false,
+  t1: false,
+  t2: false,
+  t3: false,
+  learnMoreHref: c.learnMoreHref,
+  aliases: c.aliases,
+  availability_note: c.availability_note,
+  limitations: c.limitations,
+}));
+
+const FEATURES: Feature[] = [
+  ...RAW_FEATURES.map((f) => ({ ...f, slug: slugify(f.title) })),
+  ...CATALOGUE_FEATURES,
+];
 
 const PRODUCT_PAGES = [
   { slug: "ai-lead-scoring", title: "AI Lead Scoring", url: "https://hellogrowthcrm.com/product/ai-lead-scoring", status: "active", description: "Automatically score and prioritize leads using AI signals so reps focus on the opportunities most likely to close." },
@@ -952,19 +997,19 @@ const CATEGORIES = [...new Set(FEATURES.map((f) => f.category))];
 
 export const featuresList = defineTool({
   schema: z.object({
-    category: z.enum(["Core CRM", "Commerce & Communication", "Project, AI & Customer", "Intelligence Module", "Customer Module", "Support Module", "Admin, Integrations & Service", "all"]).default("all"),
+    category: z.enum([...FEATURE_CATEGORIES, "all"]).default("all"),
     plan: z.enum(["free", "t1", "t2", "t3", "all"]).default("all").describe("Filter to features available on a specific plan tier. free=Free, t1=Software Only/Starter, t2=Growth Engine, t3=RevOps Partner"),
     search: z.string().optional().describe("Keyword to filter features by title, summary, or aliases"),
   }),
   definition: {
     name: "features_list",
-    description: "List all HelloGrowthCRM product features. Supports filtering by category, plan tier, and keyword search.",
+    description: "List HelloGrowthCRM product capabilities: calling and AI voice, ads and lead-source tracking, WhatsApp and web chat, scheduler, field visits and field sales, invoicing, commission, payroll, ticketing, reporting, API and sandbox, RBAC and more. Supports filtering by category, plan tier and keyword search. Entries from the verified catalogue include availability_note (how a buyer gets it) and limitations (what it does not do) and are not affected by the plan filter.",
     inputSchema: {
       type: "object",
       properties: {
         category: {
           type: "string",
-          enum: ["Core CRM", "Commerce & Communication", "Project, AI & Customer", "Intelligence Module", "Customer Module", "Support Module", "Admin, Integrations & Service", "all"],
+          enum: [...FEATURE_CATEGORIES, "all"],
           default: "all",
           description: "Feature category to filter by",
         },
@@ -990,6 +1035,7 @@ export const featuresList = defineTool({
       if (args.plan !== "all") {
         const tier = args.plan;
         results = results.filter((f) => {
+          if (f.availability_note !== undefined) return false; // catalogue entries: see availability_note
           const val = f[tier];
           return val !== false && val !== undefined;
         });
@@ -1008,12 +1054,22 @@ export const featuresList = defineTool({
       return ok({
         total: results.length,
         categories: CATEGORIES,
+        catalogue: {
+          verified_at: CATALOGUE_VERIFIED_AT,
+          source: CATALOGUE_SOURCE,
+          note: "Entries with availability_note were read from product code on verified_at. Older entries (no availability_note) are hand-written marketing summaries; their free/t1/t2/t3 flags describe managed-service packages. For CRM plan prices use pricing_get_plans (Free, Growth, Enterprise).",
+        },
         features: results.map((f) => ({
           slug: f.slug,
           title: f.title,
           category: f.category,
           summary: f.summary,
-          availability: { free: f.free, t1: f.t1, t2: f.t2, t3: f.t3 },
+          availability:
+            f.availability_note !== undefined
+              ? undefined
+              : { free: f.free, t1: f.t1, t2: f.t2, t3: f.t3 },
+          availability_note: f.availability_note,
+          limitations: f.limitations,
           learnMoreHref: f.learnMoreHref
             ? f.learnMoreHref.startsWith("http")
               ? f.learnMoreHref
@@ -1065,12 +1121,18 @@ export const featuresGet = defineTool({
         category: feature.category,
         summary: feature.summary,
         bullets: feature.bullets,
-        availability: {
-          free: feature.free,
-          t1_software_only: feature.t1,
-          t2_growth_engine: feature.t2,
-          t3_revops_partner: feature.t3,
-        },
+        availability:
+          feature.availability_note !== undefined
+            ? undefined
+            : {
+                free: feature.free,
+                t1_software_only: feature.t1,
+                t2_growth_engine: feature.t2,
+                t3_revops_partner: feature.t3,
+              },
+        availability_note: feature.availability_note,
+        limitations: feature.limitations,
+        verified_at: feature.availability_note !== undefined ? CATALOGUE_VERIFIED_AT : undefined,
         aliases: feature.aliases ?? [],
         learnMoreUrl: feature.learnMoreHref
           ? feature.learnMoreHref.startsWith("http")
