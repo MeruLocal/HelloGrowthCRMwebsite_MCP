@@ -198,7 +198,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     pricing_href: "/in/pricing",
     country_name: "India",
     coverage_hours: "Mon–Sat, 10am–7pm IST",
-    compliance_line: "DPDPA-ready data handling, Indian data residency, WhatsApp Business compliance, GST-ready invoicing.",
+    compliance_line: "DPDPA-ready data handling, WhatsApp Business compliance, GST-ready invoicing.",
     positioning:
       "India RevOps pod triages IndiaMART/JustDial enquiries, runs WhatsApp follow-up cadences, sends GST-ready quote chases, and ships a weekly INR report — billed in INR with GST.",
     pain_points: [
@@ -432,7 +432,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     pricing_href: "/au/pricing",
     country_name: "Australia",
     coverage_hours: "Mon–Fri, 8am–6pm AEST/AEDT (Sydney/Melbourne overlap)",
-    compliance_line: "Australian Privacy Act + Spam Act compliance, NDIS audit-readiness, AU data residency on request.",
+    compliance_line: "Australian Privacy Act + Spam Act compliance, NDIS audit-readiness.",
     positioning:
       "AU RevOps pod triages every enquiry, runs SMS + WhatsApp + email cadences, syncs closed deals to Xero, keeps the pipeline NDIS- and Privacy-Act-ready, and ships a weekly AUD report.",
     pain_points: [
@@ -744,7 +744,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     pricing_href: "/new-zealand/pricing",
     country_name: "New Zealand",
     coverage_hours: "Mon–Fri, 8am–5pm NZST/NZDT",
-    compliance_line: "Privacy Act 2020 compliant, NZ data residency on request, GST-compliant invoicing, Unsolicited Electronic Messages Act-aware.",
+    compliance_line: "Privacy Act 2020 compliant, GST-compliant invoicing, Unsolicited Electronic Messages Act-aware.",
     positioning:
       "NZ RevOps pod triages enquiries from Auckland to Invercargill, runs SMS + WhatsApp cadences for tradies and property managers, syncs to Xero, and ships a weekly NZD report.",
     pain_points: [
