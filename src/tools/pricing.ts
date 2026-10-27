@@ -16,6 +16,7 @@ import { LIVE_INTEGRATION_COUNT, INTEGRATION_CATEGORY_COUNT } from "./integratio
 //
 //   • "Professional" was renamed to "Growth" and its monthly rate moved
 //     $12 → $13. AI credits were 2,500/user/mo, not 50,000.
+//     Founder set USD monthly Growth back to $12 on 2026-10-15 (USD annual $10 unchanged).
 //   • The Free tier caps tightened: 150 leads / 20 accounts / 100 tasks /
 //     2 templates (this file claimed 200 / 50 / 500 / 5).
 //   • "Growth Engine" and "RevOps Partner" are NOT CRM plan tiers. They are

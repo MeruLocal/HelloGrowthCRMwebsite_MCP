@@ -28,7 +28,7 @@
   },
   "scripts": {
     "audit:live": "node scripts/audit-live-mcp.mjs",
-    "build": "tsc",
+    "build": "npx rtk wrap tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
@@ -37,7 +37,7 @@
     "check:mirror": "node scripts/sync-website-mirror.mjs --check",
     "check:versions": "node scripts/check-versions.mjs",
     "verify": "npm run typecheck && npm run check:versions && npm run check:mirror && npm test",
-    "test": "vitest run",
+    "test": "npx rtk wrap vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
