@@ -9,6 +9,17 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Tool `buyer_find_answer_pages`: routes buyer questions to canonical hellogrowthcrm.com pages and follow-up tools.
+- MCP prompts: `compare_with_competitor`, `price_for_my_team`, `crm_for_my_industry`, `is_it_secure`.
+- `/mcp` alias for `/sse`; `/.well-known/mcp/server-card.json`; `/llms.txt` on the MCP host.
+- `examples/clients/` connect configs.
+
+### Changed
+- `server.json` description shortened to the registry's 100-character limit.
+
 ## [2.0.0] — 2026-08-31
 
 ### Removed — BREAKING
