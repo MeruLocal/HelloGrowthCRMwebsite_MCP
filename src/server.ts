@@ -31,6 +31,7 @@ import {
   adminTokenConfigured,
   PRIVILEGED_TOOLS,
 } from "./tools/access.js";
+import { getContentFreshness } from "./lib/content-freshness.js";
 import { logger } from "./utils/logger.js";
 import { resolveClientIp } from "./utils/client-ip.js";
 import {
@@ -83,7 +84,26 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
       version: SERVER_VERSION,
       description: SERVER_DESCRIPTION,
     },
-    { capabilities: { tools: {}, resources: {} } },
+    {
+      capabilities: {
+        // `tools.listChanged` is deliberately NOT declared, and this is a
+        // correction to the upgrade roadmap, which assumed the list mutates
+        // per session because gated tools appear once a caller authenticates.
+        // It does not. `authorized` is bound ONCE, from the Authorization
+        // header on the `initialize` request (see the buildServer call in the
+        // POST handler), and is captured by the ListTools handler below for
+        // the lifetime of this Server instance. An unauthenticated session can
+        // never become authenticated; a client that acquires a token starts a
+        // NEW session and gets the fuller list from its own initialize.
+        //
+        // So the list this server hands a given session is immutable, and
+        // declaring listChanged would advertise a notification we would never
+        // have cause to send. Declare it when something genuinely mutates the
+        // list at runtime — hot-reloaded mirror data, or a feature flag.
+        tools: {},
+        resources: {},
+      },
+    },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -339,6 +359,39 @@ const HOME_PAGE_HTML = `<!doctype html>
     .muted { opacity: .72; font-size: .93em; }
     h2 { margin-top: 2.25rem; font-size: 1.15rem; }
     h1 { margin-bottom: .25rem; }
+
+    /* Install tabs. Radio + :checked sibling selectors, so the whole thing
+       works with JavaScript disabled and adds no bytes to the page. */
+    .tabs input { position: absolute; opacity: 0; pointer-events: none; }
+    .tabstrip { display: flex; flex-wrap: wrap; gap: .3rem; margin: 1rem 0 0; }
+    .tabstrip label {
+      cursor: pointer; padding: .35rem .75rem; border-radius: 6px 6px 0 0;
+      border: 1px solid transparent; border-bottom: none; font-size: .92em;
+    }
+    .tabstrip label:hover { background: rgba(127,127,127,.1); }
+    .panels { border: 1px solid rgba(127,127,127,.25); border-radius: 0 6px 6px 6px; padding: 1rem 1.1rem; }
+    .panel { display: none; }
+    .panel > :first-child { margin-top: 0; }
+    .panel > :last-child { margin-bottom: 0; }
+    .panel p { margin: .5rem 0; }
+    .panel ol { margin: .5rem 0; padding-left: 1.3rem; }
+    #tc:checked ~ .tabstrip label[for=tc],
+    #tcc:checked ~ .tabstrip label[for=tcc],
+    #tcu:checked ~ .tabstrip label[for=tcu],
+    #tv:checked ~ .tabstrip label[for=tv],
+    #tw:checked ~ .tabstrip label[for=tw],
+    #tx:checked ~ .tabstrip label[for=tx] {
+      background: rgba(127,127,127,.14); border-color: rgba(127,127,127,.25); font-weight: 600;
+    }
+    #tc:checked  ~ .panels #pc,
+    #tcc:checked ~ .panels #pcc,
+    #tcu:checked ~ .panels #pcu,
+    #tv:checked  ~ .panels #pv,
+    #tw:checked  ~ .panels #pw,
+    #tx:checked  ~ .panels #px { display: block; }
+    .tabs input:focus-visible + label,
+    .tabstrip label:focus-within { outline: 2px solid currentColor; outline-offset: 2px; }
+    .endpoint { font-size: 1.02em; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -346,10 +399,77 @@ const HOME_PAGE_HTML = `<!doctype html>
     <h1>HelloGrowthCRM Website &amp; Bot Governance MCP Server</h1>
     <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required — this server holds no customer data and performs no CRM actions.</p>
     <p>Status: <a href="/version">/version</a> &middot; Discovery: <a href="/.well-known/mcp.json">/.well-known/mcp.json</a> &middot; Tools: <code>POST /sse</code> &rarr; <code>tools/list</code></p>
-    <p><small>This is not a customer CRM API. It holds no customer data, performs no CRM actions, and needs no API key &mdash; never send one here.</small></p>
-    <p>Read-only HelloGrowthCRM website mirror (product knowledge: pricing, features, integrations, comparisons) plus bot detection &amp; crawler governance tools. Connect via the Streamable HTTP endpoint at <code>/sse</code>. No API key is required, and the public endpoint returns no personal data. This is not a CRM API and it performs no CRM actions — never send CRM credentials here.</p>
-    <p>Content-management tools and the tools that read newsletter subscribers or contact-form submissions are not served on this endpoint; they require an authenticated session.</p>
-    <p>Status: <a href="/version">/version</a> &middot; Health: <a href="/health">/health</a></p>
+    <p><strong>Note for tooling:</strong> <code>/sse</code> is a path name, not a protocol declaration. It speaks <strong>Streamable HTTP</strong> &mdash; <code>POST /sse</code> with a JSON-RPC body, and the <code>mcp-session-id</code> returned by <code>initialize</code> on every later request. It is <em>not</em> the legacy SSE transport: there is no <code>POST /message</code>, and a bare <code>GET /sse</code> without a session returns 400 by design. Scanners that assume otherwise report this server as broken; it is not.</p>
+    <p><small>This is not a customer CRM API. It holds no customer data, performs no CRM actions, and needs no API key &mdash; never send one here. Content-management tools, and the tools that read newsletter subscribers or contact-form submissions, are not served on this endpoint; they require an authenticated session.</small></p>
+
+    <h2>Add it to your client</h2>
+    <p>One URL, no account, no API key:</p>
+    <pre class="endpoint">https://mcp.hellogrowthcrm.com/sse</pre>
+    <div class="tabs">
+      <input type="radio" name="client" id="tc" checked>
+      <input type="radio" name="client" id="tcc">
+      <input type="radio" name="client" id="tcu">
+      <input type="radio" name="client" id="tv">
+      <input type="radio" name="client" id="tw">
+      <input type="radio" name="client" id="tx">
+      <div class="tabstrip">
+        <label for="tc">Claude</label>
+        <label for="tcc">Claude Code</label>
+        <label for="tcu">Cursor</label>
+        <label for="tv">VS Code</label>
+        <label for="tw">Windsurf</label>
+        <label for="tx">Codex</label>
+      </div>
+      <div class="panels">
+        <div class="panel" id="pc">
+          <p>In Claude (desktop or web), add it as a custom connector:</p>
+          <ol>
+            <li>Settings &rarr; Connectors &rarr; <strong>Add custom connector</strong></li>
+            <li>Paste <code>https://mcp.hellogrowthcrm.com/sse</code></li>
+            <li>Leave authentication empty &mdash; the public endpoint takes none</li>
+          </ol>
+          <p class="muted">Then ask Claude something the server can answer, e.g. &ldquo;what does HelloGrowthCRM cost in the UAE?&rdquo;</p>
+        </div>
+        <div class="panel" id="pcc">
+          <pre>claude mcp add --transport http hellogrowthcrm https://mcp.hellogrowthcrm.com/sse</pre>
+          <p class="muted">Add <code>--scope user</code> to make it available in every project rather than just this one.</p>
+        </div>
+        <div class="panel" id="pcu">
+          <p><a href="cursor://anysphere.cursor-deeplink/mcp/install?name=hellogrowthcrm&amp;config=eyJ1cmwiOiJodHRwczovL21jcC5oZWxsb2dyb3d0aGNybS5jb20vc3NlIn0=">Install in Cursor</a> &mdash; or add it to <code>~/.cursor/mcp.json</code> by hand:</p>
+          <pre>{
+  "mcpServers": {
+    "hellogrowthcrm": { "url": "https://mcp.hellogrowthcrm.com/sse" }
+  }
+}</pre>
+        </div>
+        <div class="panel" id="pv">
+          <p><a href="vscode:mcp/install?%7B%22name%22%3A%22hellogrowthcrm%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.hellogrowthcrm.com%2Fsse%22%7D">Install in VS Code</a> &mdash; or add it to <code>mcp.json</code> by hand:</p>
+          <pre>{
+  "servers": {
+    "hellogrowthcrm": { "type": "http", "url": "https://mcp.hellogrowthcrm.com/sse" }
+  }
+}</pre>
+        </div>
+        <div class="panel" id="pw">
+          <p>Add it to <code>~/.codeium/windsurf/mcp_config.json</code>. Windsurf names the field <code>serverUrl</code>, not <code>url</code>:</p>
+          <pre>{
+  "mcpServers": {
+    "hellogrowthcrm": { "serverUrl": "https://mcp.hellogrowthcrm.com/sse" }
+  }
+}</pre>
+        </div>
+        <div class="panel" id="px">
+          <pre>codex mcp add hellogrowthcrm --url https://mcp.hellogrowthcrm.com/sse</pre>
+          <p>&hellip;or in <code>~/.codex/config.toml</code>. A <code>url</code> key selects streamable HTTP; there is no transport field to set:</p>
+          <pre>[mcp_servers.hellogrowthcrm]
+url = "https://mcp.hellogrowthcrm.com/sse"</pre>
+        </div>
+      </div>
+    </div>
+
+    <h2>Check it is working</h2>
+    <p><a href="/version">/version</a> &middot; <a href="/health">/health</a> &middot; <a href="/.well-known/mcp.json">/.well-known/mcp.json</a></p>
+    <p class="muted"><code>/health</code> reports <code>content_freshness</code>: how old the bundled website mirror is behind each tool. It returns <code>degraded</code> when the data is stale, so you can tell a live answer from a remembered one before you quote it.</p>
   </main>
 </body>
 </html>
@@ -758,11 +878,18 @@ export async function runServer(): Promise<void> {
       // Liveness probe. Deliberately cheap and uncached: it must reflect the
       // process answering right now, not a CDN copy of a healthy past.
       if (url.pathname === "/healthz" || url.pathname === "/health") {
+        // Liveness is not the only way this server can be wrong. The bundled
+        // website mirror can go stale while the process stays perfectly
+        // healthy — which is exactly what happened between 2026-06-17 and
+        // 2026-09-08, when integrations_list served a retired count against a
+        // green /health. A stale mirror is now a DEGRADED server, and the
+        // audit script fails on it.
+        const freshness = getContentFreshness();
         send(
           200,
           "application/json; charset=utf-8",
           `${JSON.stringify({
-            status: "ok",
+            status: freshness.ok ? "ok" : "degraded",
             version: SERVER_VERSION,
             mcp_spec: MCP_SPEC_REVISION,
             uptimeSeconds: Math.floor(process.uptime()),
@@ -777,6 +904,7 @@ export async function runServer(): Promise<void> {
             // This server routes /sse. It has never routed /mcp — the previous
             // value sent probes to a 404.
             endpoint: "/sse",
+            content_freshness: freshness,
           })}\n`,
           "no-store",
         );

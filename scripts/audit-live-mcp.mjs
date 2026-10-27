@@ -83,6 +83,35 @@ try {
   process.exit(2);
 }
 
+// ── 1b. Content freshness ────────────────────────────────────────────────────
+// A mirror server can be perfectly alive and still be lying. Between
+// 2026-06-17 and 2026-09-08 this server served an integration count the
+// website had already retired, and every audit in that window passed, because
+// nothing on the wire reported how old the bundled data was. /health now
+// carries a content_freshness block; a stale mirror is a FAIL, not a nag.
+const health = await http("/health");
+if (health.status !== 200) {
+  fail("freshness", `GET /health returned ${health.status}, expected 200`);
+} else {
+  let hb = null;
+  try { hb = JSON.parse(health.text); } catch { /* handled below */ }
+  if (!hb) {
+    fail("freshness", "/health did not return parseable JSON");
+  } else if (!hb.content_freshness) {
+    fail("freshness", "/health does not report content_freshness — the bundled website mirror can go stale with no signal on the wire (add src/lib/content-freshness.ts to the health handler)");
+  } else {
+    const f = hb.content_freshness;
+    if (f.ok) {
+      pass("freshness", `every bundled mirror is within ${f.stale_after_days} days (oldest: ${f.oldest_surface} at ${f.oldest_age_days}d)`);
+    } else {
+      fail("freshness", `${f.stale_surfaces.length} bundled mirror(s) older than ${f.stale_after_days} days — oldest is ${f.oldest_surface} at ${f.oldest_age_days}d: ${f.stale_surfaces.join(", ")}. Re-sync from hellocrmwebsite before quoting anything these tools return.`);
+    }
+    if (hb.status === "degraded") {
+      warn("freshness", "/health reports status=degraded — the process is up but the data it serves is stale");
+    }
+  }
+}
+
 // ── 2. Discovery surfaces ────────────────────────────────────────────────────
 const wk = await http("/.well-known/mcp.json");
 if (wk.status === 200) {

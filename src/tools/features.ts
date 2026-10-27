@@ -926,6 +926,33 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
 
 const FEATURES: Feature[] = RAW_FEATURES.map((f) => ({ ...f, slug: slugify(f.title) }));
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage — what this list IS, stated on every response.
+//
+// WHY: an agent that calls features_list and gets a bare `total: 58` will tell
+// a customer HelloGrowthCRM has 58 features. It does not. 58 is the curated
+// plan-comparison matrix — the rows a buyer compares across Free / t1 / t2 / t3
+// — and the website publishes several hundred feature pages beyond it. The
+// number is not wrong; the SILENCE around it is. Four different counts were in
+// circulation (58 here, and 232 / 135 / 99 on various website surfaces) purely
+// because no surface said which population it was counting.
+//
+// The roadmap's first instinct was to reconcile the four counts into one. That
+// is the wrong fix: they count genuinely different things, so forcing them
+// equal would replace four honest partial views with one confident wrong one.
+// The fix is a declared taxonomy — say what is counted, say what is not, and
+// point at where the rest lives.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FEATURES_COVERAGE = {
+  scope: "plan-comparison matrix",
+  scope_note:
+    "These are the features HelloGrowthCRM compares across plan tiers (Free / Starter / Growth Engine / RevOps Partner). It is NOT a count of everything the product does, and NOT a count of the feature pages published on hellogrowthcrm.com — the marketing site carries substantially more. Do not present this total as 'the number of features'.",
+  counted: FEATURES.length,
+  source: "hellocrmwebsite plan-comparison matrix",
+  full_catalog_url: "https://hellogrowthcrm.com/features",
+} as const;
+
 const PRODUCT_PAGES = [
   { slug: "ai-lead-scoring", title: "AI Lead Scoring", url: "https://hellogrowthcrm.com/product/ai-lead-scoring", status: "active", description: "Automatically score and prioritize leads using AI signals so reps focus on the opportunities most likely to close." },
   { slug: "crm-dialer", title: "CRM Dialer", url: "https://hellogrowthcrm.com/product/crm-dialer", status: "active", description: "Built-in phone dialer with call logging, recording, and AI summaries directly inside the CRM." },
@@ -958,7 +985,8 @@ export const featuresList = defineTool({
   }),
   definition: {
     name: "features_list",
-    description: "List all HelloGrowthCRM product features. Supports filtering by category, plan tier, and keyword search.",
+    description:
+      "List the HelloGrowthCRM features that appear in the plan-comparison matrix (what is included in Free / Starter / Growth Engine / RevOps Partner). This is a curated comparison set, NOT the complete feature surface — hellogrowthcrm.com/features publishes considerably more — so do not report this total as the number of features the product has. Supports filtering by category, plan tier, and keyword search.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1007,6 +1035,7 @@ export const featuresList = defineTool({
 
       return ok({
         total: results.length,
+        coverage: FEATURES_COVERAGE,
         categories: CATEGORIES,
         features: results.map((f) => ({
           slug: f.slug,

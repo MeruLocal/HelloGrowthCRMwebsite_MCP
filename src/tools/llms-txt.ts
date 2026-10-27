@@ -6,8 +6,9 @@
  * which is why llms-full.txt (10,182 B) is SMALLER than llms.txt (14,737 B) — a
  * "full corpus" smaller than its own index. Measured live 2026-08-05.
  *
- * This server already holds a read-mirror of the whole site: 630 integrations,
- * 119 free tools, 58 features, 58 glossary terms, 42 alternatives, 42 templates,
+ * This server already holds a read-mirror of the whole site: 259 live
+ * integrations (630 catalogued rows, 371 of them scaffolded), 119 free tools,
+ * 58 plan-matrix features, 58 glossary terms, 42 alternatives, 42 templates,
  * 32 guides, 12 AI agents, plus pricing, comparisons, industries and FAQs. That
  * is roughly 214 KB of structured material — about 21x the current corpus file.
  * So the corpus does not need to be written by hand; it needs to be generated
