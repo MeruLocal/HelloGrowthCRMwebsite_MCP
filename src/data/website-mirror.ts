@@ -308,7 +308,7 @@ export interface CountryPricingSummary {
 export const COUNTRY_PRICING: CountryPricingSummary[] = [
   {
     countryName: "India", countrySlug: "in", currencyCode: "INR", currencySymbol: "₹", homeHref: "/in",
-    growthPriceShort: "₹899/user/mo", growthPriceMonthly: "₹1,099/user/mo monthly",
+    growthPriceShort: "₹899/user/mo + GST", growthPriceMonthly: "₹899/user/mo + 18% GST billed monthly",
     pricingSummaryLine: "Free Forever · Growth ₹899/user/mo · Enterprise (custom) · 14-day trial on paid plans",
     paymentMethods: "UPI, Razorpay, Net Banking, Credit/Debit card",
     compliance: "DPDPA compliant, India data residency available",

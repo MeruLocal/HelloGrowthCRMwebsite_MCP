@@ -166,6 +166,8 @@ import {
 
 import type { RegisteredTool } from "./tool-types.js";
 import { applyToolAnnotations } from "./annotations.js";
+import { applyToolTitles } from "./titles.js";
+import { applyToolOutputSchemas } from "./output-schemas.js";
 
 export const tools: RegisteredTool[] = [
   // Bot detection
@@ -315,6 +317,17 @@ export const tools: RegisteredTool[] = [
 // openWorldHint) to every definition. Throws at startup if a tool is missing
 // an entry, so an unannotated tool can never be served.
 applyToolAnnotations(tools);
+
+// Attach the human-readable `title` every client shows in place of the raw
+// snake_case name. Must run AFTER applyToolAnnotations, which replaces the
+// annotations object wholesale. Throws at startup on a missing, orphaned or
+// duplicate title.
+applyToolTitles(tools);
+
+// Attach the verified result contracts. Coverage is partial by design — a tool
+// without a schema simply doesn't advertise one. Throws only when a schema
+// names a tool that no longer exists, which would otherwise fail silently.
+applyToolOutputSchemas(tools);
 
 export const toolsByName: Map<string, RegisteredTool> = new Map(
   tools.map((t) => [t.definition.name, t]),

@@ -1,0 +1,159 @@
+# Sync website mirror — the scheduled half of the freshness story.
+#
+# src/lib/content-freshness.ts made mirror staleness VISIBLE (/health degrades,
+# audit-live-mcp FAILs after STALE_AFTER_DAYS). scripts/sync-website-mirror.mjs
+# made it FIXABLE in one command. Neither closes the loop on its own: a human
+# still has to remember to run the sync, and the whole reason the mirror sat 83
+# days stale in the first place is that nobody did.
+#
+# This workflow is that missing loop. Once a week it regenerates the integrations
+# mirror from the website source, proves the result compiles and passes tests,
+# and — only if something actually changed — opens a pull request carrying the
+# diff. The mirror is code, so the change arrives as a reviewable PR, never as a
+# silent write to main.
+#
+# WHAT IT DOES NOT DO (yet): the other 11 mirrors (agents, alternatives,
+# changelog, faqs, glossary, guides, media, partners, solutions, templates,
+# website-mirror) are still hand-copied. sync-website-mirror.mjs only covers
+# integrations, so /health stays `degraded` until each of those gets the same
+# treatment. Do not widen STALE_AFTER_DAYS to hide that — extend the sync.
+#
+# ── ONE-TIME SETUP (required before this can run) ───────────────────────────
+# The website lives in a separate, private repo, so this workflow needs read
+# access to it:
+#   1. Repo variable  WEBSITE_REPO   = "<owner>/<website-repo>"
+#      (Settings → Secrets and variables → Actions → Variables)
+#   2. Repo secret     WEBSITE_REPO_TOKEN = a token that can read that repo
+#      (a fine-grained PAT with Contents:read on the website repo, or a GitHub
+#      App installation token). The default GITHUB_TOKEN cannot read another
+#      repo, which is why a dedicated credential is unavoidable here.
+# Until both exist the "Check out the website source" step fails loudly, by
+# design — a sync that silently skips its source is worse than no sync.
+
+name: Sync website mirror
+
+on:
+  schedule:
+    # Mondays 06:17 UTC. Off the hour on purpose: GitHub's scheduler is busiest
+    # exactly on the hour and delays runs queued there (same reasoning as
+    # production-check.yml). Weekly matches how often the marketing pages move.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+    # So a human can force a sync the moment they know the website changed,
+    # rather than waiting for Monday.
+
+permissions:
+  contents: write        # push the sync branch
+  pull-requests: write   # open the PR
+
+concurrency:
+  # Two overlapping syncs would race on the same branch. Let the newer one win.
+  group: sync-website-mirror
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this (MCP) repo
+        uses: actions/checkout@v4
+        with:
+          path: mcp
+
+      - name: Check out the website source
+        uses: actions/checkout@v4
+        with:
+          # Resolved from repo settings — see ONE-TIME SETUP above. Omitting
+          # `ref` takes the website repo's default branch, which is what the
+          # live site is built from.
+          repository: ${{ vars.WEBSITE_REPO }}
+          token: ${{ secrets.WEBSITE_REPO_TOKEN }}
+          path: hellocrmwebsite
+
+      - uses: actions/setup-node@v4
+        with:
+          # 24, not the CI matrix's 18/22: sync-website-mirror.mjs imports the
+          # website's .ts modules directly and relies on Node's type-stripping,
+          # which is only dependable on >=22.18. 24 is what the maintainers run.
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+
+      - name: Install
+        working-directory: mcp
+        run: npm ci
+
+      - name: Regenerate the mirror from the website source
+        working-directory: mcp
+        env:
+          # Explicit beats the script's ../hellocrmwebsite default — the two
+          # checkouts are siblings under the workspace, but spelling it out
+          # survives any future change to the checkout paths.
+          WEBSITE_REPO: ${{ github.workspace }}/hellocrmwebsite
+        # Tee the human-readable summary (row/live/scaffolded counts, what moved)
+        # so the PR body can quote it instead of making a reviewer guess.
+        run: npm run sync:mirror | tee "${{ runner.temp }}/sync.log"
+
+      - name: Prove the regenerated mirror is sound
+        working-directory: mcp
+        # The mirror is code, not data. A PR that doesn't typecheck or breaks a
+        # test must never be opened — a green-looking "just a data refresh" PR is
+        # exactly how a bad mirror would sail through review.
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Open a PR if the mirror drifted
+        working-directory: mcp
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # The sync only ever writes these two files. Scope the diff to them so
+          # an unrelated stray file can never ride along in an automated PR.
+          CHANGED=$(git status --porcelain -- src/tools/integrations.ts src/lib/content-freshness.ts)
+          if [ -z "$CHANGED" ]; then
+            echo "✅ Mirror already matches the website source — nothing to open."
+            exit 0
+          fi
+
+          BRANCH="chore/sync-website-mirror-$(date -u +%Y%m%d)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add src/tools/integrations.ts src/lib/content-freshness.ts
+          git commit -m "chore(mirror): sync integrations from website source ($(date -u +%Y-%m-%d))"
+          # Force so a same-day re-run updates the branch instead of erroring.
+          git push --force origin "$BRANCH"
+
+          # Reuse an open PR from today's branch rather than stacking duplicates.
+          if gh pr list --head "$BRANCH" --state open --json number --jq 'length' | grep -qx 0; then
+            {
+              echo "## Automated integrations-mirror sync"
+              echo
+              echo "\`scripts/sync-website-mirror.mjs\` found the bundled mirror had drifted"
+              echo "from the website source and regenerated it. Typecheck and tests pass."
+              echo
+              echo "### What the sync reported"
+              echo '```'
+              cat "${{ runner.temp }}/sync.log"
+              echo '```'
+              echo
+              echo "### Files changed"
+              echo '```'
+              git diff --stat HEAD~1 -- src/tools/integrations.ts src/lib/content-freshness.ts
+              echo '```'
+              echo
+              echo "Review the row/route/description deltas before merging — the point"
+              echo "of the PR is that a human sees what moved, not that the bot was trusted."
+            } > "${{ runner.temp }}/pr-body.md"
+
+            gh pr create \
+              --title "chore(mirror): sync integrations from website ($(date -u +%Y-%m-%d))" \
+              --body-file "${{ runner.temp }}/pr-body.md" \
+              --head "$BRANCH" \
+              --label "mirror-sync"
+          else
+            echo "An open PR already exists for $BRANCH — branch updated, no new PR."
+          fi

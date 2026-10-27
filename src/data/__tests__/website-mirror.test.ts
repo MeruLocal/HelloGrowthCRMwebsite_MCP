@@ -78,6 +78,7 @@ describe("COUNTRY_PRICING", () => {
   it("quotes the Growth CRM plan per user, not the Managed RevOps retainer", () => {
     const usa = COUNTRY_PRICING.find((p) => p.countrySlug === "usa")!;
     expect(usa.growthPriceShort).toBe("$10/user/mo");
+    // $12 per HG-004 (2026-08-12) — canonical in hellocrmwebsite pricing-constants.ts.
     expect(usa.growthPriceMonthly).toBe("$12/user/mo monthly");
     // Regression guard: the retainer figures must never reappear here.
     for (const row of COUNTRY_PRICING) {
