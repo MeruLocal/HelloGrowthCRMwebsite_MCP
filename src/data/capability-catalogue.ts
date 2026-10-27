@@ -56,7 +56,7 @@ export const CAPABILITY_CATALOGUE: CatalogueEntry[] = [
     availability_note: "Admin sets it up under Settings > Dialer / Integrations. Growth and above (inherited from the dialer modules); live per-tenant state not confirmed.",
     limitations: ["Needs the customer's own provider account", "Some list-view Call buttons do not log a call when no dialer is configured (internal note dated 2026-09-29)"],
     aliases: ["Local dialer", "Click to call", "Exotel", "Knowlarity"],
-    learnMoreHref: "/product/crm-dialer",
+    learnMoreHref: "/product/built-in-dialer",
   },
   {
     title: "International Calling (Twilio & SIP)",
@@ -92,7 +92,6 @@ export const CAPABILITY_CATALOGUE: CatalogueEntry[] = [
     availability_note: "Growth and above (AI calling flag set at Growth in plan modules). AI numbers and minute add-ons are 'contact us'.",
     limitations: ["Language and voice coverage is focused on Indian languages; confirm before promising other languages", "Which provider a workspace runs on is provisioned by Meru"],
     aliases: ["AI calling", "AI voice agent", "Outbound AI calls"],
-    learnMoreHref: "/product/ai-voice-agents",
   },
   {
     title: "Live Call Coaching",
@@ -298,7 +297,6 @@ export const CAPABILITY_CATALOGUE: CatalogueEntry[] = [
     availability_note: "Task Boards is a Growth-tier module (Free has a capped basic task board). Some automation flags are enabled per workspace.",
     limitations: ["No voice notes on tasks"],
     aliases: ["Tasks", "Task management"],
-    learnMoreHref: "/product/sales-task-boards",
   },
   {
     title: "Document Attachments & Templates",
@@ -331,7 +329,7 @@ export const CAPABILITY_CATALOGUE: CatalogueEntry[] = [
     availability_note: "Growth and Enterprise. Scheduler workflows, WhatsApp reminders and external-calendar read-back are enabled per workspace by Meru and off by default.",
     limitations: ["Two-way free/busy sync with external calendars could not be confirmed"],
     aliases: ["Scheduler", "Appointment booking", "Calendly alternative"],
-    learnMoreHref: "/product/meeting-scheduler",
+    learnMoreHref: "/product/scheduling",
   },
   {
     title: "Calendar Sync (Google & Outlook)",
