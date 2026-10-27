@@ -160,6 +160,9 @@ export const TOOL_TITLES: Readonly<Record<string, string>> = {
   partners_get_application_schema: "Get Partner Application Schema",
   solutions_list_whatsapp_use_cases: "List WhatsApp Use Cases",
   solutions_get_managed_revops: "Get Managed RevOps Solution",
+
+  // ── Buyer intent ───────────────────────────────────────────────────────────
+  buyer_find_answer_pages: "Find Buyer Answer Pages",
 };
 
 /**
