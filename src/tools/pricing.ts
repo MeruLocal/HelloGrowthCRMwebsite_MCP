@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { defineTool, ok } from "./tool-types.js";
 import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirror.js";
+// The integration figure is DERIVED from the mirrored catalog rows (see
+// src/tools/integrations.ts). Typing a digit here is how "630+ integrations"
+// survived three months inside a plan feature bullet after the website
+// retired the number — 630 counts 371 scaffolded rows that are not built.
+import { LIVE_INTEGRATION_COUNT, INTEGRATION_CATEGORY_COUNT } from "./integrations.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pricing data — sourced from hellocrmwebsite/src/lib/pricing-usa-data.ts,
@@ -11,6 +16,7 @@ import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirr
 //
 //   • "Professional" was renamed to "Growth" and its monthly rate moved
 //     $12 → $13. AI credits were 2,500/user/mo, not 50,000.
+//     Founder set USD monthly Growth back to $12 on 2026-10-15 (USD annual $10 unchanged).
 //   • The Free tier caps tightened: 150 leads / 20 accounts / 100 tasks /
 //     2 templates (this file claimed 200 / 50 / 500 / 5).
 //   • "Growth Engine" and "RevOps Partner" are NOT CRM plan tiers. They are
@@ -79,7 +85,7 @@ const GLOBAL_PLANS = [
       "Products, proposals, invoices, expenses & revenue tracking",
       "Customer portal, referrals, references & landing pages",
       "Tickets + knowledge base",
-      "API access & all 630+ integrations across 116 categories",
+      `API access & all ${LIVE_INTEGRATION_COUNT} live integrations across ${INTEGRATION_CATEGORY_COUNT} categories`,
       "Custom fields, modules, pipeline stages & workflows",
       "Territory & team management with map view",
       "AI-assisted sales forecasting",
@@ -110,7 +116,7 @@ const GLOBAL_PLANS = [
       "White-label customer portal & custom agents",
       "SLA policies, approval flows & multi-currency commerce",
       "Unlimited exports + scheduled reports",
-      "All 630+ integrations + custom integration support",
+      `All ${LIVE_INTEGRATION_COUNT} live integrations + custom integration support`,
       "Managed RevOps included — dedicated RevOps Specialists run your pipeline (Growth Engine + RevOps Partner tiers)",
       "Custom training (up to 4 sessions/year)",
       "SLA-backed 99.9% uptime",
@@ -181,7 +187,7 @@ const INDIA_PLANS = [
       "Products, proposals, invoices, expenses & revenue tracking",
       "Customer portal, referrals, references & landing pages",
       "Tickets + knowledge base",
-      "API access & all 630 integrations across 116 categories",
+      `API access & all ${LIVE_INTEGRATION_COUNT} live integrations across ${INTEGRATION_CATEGORY_COUNT} categories`,
       "Custom fields, modules, pipeline stages & workflows",
       "Territory & team management with map view",
       "AI-assisted sales forecasting",
@@ -212,7 +218,7 @@ const INDIA_PLANS = [
       "SLA policies, approval flows & multi-currency commerce",
       "Unlimited exports + scheduled reports",
       "Test cases for SaaS / QA teams",
-      "All 630 integrations + custom integration support",
+      `All ${LIVE_INTEGRATION_COUNT} live integrations + custom integration support`,
       "Custom training (up to 4 sessions/year)",
       "SLA-backed 99.9% uptime",
       "Priority phone support",
@@ -242,7 +248,7 @@ const ADDONS = {
       { credits: "100", price: "₹69", per_credit: "₹0.69", note: "Impulse buy for free users trying AI" },
       { credits: "500", price: "₹299", per_credit: "₹0.60", note: "Repeat top-up habit — consider upgrading to Growth" },
       { credits: "1,000", price: "₹549", per_credit: "₹0.55", note: "Growth gives 2,500/user for just ₹350 more per month" },
-      { credits: "2,500", price: "₹1,499", per_credit: "₹0.60", note: "Growth (₹899) gives the same credits + unlimited users + full AI CRM. Upgrade saves ₹600" },
+      { credits: "2,500", price: "₹1,499", per_credit: "₹0.60", note: "Growth (₹899) gives the same credits + the full AI CRM. Upgrade saves ₹600" },
       { credits: "5,000", price: "₹2,499", per_credit: "₹0.50", note: "At ₹2,499 top-up vs ₹899/user Growth — upgrading wins every time" },
     ],
   },
@@ -254,7 +260,7 @@ const PRICING_FAQ = [
   { q: "Is there a money-back guarantee?", a: "Yes — a 14-day money-back window on annual plans (7-day on monthly renewals), pro-rated on India annual plans. See the refund policy at /legal/refunds." },
   { q: "Can I switch plans anytime?", a: "Yes. You can upgrade or downgrade at any time." },
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
-  { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($13 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
+  { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($12 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
   { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices are exclusive of GST — 18% GST is added on top (₹899 bills as ₹1,060.82). Call pricing_get_country_plans for a specific market." },
   { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },

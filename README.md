@@ -95,6 +95,35 @@ npm run dev
 
 The server speaks MCP over **stdio**. Any MCP-capable client can launch it.
 
+## Code Discovery with Graphify
+
+Graphify builds a local AST for token-efficient code queries. Use it to answer questions like "who calls this function" in ~2K tokens instead of 183K tokens from grep—71× reduction per query.
+
+### Setup
+
+Install Graphify:
+
+```bash
+pip install graphifyy
+```
+
+Build the knowledge graph:
+
+```bash
+graphify update .
+```
+
+### Usage
+
+Query the graph:
+
+```bash
+graphify query "What calls the function X?"
+graphify explain "Symbol Y"
+```
+
+Alternatively, run `/graphify` in Claude Code to query interactively.
+
 ### Claude Desktop / Claude Code
 
 Add the following to your `claude_desktop_config.json` (or the equivalent `mcpServers` block in your client):
@@ -126,6 +155,22 @@ for what changed between versions.
 > **Endpoint change:** the Streamable HTTP endpoint moved from `/mcp` to `/sse`,
 > and the legacy SSE transport (`GET /sse` + `POST /message`) has been removed.
 > Point clients at `https://mcp.hellogrowthcrm.com/sse`.
+
+> 🪤 **`/sse` speaks Streamable HTTP, not the legacy SSE transport.** The path
+> is a historical name, not a protocol declaration, and every external audit of
+> this server so far has tripped on it — a tool that sees `/sse` assumes
+> `GET /sse` for an event stream plus `POST /message` for requests, gets a 400,
+> and reports the server as broken. It is not. Drive it the way you would drive
+> any Streamable HTTP endpoint:
+>
+> - `POST /sse` with `Accept: application/json, text/event-stream` and a
+>   JSON-RPC body. `initialize` returns an `mcp-session-id` header; send that
+>   header on every later request.
+> - `GET /sse` opens the server→client notification stream for an existing
+>   session. **It is not the transport on its own** and returns 400 without a
+>   session id.
+> - `POST /message` does not exist on this host and never has. Neither does
+>   `/mcp` — see `GET /health`, whose `endpoint` field is authoritative.
 
 > ⚠️ **The hosted deployment can lag `main`, and the tool count will not tell
 > you.** On 2026-08-05 local `main` and production both advertised the same
