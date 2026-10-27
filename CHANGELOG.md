@@ -9,7 +9,7 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [2.1.0] — 2026-10-27
 
 ### Added
 - Tool `buyer_find_answer_pages`: routes buyer questions to canonical hellogrowthcrm.com pages and follow-up tools.
@@ -19,6 +19,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - `server.json` description shortened to the registry's 100-character limit.
+
+### Fixed
+- **No data-residency claims.** India, Australia and New Zealand "data residency"
+  statements were removed from `pricing_get_country_plans` and the `solutions_*`
+  compliance lines. Production is not region-pinned, so the claim was inaccurate.
+  The India mirror line now reads "DPDPA compliant, SOC 2 certified".
+
+Minor bump (new tool/prompts/endpoints added since 2.0.0 without breaking
+existing callers), per this file's own semver rule.
 
 ## [2.0.0] — 2026-08-31
 
