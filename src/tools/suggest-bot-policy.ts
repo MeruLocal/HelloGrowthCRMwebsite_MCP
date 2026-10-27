@@ -11,6 +11,7 @@ import { z } from "zod";
 import { aggregate } from "../core/aggregator.js";
 import { parseAccessLog, parseAccessLogFile } from "../core/log-parser.js";
 import type { BotPolicySuggestion, BotSummary } from "../utils/types.js";
+import { resolveLogPath } from "../utils/safe-paths.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 const Input = z.object({
@@ -38,12 +39,17 @@ export const suggestBotPolicy = defineTool({
     if (args.logText) {
       parsed = parseAccessLog(args.logText);
     } else {
-      const path = args.logPath ?? process.env.DEFAULT_ACCESS_LOG;
+      let path: string | undefined;
+      try {
+        path = args.logPath ? resolveLogPath(args.logPath) : process.env.DEFAULT_ACCESS_LOG;
+      } catch (err) {
+        return fail((err as Error).message);
+      }
       if (!path) return fail("Provide `logPath` or `logText`.");
       try {
         parsed = await parseAccessLogFile(path);
-      } catch (err) {
-        return fail(`Could not read log file ${path}: ${(err as Error).message}`);
+      } catch {
+        return fail("Could not read that log file.");
       }
     }
 

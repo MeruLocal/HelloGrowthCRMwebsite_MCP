@@ -13,6 +13,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
+import { assertSafeFilename } from "../utils/safe-paths.js";
 import type { BotSummary } from "../utils/types.js";
 
 export type ReportFormat = "json" | "markdown" | "csv";
@@ -163,7 +164,7 @@ export async function writeReport(
   const dir = resolve(process.env.REPORT_OUTPUT_DIR ?? "./reports");
   await mkdir(dir, { recursive: true });
 
-  const name = filename ?? defaultFilename(format);
+  const name = filename ? assertSafeFilename(filename) : defaultFilename(format);
   const target = resolve(dir, name);
   await writeFile(target, body, "utf8");
   return target;
