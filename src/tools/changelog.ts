@@ -193,7 +193,7 @@ const CHANGELOG_RELEASES: ChangelogRelease[] = [
       {
         tag: "infra",
         title: "SOC 2 Compliance",
-        description: "Achieved SOC 2 Type II certification for enterprise-grade security.",
+        description: "Completed a SOC 2 Type II examination (Soor LLC); the report is available under NDA on request.",
       },
     ],
   },

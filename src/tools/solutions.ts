@@ -13,7 +13,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 
 const SYNCED_AT = "2026-07-08";
 
-// ── WhatsApp CRM use cases ───────────────────────────────────────────────────
+// ── WhatsApp message use cases ───────────────────────────────────────────────────
 
 // Mirrors USE_CASES (5 entries) — the WhatsApp message composer use cases
 // built into HelloGrowthCRM's WhatsApp messaging feature.
@@ -879,7 +879,7 @@ export const solutionsListWhatsappUseCases = defineTool({
   definition: {
     name: "solutions_list_whatsapp_use_cases",
     description:
-      "List the WhatsApp CRM message use cases built into HelloGrowthCRM's WhatsApp composer: general message, follow-up, meeting reminder, document request/share, and notification with link — each with its message template pattern. Messages are sent via wa.me deep links with prefilled, personalized text.",
+      "List the WhatsApp message use cases built into HelloGrowthCRM's WhatsApp composer: general message, follow-up, meeting reminder, document request/share, and notification with link — each with its message template pattern. Messages are sent via wa.me deep links with prefilled, personalized text.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   async handle(_args) {
