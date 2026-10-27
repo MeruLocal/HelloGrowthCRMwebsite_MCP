@@ -66,7 +66,7 @@ const GLOBAL_PLANS = [
     // $12 per HG-004 (2026-08-12, pricing-constants.ts in hellocrmwebsite) —
     // the canonical decision postdates this file's 8/6 rewrite which had $13.
     price_monthly: "$12/user/month",
-    billing: "Per-user pricing · Annual or monthly billing · 14-day free trial",
+    billing: "Annual billing · Unlimited users · 14-day free trial",
     best_for: "Growing US sales teams",
     ai_credits: "2,500 per user/month",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
@@ -169,7 +169,7 @@ const INDIA_PLANS = [
     // (billed ₹1,060.82/mo). ₹1,099 matched no Razorpay plan — never reintroduce.
     price_annual: "₹899/user/month + 18% GST (annual — 10 months paid, 2 months free = ₹8,990/user/year + GST)",
     price_monthly: "₹899/user/month + 18% GST (same rate; annual adds 2 months free)",
-    billing: "Per-user pricing · Annual or monthly billing · 14-day free trial · Hero tier",
+    billing: "Annual billing · Unlimited users · 14-day free trial · Hero tier",
     best_for: "Growing Indian sales teams",
     ai_credits: "2,500 per user/month · Overage ₹0.60/K",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
