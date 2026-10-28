@@ -64,6 +64,9 @@ const args = process.argv.slice(2);
 const CHECK = args.includes("--check");
 const STRICT = args.includes("--strict");
 const websiteArg = args.find((a) => a.startsWith("--website="))?.slice("--website=".length);
+// --out-dir=<dir> (or MIRROR_OUT_DIR): write the regenerated files there instead of over the repo copies.
+// Used by the drift test so it never dirties the working tree.
+const outDirArg = args.find((a) => a.startsWith("--out-dir="))?.slice("--out-dir=".length) ?? process.env.MIRROR_OUT_DIR;
 
 // Default to a sibling checkout, which is how both repos sit on the dev
 // machine. Override with --website= or WEBSITE_REPO in CI.
@@ -242,7 +245,10 @@ if (!rowsChanged && !stampChanged) {
   process.exit(0);
 }
 
-fs.writeFileSync(MIRROR, mirror, "utf8");
-fs.writeFileSync(FRESHNESS, freshness, "utf8");
+const MIRROR_OUT = outDirArg ? path.join(path.resolve(outDirArg), "integrations.ts") : MIRROR;
+const FRESHNESS_OUT = outDirArg ? path.join(path.resolve(outDirArg), "content-freshness.ts") : FRESHNESS;
+if (outDirArg) fs.mkdirSync(path.resolve(outDirArg), { recursive: true });
+fs.writeFileSync(MIRROR_OUT, mirror, "utf8");
+fs.writeFileSync(FRESHNESS_OUT, freshness, "utf8");
 console.log(`\n✅ rewrote the mirror and stamped it ${today}.`);
 console.log("   Next: npx tsc --noEmit && npm test — the mirror is code, not data.");

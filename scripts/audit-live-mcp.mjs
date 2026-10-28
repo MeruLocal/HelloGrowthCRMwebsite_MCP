@@ -25,6 +25,7 @@ const TIMEOUT_MS = 20000;
 
 const results = [];
 const pass = (id, msg) => results.push({ level: "PASS", id, msg });
+import { overrideWarning } from "./lib/override-warning.mjs";
 const warn = (id, msg) => results.push({ level: "WARN", id, msg });
 const fail = (id, msg) => results.push({ level: "FAIL", id, msg });
 
@@ -108,6 +109,10 @@ if (health.status !== 200) {
     }
     if (hb.status === "degraded") {
       warn("freshness", "/health reports status=degraded — the process is up but the data it serves is stale");
+    }
+    {
+      const ow = overrideWarning(hb);
+      if (ow) warn("overrides", ow);
     }
   }
 }

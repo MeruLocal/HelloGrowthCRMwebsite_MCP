@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { defineTool, ok, fail } from "./tool-types.js";
+import { getIntegrationOverride, INTEGRATION_OVERRIDES, OVERRIDE_STATUS } from "../data/claim-overrides.js";
+import { zeroResult } from "./guidance.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static read-mirror data — integrations catalog.
@@ -1069,7 +1071,7 @@ const LIVE_STATUSES = new Set(["live", "backend-ready"]);
 
 /** Integrations that actually work today. The defensible figure. */
 export const LIVE_INTEGRATION_COUNT = INTEGRATIONS.filter(
-  (i) => i.status === undefined || LIVE_STATUSES.has(i.status),
+  (i) => !getIntegrationOverride(i.slug) && (i.status === undefined || LIVE_STATUSES.has(i.status)),
 ).length;
 
 /** Scaffolded but unbuilt. Exposed so the gap stays visible. */
@@ -1102,6 +1104,20 @@ function categoryTitle(slug: string): string {
   return INTEGRATION_CATEGORIES.find((c) => c.slug === slug)?.title ?? slug;
 }
 
+function shapeIntegration(i: IntegrationRecord): Record<string, unknown> {
+  const ov = getIntegrationOverride(i.slug);
+  return {
+    slug: i.slug,
+    name: i.name,
+    category: i.category,
+    description: ov ? ov.reason : i.description,
+    status: ov ? OVERRIDE_STATUS : (i.status ?? "live"),
+    ...(ov ? { reason: ov.reason, kt: ov.kt, evidence: ov.evidence, as_of: ov.as_of } : {}),
+    canonical_url: `${SITE}${i.route}`,
+    url: `${SITE}${i.route}`,
+  };
+}
+
 // ── integrations_list ───────────────────────────────────────────────────────────
 
 export const integrationsList = defineTool({
@@ -1114,6 +1130,12 @@ export const integrationsList = defineTool({
       .string()
       .optional()
       .describe("Keyword filter on integration name or description (case-insensitive)."),
+    status: z
+      .enum(["live", "backend-ready", "scaffolded", "not_available", "all"])
+      .default("all")
+      .describe("Optional status filter. Default all (every entry, as before). Use live for what works today."),
+    limit: z.number().int().positive().max(200).optional().describe("Optional page size (max 200). Omit it to get every matching entry in one response, as before."),
+    offset: z.number().int().min(0).default(0).describe("Start position; pass the previous response's next_offset to continue."),
   }),
   definition: {
     name: "integrations_list",
@@ -1124,12 +1146,20 @@ export const integrationsList = defineTool({
       properties: {
         category: { type: "string", description: "Category slug, title, or short label filter (case-insensitive)." },
         search: { type: "string", description: "Keyword filter on name or description (case-insensitive)." },
+        status: {
+          type: "string",
+          enum: ["live", "backend-ready", "scaffolded", "not_available", "all"],
+          default: "all",
+          description: "Optional status filter, default all (every entry, as before). Use live for what works today.",
+        },
+        limit: { type: "integer", minimum: 1, maximum: 200, description: "Optional page size (max 200). Omit it to get every matching entry in one response, as before." },
+        offset: { type: "integer", minimum: 0, default: 0, description: "Start position; pass the previous response's next_offset to continue." },
       },
       additionalProperties: false,
     },
   },
   async handle(args) {
-    let items = INTEGRATIONS;
+    let items: IntegrationRecord[] = [...INTEGRATIONS].sort((a, b) => a.slug.localeCompare(b.slug));
     let categoryMatch: IntegrationCategory | undefined;
     if (args.category) {
       const q = args.category.toLowerCase();
@@ -1150,18 +1180,66 @@ export const integrationsList = defineTool({
         (i) => i.name.toLowerCase().includes(q) || i.slug.includes(q) || i.description.toLowerCase().includes(q),
       );
     }
+    // Status filter. Effective status: an override wins over synced content; an
+    // entry with no status predates the field and counts as live (the website's rule).
+    const effective = (i: IntegrationRecord): string =>
+      getIntegrationOverride(i.slug) ? OVERRIDE_STATUS : (i.status ?? "live");
+    const beforeStatus = items;
+    const wanted = args.status;
+    const searched = Boolean(args.search);
+    items = items.filter((i) => {
+      const st = effective(i);
+      if (wanted === "all") return true;
+      // A matched override is always surfaced: otherwise the default live filter would
+      // hide the one answer the caller needs ("this integration is not available").
+      if (searched && st === OVERRIDE_STATUS) return true;
+      return wanted === "live" ? st === "live" || st === "backend-ready" : st === wanted;
+    });
+    const includesOverrides = searched && items.some((i) => effective(i) === OVERRIDE_STATUS);
+    const hiddenByStatus = beforeStatus.length - items.length;
+
+    const counts: Record<string, number> = {};
+    for (const i of items) counts[effective(i)] = (counts[effective(i)] ?? 0) + 1;
+
+    if (items.length === 0 && (args.search || args.category)) {
+      return ok({
+        ...INTEGRATION_COUNTS,
+        filtered_count: 0,
+        total: 0,
+        returned: 0,
+        next_offset: null,
+        partial: false,
+        counts,
+        status_filter: wanted,
+        ...(hiddenByStatus > 0
+          ? { hidden_by_status_filter: hiddenByStatus, hint: `${hiddenByStatus} entries match but are hidden by status=${wanted}; call again with status=all.` }
+          : {}),
+        ...zeroResult({
+          query: String(args.search ?? args.category),
+          suggestedTools: ["integrations_list_categories", "buyer_find_answer_pages", "faqs_get_site"],
+          candidates: INTEGRATIONS.map((i) => i.slug),
+        }),
+        items: [],
+      });
+    }
+
+    const total = items.length;
+    const page = args.limit === undefined ? items.slice(args.offset) : items.slice(args.offset, args.offset + args.limit);
+    const nextOffset = args.offset + page.length < total ? args.offset + page.length : null;
     return ok({
       ...INTEGRATION_COUNTS,
-      filtered_count: items.length,
+      filtered_count: total,
+      total,
+      returned: page.length,
+      offset: args.offset,
+      limit: args.limit ?? null,
+      next_offset: nextOffset,
+      partial: nextOffset !== null,
+      status_filter: wanted,
+      includes_overrides: includesOverrides,
+      counts,
       ...(categoryMatch ? { category: categoryMatch } : {}),
-      items: items.map((i) => ({
-        slug: i.slug,
-        name: i.name,
-        category: i.category,
-        description: i.description,
-        ...(i.status ? { status: i.status } : {}),
-        url: `${SITE}${i.route}`,
-      })),
+      items: page.map((i) => shapeIntegration(i)),
     });
   },
 });
@@ -1198,14 +1276,9 @@ export const integrationsGet = defineTool({
     }
     return ok({
       synced_at: SYNCED_AT,
-      slug: record.slug,
-      name: record.name,
-      category: record.category,
       category_title: categoryTitle(record.category),
-      description: record.description,
-      ...(record.status ? { status: record.status } : {}),
+      ...shapeIntegration(record),
       route: record.route,
-      url: `${SITE}${record.route}`,
     });
   },
 });

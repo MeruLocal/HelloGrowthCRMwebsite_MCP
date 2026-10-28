@@ -9,7 +9,7 @@ export default defineConfig({
     // live fetch is switched off for the whole suite; parseYouTubeFeed and the
     // merge are covered with fixtures instead.
     env: { MCP_DISABLE_LIVE_YOUTUBE: "true" },
-    include: ["src/**/*.{test,spec}.ts"],
+    include: ["src/**/*.{test,spec}.ts", "scripts/__tests__/**/*.{test,spec}.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov"],

@@ -1,3 +1,4 @@
+import { zeroResult } from "./guidance.js";
 import { z } from "zod";
 import { getSupabase } from "../lib/supabase.js";
 import { defineTool, fail, ok } from "./tool-types.js";
@@ -132,7 +133,13 @@ export const helpSearch = defineTool({
         .or(`title.ilike.%${args.query}%,intro.ilike.%${args.query}%`)
         .limit(args.limit);
       if (error) return fail(`Search error: ${error.message}`);
-      return ok({ query: args.query, count: data?.length ?? 0, results: data });
+      const count = data?.length ?? 0;
+      return ok({
+        query: args.query,
+        count,
+        ...(count === 0 ? zeroResult({ query: args.query, suggestedTools: ["faqs_get_site", "features_list", "buyer_find_answer_pages"] }) : {}),
+        results: data,
+      });
     } catch (e) {
       return fail((e as Error).message);
     }

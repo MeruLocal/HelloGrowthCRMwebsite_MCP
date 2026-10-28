@@ -16,7 +16,7 @@ export const SERVER_NAME = "hellogrowthcrm-website";
 
 export const SERVER_TITLE = "HelloGrowthCRM Website & Bot Governance MCP";
 
-export const SERVER_VERSION = "2.1.0";
+export const SERVER_VERSION = "2.2.0";
 
 export const SERVER_DESCRIPTION =
   "Read-only website mirror + bot governance MCP server for hellogrowthcrm.com. " +
@@ -28,3 +28,8 @@ export const SERVER_DESCRIPTION =
   "Content-management tools that write to the website, and the tools that read " +
   "newsletter subscribers or contact-form submissions, are not served on the " +
   "public endpoint; they require an authenticated session (see MCP_ADMIN_TOKEN).";
+
+import { buildInstructions } from "./data/routing.js";
+
+/** Routing guidance returned at `initialize` (also served by the get_started tool). */
+export const SERVER_INSTRUCTIONS = buildInstructions();

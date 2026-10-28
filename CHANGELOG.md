@@ -9,6 +9,25 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.0] — 2026-10-28
+
+Visibility phase 1 of PLAN-HELLOG-0003: help an AI assistant route a question, never read "no entry" as "not supported", and stop serving claims the product audit disproved.
+
+### Added
+- `initialize` now returns `instructions`: what this server is (read-only product knowledge, NOT a CRM API), which tool answers which of six kinds of question, and how to read `status` values and `matched:false`.
+- New tool `get_started`: the same routing as `instructions`, for clients that ignore it, plus a clean `canonical_url` and a separate `visit_url` (UTM-tagged) for each own-site link.
+- Zero-result contract on `features_list`, `integrations_list` and `help_search`: a search that finds nothing returns `matched:false`, an explicit "this does not mean the product lacks it" sentence, suggested next tools and, where close, `did_you_mean` (capped edit distance, labelled as not the same item).
+- `integrations_list` (additive, default unchanged): optional `status`, `limit` (max 200) and `offset` parameters for paging and filtering, and new response fields `total`, `returned`, `offset`, `limit`, `next_offset`, `partial`, `status_filter`, `includes_overrides`, `counts` by status; each entry carries a `canonical_url`. A call with no arguments returns every entry in one response, exactly as in 2.1.0.
+- `/health` reports `overrides: {total, expired}`; an expired override makes `/health` degraded (monitoring signal only; it never changes what tools serve).
+- `src/data/claim-overrides.ts`: entries the product audit proved are not available (for example Cashfree, PayU, Paytm, PhonePe, PayPal and Instamojo payment links, TallyPrime sync, and integration cards whose connect function is not deployed) are returned with `status: "not_available"`, a reason, the known-truth id, evidence and an as-of date. Overrides win over synced website content and expire for re-review.
+- CI `truth-guard` test and a deny list of claims the product does not support.
+
+### Changed
+- Entries the audit proved are not available keep their place in `integrations_list` and `integrations_get` but their `status` is now `not_available` (with a reason and as-of date) instead of `live`; the public live count no longer includes them. No entry or tool is removed.
+
+### Fixed
+- Removed served claims the audit disproved: "unlimited pipelines", "unlimited exports + scheduled reports", SOC 2 stated as a certification or fact, and TallyPrime sync (see the deny list).
+
 ## [2.1.0] — 2026-10-27
 
 ### Added
