@@ -141,8 +141,8 @@ describe("templates tools", () => {
   it("templates_list returns the full catalog for category=all", async () => {
     const { res, json } = await run(templatesList, { category: "all" });
     expect(res.isError).toBeFalsy();
-    expect(json.total).toBe(42);
-    expect(json.filtered_count).toBe(42);
+    expect(json.total).toBe(54);
+    expect(json.filtered_count).toBe(54);
     expect((json.categories as unknown[]).length).toBe(7);
     const templates = json.templates as { slug: string; category: string; url: string }[];
     const pipeline = templates.find((t) => t.slug === "sales-pipeline-template")!;

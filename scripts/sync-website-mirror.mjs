@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 // ============================================================================
-// sync-website-mirror.mjs — rebuild the bundled integrations mirror from the
+// sync-website-mirror.mjs — rebuild the bundled website mirrors from the
 // website source, and move the SYNCED_AT stamps that prove it was done.
+//
+// Auto-synced surfaces (see the SURFACES registry below): integrations,
+// glossary, templates. Each is a faithful projection of a STRUCTURED website
+// export. Surfaces condensed from prose, built from JSX, or merged with a
+// filesystem listing stay hand-maintained (see MANUAL_SURFACES).
 //
 //   node scripts/sync-website-mirror.mjs                 rewrite the mirror
 //   node scripts/sync-website-mirror.mjs --check         report drift, write nothing
@@ -138,127 +143,212 @@ async function loadWebsiteModule(rel) {
   }
 }
 
-const { INTEGRATIONS_CATALOG, INTEGRATIONS_CATALOG_SUMMARY } = await loadWebsiteModule(
-  "src/lib/integrations-catalog-data.ts",
-);
-const { getIntegrationPath } = await loadWebsiteModule("src/lib/integration-routes.ts");
-
-// ── build the two generated blocks ──────────────────────────────────────────
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 const q = (v) => JSON.stringify(v);
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const arrayBody = (opener, lines) => [opener, ...lines, "];"].join("\n");
 
-const categoryLines = INTEGRATIONS_CATALOG.map(
-  (c) => `  { slug: ${q(c.slug)}, title: ${q(c.title)}, shortLabel: ${q(c.shortLabel)} },`,
-);
-
-const rowLines = [];
-let rowCount = 0;
-for (const category of INTEGRATIONS_CATALOG) {
-  rowLines.push(`  // ── ${category.title} (${category.integrations.length}) ──`);
-  for (const entry of category.integrations) {
-    rowCount++;
-    const status = entry.status ? `, status: ${q(entry.status)}` : "";
-    rowLines.push(
-      `  { slug: ${q(entry.slug)}, name: ${q(entry.name)}, category: ${q(category.slug)}, ` +
-        `description: ${q(entry.whatItDoes)}${status}, route: ${q(getIntegrationPath(entry.slug))} },`,
-    );
+/**
+ * Replace a generated array declaration inside a target file. On the first run
+ * the file still holds the hand-written declaration, so wrap it in BEGIN/END
+ * markers; afterwards the markers already exist and we replace between them.
+ * `marker` is the declaration's `const NAME:` prefix (the trailing colon keeps
+ * `const TEMPLATES:` from also matching `const TEMPLATES_SYNCED_AT`); `body` is
+ * the full `const NAME: T[] = [ … ];` text.
+ */
+function spliceGenerated(source, marker, body, label) {
+  const markedStart = source.indexOf(`${BEGIN}\n${marker}`);
+  if (markedStart !== -1) {
+    const stop = source.indexOf(END, markedStart);
+    if (stop === -1) die(2, `Unterminated generated ${label} block — no ${END} after it.`);
+    return source.slice(0, markedStart) + `${BEGIN}\n${body}\n${END}` + source.slice(stop + END.length);
   }
-  rowLines.push("");
-}
-while (rowLines.at(-1) === "") rowLines.pop();
-
-const categoriesBlock = [
-  BEGIN,
-  "const INTEGRATION_CATEGORIES: IntegrationCategory[] = [",
-  ...categoryLines,
-  "];",
-  END,
-].join("\n");
-
-const rowsBlock = [
-  BEGIN,
-  "const INTEGRATIONS: IntegrationRecord[] = [",
-  ...rowLines,
-  "];",
-  END,
-].join("\n");
-
-// ── splice them in ──────────────────────────────────────────────────────────
-
-let mirror = fs.readFileSync(MIRROR, "utf8");
-const before = mirror;
-
-function replaceBlock(source, marker, block, label) {
-  const start = source.indexOf(`${BEGIN}\n${marker}`);
-  if (start === -1) {
-    die(2, `Could not find the generated ${label} block in src/tools/integrations.ts.\nExpected the marker line:\n  ${BEGIN}\nimmediately followed by:\n  ${marker}`);
-  }
-  const stop = source.indexOf(END, start);
-  if (stop === -1) die(2, `Unterminated generated ${label} block — no ${END} after it.`);
-  return source.slice(0, start) + block + source.slice(stop + END.length);
+  // First-time conversion: match the raw declaration up to its top-level `];`.
+  // The surface arrays hold no line that is exactly `];` except their own close.
+  const m = source.match(new RegExp(`^${escapeRe(marker)}[\\s\\S]*?\\n\\];`, "m"));
+  if (!m) die(2, `Could not find the ${label} declaration (${marker}) in the target file.`);
+  return source.slice(0, m.index) + `${BEGIN}\n${body}\n${END}` + source.slice(m.index + m[0].length);
 }
 
-mirror = replaceBlock(mirror, "const INTEGRATION_CATEGORIES", categoriesBlock, "categories");
-mirror = replaceBlock(mirror, "const INTEGRATIONS", rowsBlock, "rows");
+const stampDate = (source, varName, when) =>
+  source.replace(new RegExp(`const ${escapeRe(varName)} = "\\d{4}-\\d{2}-\\d{2}";`), `const ${varName} = ${q(when)};`);
 
-// The stamp is part of the sync, not a separate chore: a regenerated mirror
-// that still claims June is worse than an honestly old one.
-mirror = mirror.replace(/const SYNCED_AT = "\d{4}-\d{2}-\d{2}";/, `const SYNCED_AT = ${q(today)};`);
-mirror = mirror.replace(
-  /Source: hellocrmwebsite\/src\/lib\/integrations-catalog-data\.ts — SYNCED_AT \d{4}-\d{2}-\d{2}/,
-  `Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts — SYNCED_AT ${today}`,
-);
-mirror = mirror.replace(
-  /Source: hellocrmwebsite\/src\/lib\/integration-routes\.ts — SYNCED_AT \d{4}-\d{2}-\d{2}/,
-  `Source: hellocrmwebsite/src/lib/integration-routes.ts — SYNCED_AT ${today}`,
-);
-mirror = mirror.replace(
-  /\/\/ INTEGRATIONS_CATALOG, \d+ rows: \d+ live \+ \d+ scaffolded\) — SYNCED_AT \d{4}-\d{2}-\d{2}/,
-  `// INTEGRATIONS_CATALOG, ${INTEGRATIONS_CATALOG_SUMMARY.total} rows: ${INTEGRATIONS_CATALOG_SUMMARY.liveCount} live + ${INTEGRATIONS_CATALOG_SUMMARY.scaffoldedCount} scaffolded) — SYNCED_AT ${today}`,
-);
+// ── surface registry ─────────────────────────────────────────────────────────
+// Each surface maps one or more STRUCTURED website exports onto the bundled
+// mirror the MCP serves. A surface belongs here only when the mirror is a
+// faithful projection of its source — pick the fields, rename them, drop the
+// prose. Surfaces condensed from long-form prose, assembled from JSX views, or
+// merged with a filesystem listing stay hand-maintained (see MANUAL_SURFACES):
+// a generator cannot reproduce those losslessly, and a lossy mirror is worse
+// than an honestly dated one.
+
+const SURFACES = [
+  {
+    key: "integrations",
+    target: "src/tools/integrations.ts",
+    stampVar: "SYNCED_AT",
+    freshnessKey: "integrations",
+    async blocks() {
+      const { INTEGRATIONS_CATALOG, INTEGRATIONS_CATALOG_SUMMARY } = await loadWebsiteModule(
+        "src/lib/integrations-catalog-data.ts",
+      );
+      const { getIntegrationPath } = await loadWebsiteModule("src/lib/integration-routes.ts");
+      this.summary = INTEGRATIONS_CATALOG_SUMMARY;
+
+      const catLines = INTEGRATIONS_CATALOG.map(
+        (c) => `  { slug: ${q(c.slug)}, title: ${q(c.title)}, shortLabel: ${q(c.shortLabel)} },`,
+      );
+      const rowLines = [];
+      let rowCount = 0;
+      for (const category of INTEGRATIONS_CATALOG) {
+        rowLines.push(`  // ── ${category.title} (${category.integrations.length}) ──`);
+        for (const entry of category.integrations) {
+          rowCount++;
+          const status = entry.status ? `, status: ${q(entry.status)}` : "";
+          rowLines.push(
+            `  { slug: ${q(entry.slug)}, name: ${q(entry.name)}, category: ${q(category.slug)}, ` +
+              `description: ${q(entry.whatItDoes)}${status}, route: ${q(getIntegrationPath(entry.slug))} },`,
+          );
+        }
+        rowLines.push("");
+      }
+      while (rowLines.at(-1) === "") rowLines.pop();
+      this.rowCount = rowCount;
+
+      return [
+        { marker: "const INTEGRATION_CATEGORIES:", body: arrayBody("const INTEGRATION_CATEGORIES: IntegrationCategory[] = [", catLines) },
+        { marker: "const INTEGRATIONS:", body: arrayBody("const INTEGRATIONS: IntegrationRecord[] = [", rowLines) },
+      ];
+    },
+    extra(text, when) {
+      if (this.rowCount !== this.summary.total) {
+        die(2, `Emitted ${this.rowCount} integration rows but the website's own summary says ${this.summary.total}. Refusing to write a mirror that disagrees with its source.`);
+      }
+      return text
+        .replace(/Source: hellocrmwebsite\/src\/lib\/integrations-catalog-data\.ts — SYNCED_AT \d{4}-\d{2}-\d{2}/, `Source: hellocrmwebsite/src/lib/integrations-catalog-data.ts — SYNCED_AT ${when}`)
+        .replace(/Source: hellocrmwebsite\/src\/lib\/integration-routes\.ts — SYNCED_AT \d{4}-\d{2}-\d{2}/, `Source: hellocrmwebsite/src/lib/integration-routes.ts — SYNCED_AT ${when}`)
+        .replace(/\/\/ INTEGRATIONS_CATALOG, \d+ rows: \d+ live \+ \d+ scaffolded\) — SYNCED_AT \d{4}-\d{2}-\d{2}/, `// INTEGRATIONS_CATALOG, ${this.summary.total} rows: ${this.summary.liveCount} live + ${this.summary.scaffoldedCount} scaffolded) — SYNCED_AT ${when}`);
+    },
+    report() {
+      return `${this.summary.total} rows · ${this.summary.liveCount} live · ${this.summary.scaffoldedCount} scaffolded`;
+    },
+  },
+
+  {
+    // glossaryTerms → { slug, term, definition←shortDef, related←relatedLinks }.
+    // The long-form `content` prose is intentionally NOT mirrored.
+    key: "glossary",
+    target: "src/tools/glossary.ts",
+    stampVar: "GLOSSARY_SYNCED_AT",
+    freshnessKey: "glossary",
+    async blocks() {
+      const { glossaryTerms } = await loadWebsiteModule("src/lib/glossary-data.ts");
+      this.count = glossaryTerms.length;
+      const lines = glossaryTerms.map(
+        (t) => `  { slug: ${q(t.slug)}, term: ${q(t.term)}, definition: ${q(t.shortDef)}, related: ${q(t.relatedLinks ?? [])} },`,
+      );
+      return [{ marker: "const GLOSSARY_TERMS:", body: arrayBody("const GLOSSARY_TERMS: GlossaryEntry[] = [", lines) }];
+    },
+    report() {
+      return `${this.count} terms`;
+    },
+  },
+
+  {
+    // categoryMeta → { slug, label }; templates (CRMTemplate) → the summary the
+    // MCP serves: description←oneLiner, formats←downloads[].format, the rest 1:1.
+    key: "templates",
+    target: "src/tools/templates.ts",
+    stampVar: "TEMPLATES_SYNCED_AT",
+    freshnessKey: "templates",
+    async blocks() {
+      const { categoryMeta, templates } = await loadWebsiteModule("src/lib/templates-data.ts");
+      this.catCount = categoryMeta.length;
+      this.count = templates.length;
+      const catLines = categoryMeta.map((c) => `  { slug: ${q(c.slug)}, label: ${q(c.label)} },`);
+      const rowLines = templates.map((t) => {
+        const popular = t.popular ? ", popular: true" : "";
+        const formats = (t.downloads ?? []).map((d) => d.format);
+        return (
+          `  { id: ${q(t.id)}, slug: ${q(t.slug)}, title: ${q(t.title)}, category: ${q(t.category)}, ` +
+          `description: ${q(t.oneLiner)}, whoItsFor: ${q(t.whoItsFor)}, formats: ${q(formats)}${popular}, lastUpdated: ${q(t.lastUpdated)} },`
+        );
+      });
+      return [
+        { marker: "const TEMPLATE_CATEGORIES:", body: arrayBody("const TEMPLATE_CATEGORIES: Array<{ slug: TemplateCategory; label: string }> = [", catLines) },
+        { marker: "const TEMPLATES:", body: arrayBody("const TEMPLATES: TemplateSummary[] = [", rowLines) },
+      ];
+    },
+    report() {
+      return `${this.count} templates · ${this.catCount} categories`;
+    },
+  },
+];
+
+// Surfaces that are NOT a clean projection of a structured source, and why.
+// Documented so the next contributor restructures the website source first
+// rather than shipping a lossy generator.
+const MANUAL_SURFACES = {
+  agents: "assembled from JSX view files (AgenticAIHub/VoiceAgentPage/MCPPage), not a data export",
+  alternatives: "structured shortlist merged with a filesystem directory listing of src/app/(public)/*",
+  changelog: "CHANGELOG_CURATED_RELEASES is structured — addable once the nested item/tag projection is pinned down",
+  faqs: "faqData is now empty on the website; site-faqs carries a PRICING_ANSWER placeholder to substitute",
+  guides: "FEATURE_GUIDE + JOB_CATEGORIES is structured — addable after confirming the MCP projection shape",
+  media: "four structured sources merged (home/YouTube videos + text/video testimonials)",
+  partners: "composite of partner-program-content + partner-apply-schema + page metadata",
+  solutions: "prose condensed from managed-revops-content + whatsappUseCases + 25 city landing pages",
+};
+
+// ── apply every surface ──────────────────────────────────────────────────────
 
 let freshness = fs.readFileSync(FRESHNESS, "utf8");
 const freshnessBefore = freshness;
-freshness = freshness.replace(/(\n  integrations: )"\d{4}-\d{2}-\d{2}"/, `$1${q(today)}`);
+const results = [];
+let anyDrift = false;
 
-// ── report ──────────────────────────────────────────────────────────────────
+for (const surface of SURFACES) {
+  const file = path.join(REPO, surface.target);
+  const before = fs.readFileSync(file, "utf8");
+  let text = before;
 
-const rowsChanged = before !== mirror;
-const stampChanged = freshnessBefore !== freshness;
+  for (const block of await surface.blocks()) {
+    text = spliceGenerated(text, block.marker, block.body, `${surface.key}/${block.marker}`);
+  }
+  text = stampDate(text, surface.stampVar, today);
+  if (surface.extra) text = surface.extra(text, today);
 
-console.log(`website:  ${WEBSITE}`);
-console.log(
-  `catalog:  ${INTEGRATIONS_CATALOG_SUMMARY.total} rows · ` +
-    `${INTEGRATIONS_CATALOG_SUMMARY.liveCount} live · ` +
-    `${INTEGRATIONS_CATALOG_SUMMARY.scaffoldedCount} scaffolded · ` +
-    `${INTEGRATIONS_CATALOG.length} categories`,
-);
-console.log(`emitted:  ${rowCount} rows, ${categoryLines.length} categories`);
+  freshness = freshness.replace(
+    new RegExp(`(\\n  ${escapeRe(surface.freshnessKey)}: )"\\d{4}-\\d{2}-\\d{2}"`),
+    `$1${q(today)}`,
+  );
 
-if (rowCount !== INTEGRATIONS_CATALOG_SUMMARY.total) {
-  die(2, `Emitted ${rowCount} rows but the website's own summary says ${INTEGRATIONS_CATALOG_SUMMARY.total}. Refusing to write a mirror that disagrees with its source.`);
+  const changed = before !== text;
+  if (changed) anyDrift = true;
+  results.push({ key: surface.key, changed, detail: surface.report() });
+  if (!CHECK && changed) fs.writeFileSync(file, text, "utf8");
 }
 
+const stampChanged = freshnessBefore !== freshness;
+if (stampChanged) anyDrift = true;
+if (!CHECK && stampChanged) fs.writeFileSync(FRESHNESS, freshness, "utf8");
+
+// ── report ───────────────────────────────────────────────────────────────────
+
+console.log(`website:  ${WEBSITE}`);
+for (const r of results) {
+  console.log(`  ${r.changed ? "drift" : "ok   "}  ${r.key.padEnd(13)} ${r.detail}`);
+}
+console.log(`manual (hand-maintained): ${Object.keys(MANUAL_SURFACES).join(", ")}`);
+
 if (CHECK) {
-  if (!rowsChanged && !stampChanged) {
-    console.log("\n✅ in sync — the bundled mirror matches the website source.");
+  if (!anyDrift) {
+    console.log("\n✅ in sync — every auto-synced surface matches the website source.");
     process.exit(0);
   }
-  console.error(
-    "\n❌ DRIFT: the bundled mirror no longer matches the website source." +
-      (rowsChanged ? "\n   · src/tools/integrations.ts rows or stamp are out of date" : "") +
-      (stampChanged ? "\n   · src/lib/content-freshness.ts integrations stamp is out of date" : "") +
-      "\n\nRun: node scripts/sync-website-mirror.mjs",
-  );
+  console.error("\n❌ DRIFT: a bundled mirror no longer matches the website source.\nRun: node scripts/sync-website-mirror.mjs");
   process.exit(1);
 }
 
-if (!rowsChanged && !stampChanged) {
-  console.log("\n✅ already in sync — nothing written.");
-  process.exit(0);
-}
-
-fs.writeFileSync(MIRROR, mirror, "utf8");
-fs.writeFileSync(FRESHNESS, freshness, "utf8");
-console.log(`\n✅ rewrote the mirror and stamped it ${today}.`);
-console.log("   Next: npx tsc --noEmit && npm test — the mirror is code, not data.");
+console.log(`\n✅ ${anyDrift ? "rewrote drifted surfaces and stamped" : "already in sync; stamped"} ${today}.`);
+console.log("   Next: npx tsc --noEmit && npm test — the mirrors are code, not data.");
