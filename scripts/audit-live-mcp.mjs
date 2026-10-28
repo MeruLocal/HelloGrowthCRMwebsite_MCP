@@ -13,7 +13,7 @@
 //
 // It covers the checks the well-known third-party tools perform (protocol
 // conformance, schema hygiene, annotation coverage, session handling, error
-// shape, discovery surfaces) — see .claude/skills/mcp-server-audit/SKILL.md for
+// shape, discovery surfaces) — see .claude/skills/rss-mcp-server-audit/SKILL.md for
 // the mapping and for the checks a script CANNOT do.
 //
 // Exit codes: 0 = no FAILs, 1 = at least one FAIL, 2 = could not reach server.
