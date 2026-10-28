@@ -51,7 +51,7 @@ export const MIRROR_STAMPS: Readonly<Record<string, string>> = {
   faqs: "2026-07-08",
   glossary: "2026-07-08",
   guides: "2026-06-11",
-  integrations: "2026-09-08",
+  integrations: "2026-10-28",
   media: "2026-07-08",
   partners: "2026-06-11",
   solutions: "2026-07-08",
