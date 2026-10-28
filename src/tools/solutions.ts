@@ -276,7 +276,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     pricing_href: "/usa/pricing",
     country_name: "the United States",
     coverage_hours: "Mon–Fri, 9am–6pm ET (overlap with PT business hours)",
-    compliance_line: "SOC 2 Type II controls, CCPA-aware data handling, CAN-SPAM + TCPA opt-out + suppression management.",
+    compliance_line: "CAN-SPAM + TCPA opt-out and suppression management for outbound messaging. Security and certification status is not stated here; ask the company for documentation.",
     positioning:
       "US RevOps team triages every inbound MQL, runs email + SMS cadences, dials with local-presence numbers, and ships a weekly forecast-accuracy report — for a third of an SDR + RevOps hire.",
     pain_points: [
@@ -341,7 +341,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     ],
     faqs: [
       { q: "Is this team US-based?", a: "US RevOps Specialists cover ET business hours with PT overlap; trained on HubSpot, Salesforce, Outreach, Apollo, ZoomInfo, HelloGrowthCRM." },
-      { q: "Are you SOC 2 + CCPA compliant?", a: "Yes — SOC 2 Type II controls, CCPA-aware handling, signed BAA available for healthcare-adjacent workloads." },
+      { q: "Are you SOC 2 + CCPA compliant?", a: "This server does not state certification or compliance status. Ask the company for security and privacy documentation, including any agreement you need for regulated workloads." },
       { q: "How fast do MQLs get a response?", a: "Sub-5-minute first touch during business hours from a local-presence number; automated email + SMS out-of-hours." },
       { q: "What does the dialer cost?", a: "Local-presence dialing included in both tiers — no separate Aircall / JustCall / Dialpad bill." },
       { q: "Can you operate inside our existing CRM (HubSpot / Salesforce)?", a: "Yes — SOPs adapt to your existing CRM, dialer, and email tool; HelloGrowthCRM optional." },

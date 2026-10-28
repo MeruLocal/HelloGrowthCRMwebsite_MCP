@@ -62,7 +62,7 @@ const SITE_FAQ_ITEMS: SiteFaqItem[] = [
   },
   {
     q: "Is my data secure with HelloGrowthCRM?",
-    a: "Yes. HelloGrowthCRM is SOC 2 Type II with AES-256 encryption at rest, TLS 1.3 in transit, and daily backups in US data centers.",
+    a: "Security and compliance documentation, including any certification report, is available on request from the company. This server does not state a certification; see the Security page for the controls the product describes.",
     links: [{ text: "Learn more about our security", href: "/security" }],
   },
   {

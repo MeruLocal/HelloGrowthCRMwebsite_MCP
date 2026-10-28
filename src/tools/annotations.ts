@@ -62,6 +62,7 @@ const READ_ONLY_CLOSED: readonly string[] = [
   "content_list_tools",
   "content_get_seo_rules",
   "buyer_find_answer_pages",
+  "get_started",
   "pricing_get_plans",
   "pricing_get_addons",
   "pricing_get_faq",

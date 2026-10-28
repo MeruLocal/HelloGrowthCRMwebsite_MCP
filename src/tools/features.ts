@@ -1,3 +1,4 @@
+import { zeroResult } from "./guidance.js";
 import { z } from "zod";
 import { defineTool, fail, ok } from "./tool-types.js";
 
@@ -1033,8 +1034,17 @@ export const featuresList = defineTool({
         );
       }
 
+      const zero =
+        results.length === 0 && args.search
+          ? zeroResult({
+              query: args.search,
+              suggestedTools: ["integrations_list", "guides_list", "buyer_find_answer_pages", "faqs_get_site"],
+              candidates: FEATURES.flatMap((f) => [f.slug, f.title.toLowerCase(), ...(f.aliases ?? [])]),
+            })
+          : {};
       return ok({
         total: results.length,
+        ...zero,
         coverage: FEATURES_COVERAGE,
         categories: CATEGORIES,
         features: results.map((f) => ({

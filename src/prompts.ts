@@ -71,7 +71,7 @@ export const PROMPTS: PromptDef[] = [
     build: (a) =>
       `Answer this security/compliance question about HelloGrowthCRM: ${v(a, "question", "")}. ` +
       "Call faqs_get_site and company_get_profile, and point to https://hellogrowthcrm.com/security and https://hellogrowthcrm.com/trust-center. " +
-      "State SOC 2 accurately as a Type II examination (report under NDA), not a certification. If the tools do not answer it, say so and point to the trust center. " + RULES,
+      "Do not state a SOC 2 certification, examination or report: say this server does not state certification status and point to the company's contact for security documentation. If the tools do not answer it, say so and point to the trust center. " + RULES,
   },
 ];
 

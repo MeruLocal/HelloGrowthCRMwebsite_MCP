@@ -30,7 +30,7 @@ export const WEBSITE_SOURCE_OF_TRUTH = "https://hellogrowthcrm.com";
 
 export const COMPANY = {
   name: "HelloGrowthCRM",
-  /** Operating legal entity (Delaware, USA; SOC 2 certified under this name). */
+  /** Operating legal entity (Delaware, USA). */
   legalName: "Soor LLC",
   /** India operating entity. */
   indiaLegalEntity: "Meru Technosoft Pvt. Ltd.",
@@ -311,7 +311,7 @@ export const COUNTRY_PRICING: CountryPricingSummary[] = [
     growthPriceShort: "₹899/user/mo + GST", growthPriceMonthly: "₹899/user/mo + 18% GST billed monthly",
     pricingSummaryLine: "Free Forever · Growth ₹899/user/mo · Enterprise (custom) · 14-day trial on paid plans",
     paymentMethods: "UPI, Razorpay, Net Banking, Credit/Debit card",
-    compliance: "DPDPA compliant, SOC 2 certified",
+    compliance: "DPDPA consent features for India workspaces; certification status is not stated here, ask the company",
     pricingHref: "/in/pricing",
   },
   {
@@ -319,7 +319,7 @@ export const COUNTRY_PRICING: CountryPricingSummary[] = [
     growthPriceShort: "$10/user/mo", growthPriceMonthly: "$12/user/mo monthly",
     pricingSummaryLine: "Free Forever · Growth $10/user/mo · Enterprise (custom) · 14-day trial on paid plans",
     paymentMethods: "Credit card, ACH, PayPal, Stripe",
-    compliance: "SOC 2 Type II, CCPA compliant",
+    compliance: "Certification status is not stated here; ask the company for security documentation",
     pricingHref: "/usa/pricing",
   },
   {

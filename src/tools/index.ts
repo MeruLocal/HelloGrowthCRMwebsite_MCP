@@ -149,6 +149,7 @@ import { changelogListReleases, changelogGetRelease } from "./changelog.js";
 // ── Site FAQs ─────────────────────────────────────────────────────────────────
 import { faqsGetSite } from "./faqs.js";
 import { buyerFindAnswerPages } from "./buyer-answers.js";
+import { getStarted } from "./get-started.js";
 
 // ── Media (videos & testimonials) ─────────────────────────────────────────────
 import { mediaListVideos, mediaListTestimonials } from "./media.js";
@@ -299,6 +300,7 @@ export const tools: RegisteredTool[] = [
   changelogGetRelease,
 
   // Site FAQs
+  getStarted,
   buyerFindAnswerPages,
   faqsGetSite,
 

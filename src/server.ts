@@ -1,3 +1,4 @@
+import { overrideSummary } from "./data/claim-overrides.js";
 /**
  * MCP server setup.
  *
@@ -41,8 +42,7 @@ import {
   SERVER_NAME,
   SERVER_TITLE,
   SERVER_VERSION,
-  SERVER_DESCRIPTION,
-} from "./server-info.js";
+  SERVER_DESCRIPTION, SERVER_INSTRUCTIONS } from "./server-info.js";
 import {
   createRateLimitStore,
   type RateLimitStore,
@@ -95,6 +95,7 @@ export function buildServer(opts: { authorized?: boolean } = {}): Server { // NO
       description: SERVER_DESCRIPTION,
     },
     {
+      instructions: SERVER_INSTRUCTIONS,
       capabilities: {
         // `tools.listChanged` is deliberately NOT declared, and this is a
         // correction to the upgrade roadmap, which assumed the list mutates
@@ -918,11 +919,12 @@ export async function runServer(): Promise<void> {
         // green /health. A stale mirror is now a DEGRADED server, and the
         // audit script fails on it.
         const freshness = getContentFreshness();
+        const overrides = overrideSummary();
         send(
           200,
           "application/json; charset=utf-8",
           `${JSON.stringify({
-            status: freshness.ok ? "ok" : "degraded",
+            status: freshness.ok && overrides.expired === 0 ? "ok" : "degraded",
             version: SERVER_VERSION,
             mcp_spec: MCP_SPEC_REVISION,
             uptimeSeconds: Math.floor(process.uptime()),
@@ -938,6 +940,7 @@ export async function runServer(): Promise<void> {
             // value sent probes to a 404.
             endpoint: "/sse",
             content_freshness: freshness,
+            overrides: overrides,
           })}\n`,
           "no-store",
         );

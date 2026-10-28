@@ -163,6 +163,7 @@ export const TOOL_TITLES: Readonly<Record<string, string>> = {
 
   // ── Buyer intent ───────────────────────────────────────────────────────────
   buyer_find_answer_pages: "Find Buyer Answer Pages",
+  get_started: "Get Started: What This Server Is and Which Tool to Call",
 };
 
 /**

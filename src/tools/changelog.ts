@@ -193,7 +193,7 @@ const CHANGELOG_RELEASES: ChangelogRelease[] = [
       {
         tag: "infra",
         title: "SOC 2 Compliance",
-        description: "Completed a SOC 2 Type II examination (Soor LLC); the report is available under NDA on request.",
+        description: "SOC 2 work was announced with this release; this server does not verify its status. Ask the company for security documentation.",
       },
     ],
   },
