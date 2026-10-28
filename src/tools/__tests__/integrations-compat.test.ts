@@ -33,16 +33,12 @@ describe("integrations_list compatibility with 2.1.0 (AC-10, section 7f)", () =>
     expect(missing, `slugs missing from the 2.2.0 traversal: ${missing.join(", ")}`).toEqual([]);
   });
 
-  it("the 2.2.0 default entries are a subset of the full traversal", async () => {
+  it("the 2.2.0 DEFAULT response (no arguments) still contains every slug the 2.1.0 default had, in one response", async () => {
     const def = await page({});
-    const all = new Set<string>();
-    let offset: number | null = 0;
-    while (offset !== null) {
-      const p = await page({ status: "all", limit: 200, offset });
-      p.items.forEach((i) => all.add(i.slug));
-      offset = p.next_offset;
-    }
-    for (const i of def.items) expect(all.has(i.slug)).toBe(true);
+    expect(def.next_offset).toBeNull();
+    const slugs = new Set(def.items.map((i) => i.slug));
+    const missing = fixture.slugs.filter((s) => !slugs.has(s));
+    expect(missing, `slugs missing from the 2.2.0 default response: ${missing.join(", ")}`).toEqual([]);
   });
 
   it("pages do not overlap", async () => {

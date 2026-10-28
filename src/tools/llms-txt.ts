@@ -154,16 +154,8 @@ async function buildSections(): Promise<Section[]> {
 
   // ── Integrations (largest group — name + category only, to stay readable) ──
   try {
-    // integrations_list is paged and live-only by default (2.2.0): walk every page so the
-    // corpus lists each integration that works today, and none that is scaffolded or
-    // verified as not available.
-    const items: Record<string, unknown>[] = [];
-    let offset: number | null = 0;
-    for (let guard = 0; offset !== null && guard < 20; guard++) {
-      const page = await callTool("integrations_list", { status: "live", limit: 200, offset });
-      items.push(...asArray(page.items));
-      offset = typeof page.next_offset === "number" ? page.next_offset : null;
-    }
+    const r = await callTool("integrations_list");
+    const items = asArray(r.items);
     const lines = items.map(
       (it) => `- ${str(it.name)} (${str(it.category)})`,
     );

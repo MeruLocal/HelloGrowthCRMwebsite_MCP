@@ -73,8 +73,10 @@ const hit = (paytm.body?.items ?? []).find((i) => i.slug === "paytm");
 check(hit?.status === "not_available" && Boolean(hit?.kt) && Boolean(hit?.as_of) && paytm.body?.matched === undefined, "integrations_list paytm: not_available entry with kt and as_of");
 
 const def = await tool(s, "integrations_list");
-check(def.bytes < 40_000, "integrations_list default page under 40 KB", `${def.bytes} bytes`);
+check(def.body?.returned === def.body?.total && def.body?.total > 500, "integrations_list default is unchanged: every entry in one response", `${def.body?.returned}/${def.body?.total}`);
 check(Boolean(def.body?.counts), "integrations_list default has counts");
+const paged = await tool(s, "integrations_list", { limit: 50, status: "live" });
+check(paged.bytes < 40_000 && paged.body?.next_offset !== undefined, "integrations_list limit=50 opt-in page under 40 KB", `${paged.bytes} bytes`);
 check(!/630\+?\s*integrations/i.test(def.text), "integrations_list default has no '630 integrations'");
 
 let offset = 0, returned = 0, total = -1, guard = 0;

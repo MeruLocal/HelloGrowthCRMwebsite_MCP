@@ -124,18 +124,27 @@ describe("zero-result contract (AC-04)", () => {
 });
 
 describe("integrations_list contract (AC-05)", () => {
-  it("default call is live-only, first page, under 40 KB, with counts", async () => {
+  it("default call is unchanged: every entry in one response, plus counts", async () => {
     const tool = toolsByName.get("integrations_list")!;
     const res = await tool.handle(tool.schema.parse({}));
-    const bytes = Buffer.byteLength(res.content[0]!.text);
     const out = JSON.parse(res.content[0]!.text);
-    expect(bytes).toBeLessThan(40_000);
-    expect(out.status_filter).toBe("live");
-    expect(out.limit).toBe(50);
-    expect(out.returned).toBeLessThanOrEqual(50);
+    expect(out.status_filter).toBe("all");
+    expect(out.limit).toBeNull();
+    expect(out.returned).toBe(out.total);
+    expect(out.total).toBeGreaterThan(500);
+    expect(out.next_offset).toBeNull();
+    expect(out.partial).toBe(false);
     expect(out.counts).toBeTypeOf("object");
-    expect(out.partial).toBe(out.next_offset !== null);
     expect(res.content[0]!.text).not.toMatch(/630\+?\s*integrations/i);
+  });
+
+  it("opt-in paging: limit=50 returns a first page under 40 KB with next_offset", async () => {
+    const tool = toolsByName.get("integrations_list")!;
+    const res = await tool.handle(tool.schema.parse({ limit: 50, status: "live" }));
+    const out = JSON.parse(res.content[0]!.text);
+    expect(Buffer.byteLength(res.content[0]!.text)).toBeLessThan(40_000);
+    expect(out.returned).toBeLessThanOrEqual(50);
+    expect(out.partial).toBe(out.next_offset !== null);
   });
 
   it("limit is capped at 200", () => {

@@ -1132,9 +1132,9 @@ export const integrationsList = defineTool({
       .describe("Keyword filter on integration name or description (case-insensitive)."),
     status: z
       .enum(["live", "backend-ready", "scaffolded", "not_available", "all"])
-      .default("live")
-      .describe("Status filter. Default live (works today). A search that matches an entry verified as not_available always returns it, whatever this filter says."),
-    limit: z.number().int().positive().max(200).default(50).describe("Page size, default 50, max 200."),
+      .default("all")
+      .describe("Optional status filter. Default all (every entry, as before). Use live for what works today."),
+    limit: z.number().int().positive().max(200).optional().describe("Optional page size (max 200). Omit it to get every matching entry in one response, as before."),
     offset: z.number().int().min(0).default(0).describe("Start position; pass the previous response's next_offset to continue."),
   }),
   definition: {
@@ -1149,10 +1149,10 @@ export const integrationsList = defineTool({
         status: {
           type: "string",
           enum: ["live", "backend-ready", "scaffolded", "not_available", "all"],
-          default: "live",
-          description: "Status filter, default live. A search that matches an entry verified as not_available always returns it, whatever this filter says.",
+          default: "all",
+          description: "Optional status filter, default all (every entry, as before). Use live for what works today.",
         },
-        limit: { type: "integer", minimum: 1, maximum: 200, default: 50, description: "Page size, default 50, max 200." },
+        limit: { type: "integer", minimum: 1, maximum: 200, description: "Optional page size (max 200). Omit it to get every matching entry in one response, as before." },
         offset: { type: "integer", minimum: 0, default: 0, description: "Start position; pass the previous response's next_offset to continue." },
       },
       additionalProperties: false,
@@ -1224,7 +1224,7 @@ export const integrationsList = defineTool({
     }
 
     const total = items.length;
-    const page = items.slice(args.offset, args.offset + args.limit);
+    const page = args.limit === undefined ? items.slice(args.offset) : items.slice(args.offset, args.offset + args.limit);
     const nextOffset = args.offset + page.length < total ? args.offset + page.length : null;
     return ok({
       ...INTEGRATION_COUNTS,
@@ -1232,7 +1232,7 @@ export const integrationsList = defineTool({
       total,
       returned: page.length,
       offset: args.offset,
-      limit: args.limit,
+      limit: args.limit ?? null,
       next_offset: nextOffset,
       partial: nextOffset !== null,
       status_filter: wanted,
