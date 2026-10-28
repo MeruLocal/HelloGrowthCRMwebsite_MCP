@@ -84,7 +84,7 @@ Top missing tool types: an industry-fit profile (would fix all 20 "best CRM for 
 
 Today: 77 tools in one namespace — roughly 25 bot-governance tools (scan_website_bots, analyze_access_logs, crawl_pages, fetch_page_content, export_bot_report …) mixed with ~50 product-knowledge tools. A buyer's assistant sees both, and the server identifies itself as "Website & Bot Governance MCP".
 
-**Recommendation:** two profiles. `/mcp` (or the default) = the **buyer/knowledge profile** of about 25 tools; the bot-governance tools move to a separate path or server (`/mcp/governance`) with their own listing. Candidate buyer profile:
+**Recommendation (additive, per the founder's instruction of 2026-10-28 that nothing existing is removed and MCP traffic is not reduced):** keep every existing tool on the default endpoint. Add an **optional buyer profile** of about 25 tools at an additional path (for example `/mcp/buyer`) for clients that want a short tool list, and give the bot-governance tools their own listing as an *additional* surface, not a move. Candidate buyer profile:
 
 | Tool | Answers | Source of truth |
 |---|---|---|
@@ -161,4 +161,4 @@ Design rules: names are `domain_verb_object`; every description starts "Use this
 | 3 | register/submit (human); monthly live eval; telemetry gate; country-aware server card | founder: npm name; directory submissions |
 | Separate, urgent | security: `analytics_social_proof` emails, `robotsTxtPath` file read, SSRF rebinding, transport hardening (G1–G4 from the merge-train review) | maintainer; its own PR |
 
-**Founder decisions needed:** (1) split bot-governance into its own server/profile? (2) SOC 2 wording: remove, or "Type II examination, report under NDA" everywhere? (3) npm: publish under a buyer-facing name or drop it? (4) approve submitting to Claude's directory and ChatGPT with a neutral buyer-guide framing; (5) annual USD price, local-currency prices; (6) public roadmap policy (what we may say is "planned").
+**Founder decisions needed:** (1) add an optional buyer-profile endpoint (nothing removed from the default)? (2) SOC 2 wording: remove, or "Type II examination, report under NDA" everywhere? (3) npm: publish under a buyer-facing name or drop it? (4) approve submitting to Claude's directory and ChatGPT with a neutral buyer-guide framing; (5) annual USD price, local-currency prices; (6) public roadmap policy (what we may say is "planned").
