@@ -6,7 +6,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // differ from the website source file; re-extract and bump SYNCED_AT instead.
 //
 // Source: hellocrmwebsite/src/lib/templates-data.ts (templates + categoryMeta)
-//         — SYNCED_AT 2026-06-11
+//         — SYNCED_AT 2026-10-29
 // Route:  hellocrmwebsite/src/app/(public)/templates/[category]/[slug]/page.tsx
 //         → https://hellogrowthcrm.com/templates/{category}/{slug}
 // Only summary fields are mirrored (slug, title, category, one-line
@@ -15,7 +15,7 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // the website page itself.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TEMPLATES_SYNCED_AT = "2026-10-28";
+const TEMPLATES_SYNCED_AT = "2026-10-29";
 
 type TemplateCategory =
   | "pipeline"

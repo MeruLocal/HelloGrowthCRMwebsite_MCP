@@ -5,14 +5,14 @@ import { defineTool, fail, ok } from "./tool-types.js";
 // Static mirror data — READ-MIRROR of the website. Never edit values here to
 // differ from the website source file; re-extract and bump SYNCED_AT instead.
 //
-// Source: hellocrmwebsite/src/lib/glossary-data.ts (glossaryTerms) — SYNCED_AT 2026-07-08
+// Source: hellocrmwebsite/src/lib/glossary-data.ts (glossaryTerms) — SYNCED_AT 2026-10-29
 // Served on the website at /glossary and /glossary/[slug].
 // The source has no category field; each term carries slug, term, shortDef
 // (mirrored as `definition`), long-form content (not mirrored — prose), and
 // relatedLinks (mirrored as `related`).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GLOSSARY_SYNCED_AT = "2026-10-28"; // last verified against website master
+const GLOSSARY_SYNCED_AT = "2026-10-29"; // last verified against website master
 
 interface GlossaryEntry {
   slug: string;

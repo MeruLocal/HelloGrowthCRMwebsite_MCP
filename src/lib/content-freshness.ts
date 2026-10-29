@@ -47,15 +47,15 @@ export const MIRROR_STAMPS: Readonly<Record<string, string>> = {
   "website-mirror": "2026-08-06",
   agents: "2026-07-08",
   alternatives: "2026-07-08",
-  changelog: "2026-06-11",
+  changelog: "2026-10-29",
   faqs: "2026-07-08",
-  glossary: "2026-10-28",
-  guides: "2026-06-11",
-  integrations: "2026-10-28",
+  glossary: "2026-10-29",
+  guides: "2026-10-29",
+  integrations: "2026-10-29",
   media: "2026-07-08",
   partners: "2026-06-11",
   solutions: "2026-07-08",
-  templates: "2026-10-28",
+  templates: "2026-10-29",
 };
 
 export interface MirrorFreshness {

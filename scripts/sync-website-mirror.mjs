@@ -4,7 +4,7 @@
 // website source, and move the SYNCED_AT stamps that prove it was done.
 //
 // Auto-synced surfaces (see the SURFACES registry below): integrations,
-// glossary, templates. Each is a faithful projection of a STRUCTURED website
+// glossary, templates, guides, changelog. Each is a faithful projection of a STRUCTURED website
 // export. Surfaces condensed from prose, built from JSX, or merged with a
 // filesystem listing stay hand-maintained (see MANUAL_SURFACES).
 //
@@ -147,7 +147,7 @@ async function loadWebsiteModule(rel) {
 
 const q = (v) => JSON.stringify(v);
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const arrayBody = (opener, lines) => [opener, ...lines, "];"].join("\n");
+const arrayBody = (opener, lines, close = "];") => [opener, ...lines, close].join("\n");
 
 /**
  * Replace a generated array declaration inside a target file. On the first run
@@ -164,9 +164,11 @@ function spliceGenerated(source, marker, body, label) {
     if (stop === -1) die(2, `Unterminated generated ${label} block — no ${END} after it.`);
     return source.slice(0, markedStart) + `${BEGIN}\n${body}\n${END}` + source.slice(stop + END.length);
   }
-  // First-time conversion: match the raw declaration up to its top-level `];`.
-  // The surface arrays hold no line that is exactly `];` except their own close.
-  const m = source.match(new RegExp(`^${escapeRe(marker)}[\\s\\S]*?\\n\\];`, "m"));
+  // First-time conversion: match the raw declaration up to its top-level close
+  // (`];` for an array, `};` for a Record object). The surface blocks hold no
+  // line that is exactly `];`/`};` except their own close — nested arrays and
+  // objects are always indented.
+  const m = source.match(new RegExp(`^${escapeRe(marker)}[\\s\\S]*?\\n[\\]}];`, "m"));
   if (!m) die(2, `Could not find the ${label} declaration (${marker}) in the target file.`);
   return source.slice(0, m.index) + `${BEGIN}\n${body}\n${END}` + source.slice(m.index + m[0].length);
 }
@@ -284,6 +286,64 @@ const SURFACES = [
       return `${this.count} templates · ${this.catCount} categories`;
     },
   },
+
+  {
+    // JOB_CATEGORIES → the { key: label } map; FEATURE_GUIDE → the summary the
+    // MCP serves: description←problem, sections←capabilities[].title, the rest
+    // 1:1. The long-form context/useWhen/faq/vs prose is not mirrored.
+    key: "guides",
+    target: "src/tools/guides.ts",
+    stampVar: "GUIDES_SYNCED_AT",
+    freshnessKey: "guides",
+    async blocks() {
+      const { JOB_CATEGORIES, FEATURE_GUIDE } = await loadWebsiteModule("src/lib/feature-guide-data.ts");
+      this.catCount = Object.keys(JOB_CATEGORIES).length;
+      this.count = FEATURE_GUIDE.length;
+      const catLines = Object.entries(JOB_CATEGORIES).map(([k, v]) => `  ${q(k)}: ${q(v.label)},`);
+      const rowLines = FEATURE_GUIDE.map((g) => {
+        const sections = g.capabilities.map((c) => c.title);
+        return (
+          `  { slug: ${q(g.slug)}, name: ${q(g.name)}, tagline: ${q(g.tagline)}, category: ${q(g.category)}, ` +
+          `audience: ${q(g.audience)}, plan: ${q(g.plan)}, description: ${q(g.problem)}, sections: ${q(sections)}, deepDive: ${q(g.deepDive)} },`
+        );
+      });
+      return [
+        { marker: "const GUIDE_CATEGORIES:", body: arrayBody("const GUIDE_CATEGORIES: Record<GuideCategory, string> = {", catLines, "};") },
+        { marker: "const FEATURE_GUIDES:", body: arrayBody("const FEATURE_GUIDES: GuideSummary[] = [", rowLines) },
+      ];
+    },
+    report() {
+      return `${this.count} guides · ${this.catCount} categories`;
+    },
+  },
+
+  {
+    // CHANGELOG_CURATED_RELEASES mirrored in full (nested release → items),
+    // projecting only the fields the MCP type carries.
+    key: "changelog",
+    target: "src/tools/changelog.ts",
+    stampVar: "SYNCED_AT",
+    freshnessKey: "changelog",
+    async blocks() {
+      const { CHANGELOG_CURATED_RELEASES } = await loadWebsiteModule("src/lib/changelog-curated.ts");
+      this.count = CHANGELOG_CURATED_RELEASES.length;
+      const lines = [];
+      for (const r of CHANGELOG_CURATED_RELEASES) {
+        lines.push("  {");
+        lines.push(`    version: ${q(r.version)}, date: ${q(r.date)}, isoDate: ${q(r.isoDate)}, source: ${q(r.source ?? "curated")},`);
+        lines.push("    items: [");
+        for (const it of r.items) {
+          lines.push(`      { tag: ${q(it.tag)}, title: ${q(it.title)}, description: ${q(it.description)} },`);
+        }
+        lines.push("    ],");
+        lines.push("  },");
+      }
+      return [{ marker: "const CHANGELOG_RELEASES:", body: arrayBody("const CHANGELOG_RELEASES: ChangelogRelease[] = [", lines) }];
+    },
+    report() {
+      return `${this.count} curated releases`;
+    },
+  },
 ];
 
 // Surfaces that are NOT a clean projection of a structured source, and why.
@@ -292,9 +352,7 @@ const SURFACES = [
 const MANUAL_SURFACES = {
   agents: "assembled from JSX view files (AgenticAIHub/VoiceAgentPage/MCPPage), not a data export",
   alternatives: "structured shortlist merged with a filesystem directory listing of src/app/(public)/*",
-  changelog: "CHANGELOG_CURATED_RELEASES is structured — addable once the nested item/tag projection is pinned down",
   faqs: "faqData is now empty on the website; site-faqs carries a PRICING_ANSWER placeholder to substitute",
-  guides: "FEATURE_GUIDE + JOB_CATEGORIES is structured — addable after confirming the MCP projection shape",
   media: "four structured sources merged (home/YouTube videos + text/video testimonials)",
   partners: "composite of partner-program-content + partner-apply-schema + page metadata",
   solutions: "prose condensed from managed-revops-content + whatsappUseCases + 25 city landing pages",
@@ -316,6 +374,9 @@ for (const surface of SURFACES) {
     text = spliceGenerated(text, block.marker, block.body, `${surface.key}/${block.marker}`);
   }
   text = stampDate(text, surface.stampVar, today);
+  // Move the provenance comment dates too, so a "— SYNCED_AT <date>" note in the
+  // file header never contradicts the const the tool actually serves.
+  text = text.replace(/(— SYNCED_AT )\d{4}-\d{2}-\d{2}/g, `$1${today}`);
   if (surface.extra) text = surface.extra(text, today);
 
   freshness = freshness.replace(
