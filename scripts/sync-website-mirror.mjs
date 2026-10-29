@@ -107,12 +107,28 @@ if (!fs.existsSync(path.join(WEBSITE, "src/lib/integrations-catalog-data.ts"))) 
  * file URLs in a temp copy outside both repos. Node ≥22.18 strips the types.
  */
 async function loadWebsiteModule(rel) {
+  const origDir = path.dirname(path.join(WEBSITE, rel));
   const src = fs
     .readFileSync(path.join(WEBSITE, rel), "utf8")
+    // `@/lib/X` → the website's src/lib/X.ts as an absolute file URL.
     .replace(
       /from "@\/lib\/([^"]+)"/g,
       (_m, mod) => `from ${JSON.stringify(pathToFileURL(path.join(WEBSITE, "src/lib", `${mod}.ts`)).href)}`,
-    );
+    )
+    // Relative specifiers (`./x`, `../../scripts/data/y.json`) resolve against
+    // the ORIGINAL file's directory, not this relocated temp copy. JSON imports
+    // also need an explicit import attribute under Node's ESM loader. The
+    // website added one such import (integration-junk-slugs) on 2026-09-22,
+    // which this script could not read until it learned to rewrite relative
+    // paths too — the integrations mirror silently stopped syncing until then.
+    .replace(/from "(\.\.?\/[^"]+)"/g, (_m, spec) => {
+      const abs = path.resolve(origDir, spec);
+      if (spec.endsWith(".json")) {
+        return `from ${JSON.stringify(pathToFileURL(abs).href)} with { type: "json" }`;
+      }
+      const file = abs.endsWith(".ts") ? abs : `${abs}.ts`;
+      return `from ${JSON.stringify(pathToFileURL(file).href)}`;
+    });
   const tmp = path.join(os.tmpdir(), `hgcrm-mirror-${path.basename(rel)}-${process.pid}.ts`);
   fs.writeFileSync(tmp, src, "utf8");
   try {
