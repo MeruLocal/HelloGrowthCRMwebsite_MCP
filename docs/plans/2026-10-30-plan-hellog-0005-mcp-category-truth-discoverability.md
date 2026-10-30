@@ -219,3 +219,72 @@ Estimate, not a quote (method: research-suite `growth/token-estimate-method.md`)
 Why it moved (rev 1: 6.1M reuse): Fable called rev 1 ~20 % high and PR-A 0.7–0.9M; PR-A also shrank because D-EXP-16 removed its copy edits and deny entries, and PR-D (1.4M) left this repo. PR-B and PR-C are unchanged (Fable: fair). Low assumes #95/#96 merge first; high assumes the PR-B fallback path and a re-pin when audit v6 lands.
 
 At the Sonnet input rate ($3/M): rev 2 reuse ≈ $13 expected, fresh ≈ $20 (rev 1: $18 / $27); Opus ≈ 5×. This plan PR: about 0.2M (anchor: one plan PR = 179k–208k).
+
+## 13. Revision 3 — capability-agent MCP drafts folded into PR-C (category facts) (D-EXP-14, 2026-10-30)
+
+**Sources:**
+- OPP-CAP5-MCP-CATEGORIES, plus the per-category drafts OPP-BOQ/TRAVEL/SALON/GYM/TMS/FREIGHT/INSURANCE-001: research PR #53, `claude/cap5-verticals` @ `c6c86cd`.
+- Per-category U8 audits for ATS, BOQ, GYM, SALON, TMS and TRAVEL: research PR #58, `claude/cap6-marketing-ai` @ `1c57d69`.
+- OPP-ATS-001 `mcp.md` part 1: research PR #56, `claude/cap4-operations` @ `46ce0db`.
+- Ten cap2 buyer-term drafts: research PR #57, `claude/cap2-communication` @ `f7c444d`.
+- cap1 notes: research PR #55 @ `16e1e89`.
+
+**Decision: one shared change, folded into PR-C. There is no new MCP plan PR and no per-category PR.** Each draft independently found the same gap: none of the 77 tools in `raw/mcp-tools/hellogrowthcrm/2026-10-29/tools-list.json` exposes software categories. Of the 77 tool definitions, 0 contain "applicant tracking", "ATS", "gym", "salon", "BOQ" or "TMS". `buyer_find_answer_pages` names recruitment only as "CRM for an industry". In the cap6 count, 48 of 77 descriptions frame HGC as "CRM".
+
+### 13.1 What PR-C gains
+
+| # | Addition | From |
+|---|---|---|
+| 1 | **Data source.** Generate the category records from the research truth records `growth/categories/*.yaml`, joined to the compete-map row. The YAML is pinned with a sha256 like the PR-B snapshot and is never hand-edited. If the two disagree, the YAML (newer, per-category, code-checked) wins and the build prints the difference | cap5, cap4, cap6 |
+| 2 | **Record fields added** (additive to §2's record): `buyer_terms[]` (merged into `aliases[]`); `claim_ceiling` (gym and salon have audit depth FULL but a STRONG PARTIAL ceiling while CQ-CAP5-003 and -004 are open); `unverified[]` (table-stakes screens awaiting a code check, never listed under capabilities); `capabilities[]: {capability, availability, note, evidence}` — per-capability rows using rev 2's `availability` vocabulary (`native` ✓ · `partial` ◐ with what is missing · `integration` ↗ named · `not_available` — · `unverified` ?), so the drafts' `could_not_verify` maps to `unverified`. The dates reuse rev 2's `hgc_verified_at` / `competitor_checked_at` (D-EXP-15), taken from the data, never typed. Gap rows are always returned (D-EXP-16/17) | cap5, cap6 |
+| 3 | **Buyer terms per category** (served as `aliases`). Communication categories from cap2: see the list after this table | cap2 ×10, cap4, cap5, cap6 |
+| 4 | **Limits served with the yes.** These are required `limitations[]` / `not_built[]` entries, so a buyer's assistant gets yes + functions + limits: dialer "no predictive/parallel dialing"; call tracking "no per-source tracking numbers (DNI)"; email tracking "off by default"; voicemail drop "coming soon"; shared inbox "Instagram auto-reply and email-to-ticket not built"; WhatsApp calling and coexistence "beta" (served when GA); ATS "no contractor pay-and-bill, no VMS import, job-board posting unverified (CQ-C4-008)"; TMS "route optimisation, shipper portal and GPS unverified (CQ-CAP5-009)"; freight "customs e-filing, warehouse, tracking API unverified (CQ-CAP5-010)"; insurance "rater, ACORD, IVANS unverified (CQ-CAP5-021)" | all |
+| 5 | **`search`/`fetch` routing.** Index the records as `kind:"category"` (§0a) so buyer terms hit the record first, then the canonical page once it is live (`canonical_urls` stays empty and `no_dedicated_page: true` until the website PRs ship — hellocrmwebsite #2004 rev 3, #2009) | cap5 §4, cap6 |
+| 6 | **Tests.** One fixture per category; travel is first (contract in research `plans-draft/OPP-TRAVEL-001/mcp.md` §2). Five buyer questions per category from each `plans-draft/<OPP>/mcp.md` join the founder §45 query suite (0004 Phase F). One regression query per cap2 buyer term (e.g. "Does HelloGrowthCRM have an AI receptionist?" → yes + functions + limits) | cap2, cap5, cap6 |
+
+Buyer terms for row 3:
+
+- **AI voice agents:** AI receptionist, AI phone answering, virtual receptionist, AI calling, AI voice agent.
+- **Email verification:** email verification, email bounce checker.
+- **Shared inbox:** shared inbox, team inbox software.
+- **Dialer:** power dialer, auto dialer, click-to-call.
+- **SMS:** bulk SMS, business texting.
+- **WhatsApp:** WhatsApp broadcast, WhatsApp chatbot, CRM with WhatsApp. These are served as one channel in the suite; a test asserts no served string says "WhatsApp-first" (R1).
+- **Customisation (OPP-CRM-001):** industry vocabulary, custom labels.
+
+Vertical categories use the `buyer_terms` in each YAML. For ATS these are applicant tracking system, ATS software, recruitment software, recruitment agency software, candidate pipeline and careers page.
+
+### 13.2 Conflicts with this plan, and how they resolve
+
+| # | Draft proposes | This plan says | Resolution |
+|---|---|---|---|
+| M1 | New tools `categories_list` and `category_get` (cap4, cap5, cap6) | **No new tool** (§9). The tool count stays unchanged because selection degrades past about 30–50 tools (0003) | The same data and contract ship as the **resource plus the `kind:"category"` search/fetch entry**. The draft tool contracts (inputs, `unknown_category` error, outputSchema) become the resource's JSON shape and the `fetch` response. The tool form is **DEFERRED to 0003 Phase 2 `capability_check`**, which reads these records. Founder can overrule (F5) |
+| M2 | List only FULL / STRONG PARTIAL / PARTIAL; never THIN or UNKNOWN (cap5) | Serve THIN and UNKNOWN with that status; nothing silently narrowed (G13) | Already founder question **F1**. Default until F1 is answered: serve them, marked |
+| M3 | A `category` input on `buyer_find_answer_pages`, `content_list_tools`, `templates_list`, `content_list_case_studies`; a `categories` topic; outputSchema for `alternatives_get` and `content_get_comparison` (cap4, cap5, cap6) | Input-schema and outputSchema work belongs to #106 (0004 Phase C) | Evidence posted on #106. Not re-planned here. Description additions (buyer terms) are additive and land with PR-C |
+| M4 | Tenant-server workflow tools on `crm-mcp-server` (`jobs_list`, `candidates_search`, `members_list`, `renewals_due`, …; cap6 CQ6-010) | Out of scope: `crm-mcp-server` lives in hellocrm (§5 "Sideways") | **Routed to the parent for the hellocrm product plans.** Not in this repo |
+| M5 | Per-vertical tools (`travel_*`, `salon_*`) | — | Rejected by cap5 itself ("out of scope"). Agreed |
+
+Founder question added: **F5** — keep categories as resource plus search kind (default), or add the two tools now?
+
+### 13.3 Drafts that need no MCP change now (recorded, no PR)
+
+- OPP-LEADCAPTURE-002 and OPP-PROSPECTING-001 (#55) need only a mirror refresh after the product ships.
+- OPP-SCHEDULING-001 is to be assessed in the scheduling launch pack. Whether the tenant MCP can create a booking link or poll is unknown, so it is routed to the parent.
+- OPP-WHATSAPP-002/003 and OPP-INBOX-003 (#57) are added when the features reach GA or ship.
+- OPP-TELEPHONY-002 (call source on the call log) is added after the integration ships.
+- OPP-CAP6-0004 (Zapier MCP docs) is evidence on #106 (setup docs).
+
+### 13.4 Token estimate delta
+
+- The shared category work is counted **once**: cap5 estimates 0.5M / 0.75M / 1.2M (low / expected / high) for two tools.
+- As a resource plus search kind it fits inside PR-C's existing 1.2M / 1.7M / 2.6M, with about 0.3M added for the YAML adapter, the buyer-term aliases, the cap2 limits and the per-category fixtures.
+- New PR-C estimate: **1.5M / 2.0M / 3.0M**. The rev-2 total (reuse) moves from 3.0M / 4.2M / 6.4M to **3.3M / 4.5M / 6.8M**.
+
+### 13.5 Review record (rev 3)
+
+| Reviewer | Status |
+|---|---|
+| Sol | **BLOCKED** (no Azure key) |
+| Astra (blind) | **BLOCKED** (no Azure key) |
+| Fable | **PENDING** (parent session) |
+| Blind Opus | **PENDING** (parent session) |
