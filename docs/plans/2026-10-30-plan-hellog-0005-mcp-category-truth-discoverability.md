@@ -20,7 +20,7 @@
 
 ## 0a. Necessary changes   (planned-file coverage)
 
-PR-A — self-description and access model (no dependency; deny entries wait for #103)
+PR-A — self-description and access model (no dependency; deny entries wait for #103). PR #108 opened on this plan
 - [ ] `src/tools/agents.ts` — correct the hub badge ("12 AI Agents. 3 Autonomy Levels") to the registered agent count, and change Deal Risk "24/7"/"real time" wording to "on demand", per audit rows on `/agentic-ai`. Correct the `mcp` entry: keep slug and route; add `servers: [{kind:"public-knowledge", access:"read-only", auth:"none", crm_data:false}, {kind:"tenant-crm", status:"LIVE-LIMITED", auth:"per-workspace scoped key, admin setup", verified_clients:[…]}]`. Remove the unsourced "the only CRM MCP server with native WhatsApp tools" and "90% of deals close on WhatsApp" lines
 - [ ] `src/well-known.ts` — add `access: {public:"read-only", auth:"none", crm_data:false, operator_write_tools:"bearer-gated, not for buyers"}` to `/.well-known/mcp.json` and the server card
 - [ ] `src/data/deny-claims.ts` (exists once #103 merges) — add `twelve-agents`, `public-mcp-read-write`, `only-crm-mcp` entries, each citing its audit row
@@ -63,7 +63,7 @@ PR-D — Agent/MCP Discoverability score
 | Registry listing; competitor registry presence | #106 Phase A | #106: US-1 found 19 of 238 open US competitors with an official MCP in the registry; pilot found 8 of 11 via vendor docs, only monday in the registry |
 | `search`/`fetch`; tool naming, descriptions, `outputSchema`; per-client setup docs; directories | #106 Phases B–F | #106: competitor patterns (Attio docs MCP, Pipedrive in Claude and ChatGPT directories, HighLevel via agent directories, Zoho per-client pages); website MCP page lacks Claude Code and VS Code steps |
 | Verified-claims record, freshness stamps, monthly live eval | #102 §6 and §8 | #102: audit status counts and the `/agentic-ai` overclaims this server mirrors |
-| Capability facts | #95 | #95: 146 rows in `unknown-verified-2026-10-30` (80 LIVE, 66 LIVE-LIMITED) are candidates to extend the catalogue |
+| Capability facts | #95 | #95: 147 rows in `unknown-verified-2026-10-30` (80 LIVE, 66 LIVE-LIMITED, 1 HIDDEN) are candidates to extend the catalogue |
 | Vertical facts | #96 | #96: audit `module_matrix` — 34 of 63 modules, all industry verticals, have 0 % public-MCP coverage |
 | Free-plan facts | #94, #107 | both: the two PRs disagree with each other, and research §6d flags website 100 vs app 500 |
 
