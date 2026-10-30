@@ -1,6 +1,6 @@
 # Plan — MCP: proof layer for product claims (Claim Registry tools, proof fields on features, shared name map)
 
-- **Revision:** 1 (2026-10-30). Draft. Sol/Astra BLOCKED (§10).
+- **Revision:** 2 (2026-10-30) — reviewer decisions on F1–F4, delegated by the founder: §13. Rev 1 was the draft. Sol/Astra BLOCKED (§10).
 - **Plan id:** PLAN-HELLOG-0006, allocated by hand on 2026-10-30 from three sources: `git ls-tree origin/main docs/plans/` has no `plan-hellog-*` file; `git branch -r` shows `plan/hellog-0001..0005` only; the REST PR list (`gh api repos/MeruLocal/hellogrowthcrmwebsite_mcp/pulls?state=all`) shows `PLAN-HELLOG-0001..0005` as the only plan titles (0004 = #106, 0005 = #108). GraphQL `gh pr list` is blocked in this environment.
 - **Branch:** `plan/hellog-0006-mcp-proof-layer` · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (head `5190a02`)
 - **Mode:** PLAN (plan only — no code in this PR). Each BUILD below is its own PR carrying `Implements: PLAN-HELLOG-0006 (PR-x)`.
@@ -54,7 +54,7 @@ PR-C — shared name map (after 0005 PR-C; after PR-A)
 | D-EXP-18 spec §2–3 | Proof score 0–100, live module a precondition (score 0 if not LIVE/LIVE-LIMITED); bands 80/60/40; under D-EXP-16 a low score never removes a claim; registry columns incl. `plans`, `default_enabled`, `regions`; "status is never raised without code proof" | Served as computed by the research repo; this server **never computes or raises** a score or status (AC-04) |
 | PLAN-HELLOG-0005 (#108, rev 3) | Category records `{category, aliases, modules, depth, status, availability, evidence, limitations, not_built, canonical_urls, …}` from `growth/categories/*.yaml`; served as resource + `kind:"category"` in 0004 search/fetch; **rev 3 §13.2 M1: no `categories_list`/`category_get` tools** (DEFERRED to 0003 `capability_check`, founder F5); PR-B pins a Product Truth Audit snapshot with sha256 | PR-C **consumes** 0005's records for category id + synonyms, does not rebuild them. PR-A **cross-checks** against 0005 PR-B's snapshot instead of pinning a second audit copy. See §0c |
 | PLAN-HELLOG-0004 (#106) | `search`/`fetch`, `/mcp/knowledge` profile, `outputSchema` coverage, query suite | `claims_*` join the knowledge profile when it exists; no search kind is added for claims in this plan (§9) |
-| PLAN-HELLOG-0003 (#102) | Truth policy, status vocabulary, deny list; tool selection degrades past about 30–50 tools; additive only | Two tools added (founder named them in D-EXP-18); name map is a resource, not a tool. Tension recorded as founder decision F1 |
+| PLAN-HELLOG-0003 (#102) | Truth policy, status vocabulary, deny list; tool selection degrades past about 30–50 tools; additive only | Two tools added (founder named them in D-EXP-18); name map is a resource, not a tool. Tension recorded as founder decision F1 — **resolved rev 2 (§13 F1): the two tools stay, under the shared stance with #108** |
 | `main` code, 2026-10-30 | 89 `defineTool(` calls; 9 resources; `features_list` already returns an `availability` object = plan tiers; `CHANGELOG_RELEASES` has 6 curated releases (1.0.0–1.5.0) | `proof` is a new key, not `availability`; most features will have `changelog_ref: null` — that is honest, not a bug (AC-06) |
 | Research suite, branch `claude/usa-competitors-list-5373vp` | `claims/claims.csv` (2,411 rows, website-claim fix list with `claim_id`, `checked_on`, `expiry`, `confidence`); `claims/product-truth-v5/*`; 9 category YAMLs with `synonyms`, `live_modules`, `limitations`; **`claims/registry/` does not exist yet** | PR-A is blocked until the export lands (§2a dependency 1). The plan fixes the JSON contract the research PR must produce (§2) |
 
@@ -63,7 +63,7 @@ PR-C — shared name map (after 0005 PR-C; after PR-A)
 | Concern | Owned by | This plan |
 |---|---|---|
 | Category records, depth, category-level availability, `aliases`/buyer terms | 0005 PR-C | Reads them. Adds only module name, docs path and tool names, keyed by 0005's category id |
-| `categories_list` / `category_get` tools | 0005 §13.2 M1 → DEFERRED (F5) | Not added here. If the founder answers 0005 F5 "add the tools", the name map becomes a field of `category_get` and the PR-C resource stays as a mirror |
+| `categories_list` / `category_get` tools | 0005 §13.2 M1 → **RESOLVED (0005 F5, rev 5): not added** | Not added here. The name map is a resource keyed by 0005's category id (rev 2: the conditional "field of `category_get`" branch is gone) |
 | Product Truth Audit snapshot + `check:product-truth` | 0005 PR-B | Not re-pinned. PR-A adds a test: every claim whose capability matches a pinned 0005 audit row has the same status |
 | Agents `status`, `access` block | 0005 PR-A | Untouched |
 | Search/fetch `kind:"category"` | 0005 PR-C / 0004 Phase B | Untouched; no `kind:"claim"` here |
@@ -90,11 +90,11 @@ Smallest shippable version: **PR-A alone**. It turns the Claim Registry into a s
 **`claims_list`** inputs (all optional): `category_id`, `status`, `region`, `min_proof_score`, `search` (claim id, capability, wording). Output: `total`, `coverage` (what this population is and is not — same pattern as `FEATURES_COVERAGE`), `as_of`, `sha256`, compact rows. **`claims_get`** input: `claim_id`; unknown id → `fail` with up to 5 suggestions (same pattern as `features_get`).
 
 **Public filter (PR-A, generated, tested):**
-- `HIDDEN` rows are **not served** (internal flag; founder F2). `PLANNED` and `NOT_BUILT` rows **are** served with that status and `proof_score: 0` — nothing is presented as available.
+- `HIDDEN` rows are **not served** (internal flag; founder F2 — **confirmed rev 2, §13**). Every other status in the export is served **verbatim** (the #59 README carries `BETA`, `PARTIAL`, `CONFIGURATION`, `UNKNOWN` alongside the spec's five); only `LIVE` and `LIVE-LIMITED` may carry a non-zero `proof_score`. `PLANNED` and `NOT_BUILT` rows **are** served with that status and `proof_score: 0` — nothing is presented as available.
 - `product_evidence` (hellocrm file paths and routes, a private repo) is reduced to `"code-verified"` + `hgc_verified_on`; the path is never served.
 - `owner` is never served.
-- `customer_evidence` is served only when the registry marks it named **and** permissioned; otherwise `null` (D-EXP-18 §8: no invented customer figures).
-- URL fields are served only if they are `https://` and on an allowlisted host (hellogrowthcrm.com, the docs/help hosts, the video host the website already embeds). Anything else → `null` with `evidence_note: "not public"`.
+- `customer_evidence` is served only when the registry's `customer_evidence_permission` is `named` (rev 2, F4 — the field #59 defines: blank · `none` · `anonymised` · `named`); `anonymised`, `none` and blank → `null` with `customer_evidence_permission` echoed, so a consumer can see that evidence exists but is not public (D-EXP-18 §8: no invented customer figures).
+- URL fields are served only if they are `https://` and on an allowlisted host — rev 2 (F3): `hellogrowthcrm.com` (help and blog paths live there; `www.` is normalised to the apex), `mcp.hellogrowthcrm.com` (`mcp_evidence` only), and for `video_url` only `www.youtube.com`, `youtu.be`, `www.youtube-nocookie.com` (the only video host the website embeds today). The list is one exported const `EVIDENCE_URL_HOSTS` with a test; adding a host is a one-line PR. Anything else → `null` with `evidence_note: "not public"`.
 
 **Status and score rules:** served `status` and `proof_score` equal the pinned snapshot exactly. The server never derives, rounds or raises them. A claim with status other than LIVE/LIVE-LIMITED and a non-zero score is a **build error** (spec §2 precondition). A claim below 40 is still served (D-EXP-16), with `proof_band: "below_40"` — the score sets priority, it is not a deletion gate.
 
@@ -188,7 +188,7 @@ No competitor MCP was found serving per-claim evidence, but tool inventories are
 - **Internal evidence leak.** Public filter is generated and tested per field (AC-03b, AC-03d); URL host allowlist.
 - **Two truth snapshots disagree.** No second audit pin; cross-check against 0005 PR-B (AC-09). If the registry and the audit disagree, the build prints the difference and fails — a human PR resolves it in the research repo.
 - **Duplicating #108.** Synonyms come only from 0005 records (AC-07); no category tools; no new search kind.
-- **Tool count.** +2 tools (89 → 91) against 0003's degradation concern. Mitigated by the knowledge-profile split (0004 Phase C) and by also serving the same data as a resource. Founder F1 can switch to resource-only.
+- **Tool count.** +2 tools (89 → 91) against 0003's degradation concern. Mitigated by the knowledge-profile split (0004 Phase C) and by also serving the same data as a resource. F1 resolved rev 2 (§13): the tools stay; a later switch to resource-only would be a founder decision reversing D-EXP-18.
 - **Score misuse.** Served with `proof_band`; `coverage` text states the score sets proof-work priority and never removes a claim (D-EXP-16). Not merged with the other founder scores (D-EXP-11).
 - **Stale snapshot.** `as_of` and `expiry` served; a claim past `expiry` gets `stale: true` (data, not removal). Refresh is a human PR that changes the sha.
 - **Sparse proof today.** Spec §1: one app screenshot, 13 help articles, 6 curated releases. Most `proof` fields will be `null`. That is the honest state, and it is the queue for the website and hellocrm proof work (spec §5).
@@ -221,10 +221,10 @@ node .claude/skills/rss-plan-pr/scripts/ask-sol.mjs --file <this plan> --role pl
 ## 11. Decisions owed
 
 Founder:
-- **F1** — Two new tools `claims_list`/`claims_get` (as D-EXP-18 names them; default) or resource-only, matching 0005's "no new tool" stance for categories?
-- **F2** — Serve `HIDDEN` claims publicly? Default **no**. `PLANNED`/`NOT_BUILT` served with that status (default **yes**).
-- **F3** — Which video/docs hosts are allowlisted for public evidence URLs?
-- **F4** — Customer evidence: confirm the permission field the registry uses (spec §7 item 2, consent wording) before any customer name is served.
+- **F1 — RESOLVED rev 2 (§13): the two tools stay.** The question was: two new tools `claims_list`/`claims_get` (as D-EXP-18 names them; default) or resource-only, matching 0005's "no new tool" stance for categories?
+- **F2 — RESOLVED rev 2 (§13): `HIDDEN` not served; `PLANNED`/`NOT_BUILT` served with status and score 0.**
+- **F3 — RESOLVED rev 2 (§13): `hellogrowthcrm.com`, `mcp.hellogrowthcrm.com` (mcp evidence), YouTube hosts for video only.**
+- **F4 — RESOLVED rev 2 (§13): `customer_evidence_permission` (#59), served only when `named`.**
 
 Research (owner of the export):
 - **R1** — Add `mcp_feature_slugs` to the export so `feature-claim-map.ts` is generated, not hand-kept.
@@ -243,3 +243,16 @@ Estimate, not a quote (method: research-suite `growth/token-estimate-method.md`;
 | **Total, fresh** | + own audit snapshot and guard 0.6M · own category synonyms 0.5M | 4.1M | 5.3M | 8.0M |
 
 At the $3/M input rate: expected ≈ $13 (reuse), ≈ $16 (fresh); about 5× at the $15/M rate. This plan PR: about 0.2M (anchor: one plan PR = 179k–208k).
+
+## 13. Reviewer decisions (delegated by founder, 2026-10-30)
+
+The founder delegated F1–F4 to the delegated reviewer ("ask the reviewer and do as per the reviewer", 2026-10-30). Each was checked against `origin/main` `5190a02`, the Claim Registry README on research PR #59 (`claude/claim-registry-v1`, `claims/registry/README.md`) and the hosts hellocrmwebsite `origin/master` actually links or embeds. Rules applied: D-EXP-16 (additive only), D-EXP-17 (honest legend), D-EXP-18 (no claim above its proof), least exposure on the public server, nothing unverified served, HIDDEN never public, and one tool-vs-resource stance shared with PLAN-HELLOG-0005 (#108 §15).
+
+| # | Decision | Reason | Effect on the plan |
+|---|---|---|---|
+| **F1** | **Keep the two tools `claims_list` / `claims_get`**, and keep the same data as a resource (§2). This is consistent with #108's "no category tools" under one shared rule, now written in both plans: **a tool is added only when (i) a founder decision names it and (ii) it takes query inputs a resource cannot carry (filters).** Claims meet both — D-EXP-18 names the tools, and `claims_list` filters by `category_id`, `status`, `region`, `min_proof_score`, `search`. Category records (#108) meet neither, so they stay resource plus `kind:"category"` | The 0003 count concern is real but is already mitigated by the 0004 profile split and by serving the resource too; overriding a founder-named tool would not be a reviewer's call, and a filtered claim query has no resource equivalent. The two plans now differ in *outcome* for a stated reason, not in *stance* | §0b row, §0c row and §8 "Tool count" updated. Scope, ACs and the §12 estimate (3.0M / 4.2M / 6.3M reuse) unchanged. R1/R2 (research) unchanged |
+| **F2** | **`HIDDEN` is never served** (the README's `public: false` flag is honoured by the generated public filter, not by a hand list). `PLANNED` and `NOT_BUILT` **are** served with that status and `proof_score: 0`. Every other status the export carries (`BETA`, `PARTIAL`, `CONFIGURATION`, `UNKNOWN` — #59 README keeps them verbatim) is served verbatim with score 0 unless it is `LIVE` or `LIVE-LIMITED`; the build never maps a status up | Least exposure on an anonymous server, and D-EXP-17: a planned item shown as planned is honest; a hidden item shown at all is a leak; a mapped status is a claim above its proof (D-EXP-18) | §2 public-filter bullet updated. AC-03a now reads "non-live status ⇒ score 0" for *every* non-live value, not only PLANNED/NOT_BUILT. R2's question to research is narrowed to "confirm `proof_score` is pre-computed"; the vocabulary answer is in #59. No token change |
+| **F3** | **Allowlist, as one tested const `EVIDENCE_URL_HOSTS`:** `hellogrowthcrm.com` (apex; `www.` normalised to it — help articles and blog posts live under it, there is no separate docs host), `mcp.hellogrowthcrm.com` for `mcp_evidence` only, and for `video_url` only `www.youtube.com`, `youtu.be`, `www.youtube-nocookie.com`. **Not allowlisted:** `app.hellogrowthcrm.com` (a login surface; no public demo workspace exists — §8 "Sparse proof"), `staging.*`, `api.*`, `seo.*`, and any third-party doc host. Any other URL → `null` + `evidence_note: "not public"`. Adding a host is a one-line PR with a test update | The website's `origin/master` links `hellogrowthcrm.com` 1,158× and embeds YouTube 53× and no other video host; the help sitemap is served from the apex. Allowlisting only what is already public keeps exposure least and makes the filter checkable by grep | §2 URL bullet updated. AC-03d's host test enumerates the const. No scope or token change |
+| **F4** | **Use `customer_evidence_permission` exactly as #59 defines it** (blank · `none` · `anonymised` · `named`; any other value fails the registry build). `customer_evidence` is served **only when the value is `named`**. For `anonymised`, `none` and blank the text is `null` and the permission value is echoed, so a consumer can tell "evidence exists, not public" from "none recorded". No MCP-side consent wording is invented; the consent record lives in the registry | The research PR already owns the field and its enum; defining a second field here would fork the truth. `anonymised` text is still a customer statement without a name attached, and serving it anonymously on a public server is a judgement the founder has not made — so it stays unserved until the founder says otherwise (least exposure) | §2 customer-evidence bullet updated. AC-03b (per-field filter test) gains the four-value case table. No token change |
+
+**What did not change:** nothing is removed, trimmed or reworded (D-EXP-16). WhatsApp stays one channel among many (AC-03). Sol and Astra stay BLOCKED; these are reviewer decisions, not a Sol/Astra verdict.
