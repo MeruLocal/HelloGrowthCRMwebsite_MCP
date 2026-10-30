@@ -287,8 +287,8 @@ Founder question added: **F5** — keep categories as resource plus search kind 
 |---|---|
 | Sol | **BLOCKED** (no Azure key) |
 | Astra (blind) | **BLOCKED** (no Azure key) |
-| Fable | **PENDING** (parent session) |
-| Blind Opus | **PENDING** (parent session) |
+| Provisional reviewer 1 (independent) | **PENDING** (parent session) |
+| Provisional reviewer 2 (blind) | **PENDING** (parent session) |
 
 ## 14. Revision 4 — blind Review 2 folded (2026-10-30)
 
