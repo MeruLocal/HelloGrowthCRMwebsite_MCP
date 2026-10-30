@@ -1,0 +1,339 @@
+# Plan — MCP: category-level capability facts kept true, an honest access model, and a discoverability score
+
+- **Revision:** 6 (2026-10-30) — applies founder rule D-EXP-22 (§16): the qualifier and status fields placed next to existing copy are `DEFERRED — build first (D-EXP-22)`. Rev 5 (2026-10-30) — reviewer decisions on F5, F6, F7, delegated by the founder: §15. Rev 4 folded Review 2, the blind PROVISIONAL substitute for Astra (PR comment 6523614601), verified against `origin/main` `5190a02`: §14. Rev 3 (§13) folded the capability-agent MCP drafts into PR-C. Rev 2 folded the PROVISIONAL Review 1 (PR comment 6523387659) and applied founder rules **D-EXP-16 additive only** and **D-EXP-17 honest tables**: §10a. Still a draft: Sol/Astra BLOCKED.
+- **Plan id:** PLAN-HELLOG-0005, from `plan-id.mjs next`. Two of its three sources failed, as they did for 0004: it read trunk `master` instead of `main`, and `gh pr list` is GraphQL, which is blocked here. Re-checked by hand on 2026-10-30: the REST PR list shows 0001–0004 as the only `PLAN-HELLOG-*` titles (#60, #98, #102, #106), `git ls-remote` shows `plan/hellog-0001..0004` only, and `origin/main` has no `plan-hellog-*` file.
+- **Branch:** `plan/hellog-0005-mcp-category-truth-discoverability` · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (head `5190a02`)
+- **Mode:** PLAN (CEO office, plan only — no code in this PR). Each BUILD below is its own PR carrying `Implements: PLAN-HELLOG-0005 (PR-x)`.
+- **Change tags:** `public_api` (a new resource, new manifest fields, changed served copy), `product` (which capabilities the server says HGC has)
+- **Tier:** T2. Owed (`workflow.mjs obligations --mode BUILD --tags public_api,product`): acceptance_criteria · blast_radius · caller_inventory · compatibility_test · competitor_scan · intent · necessary_changes · planned_file_coverage · premise_check · smoke_test
+- **Restricted areas touched (G2):** none. No auth, billing, migration, secret or email-send file. `src/tools/access.ts` (the bearer gate for the eight operator write tools) is read, not changed.
+- **Freeze in force?** Yes, inherited. The PLAN-HELLOG-0003 release gate (PR #102 §0c, widened by 0004) blocks a public deploy of any new anonymous surface until G1–G5 are deployed and verified. PR-C (a new resource) obeys it. **Rev 4 (Review 2 finding 5):** PR-A adds no endpoint, tool or resource, only fields on the existing `/.well-known/mcp.json`, server card and `agents_list`/`agents_get` responses. **Rev 5 (F7, resolved §15): the gate is per *deploy*, not per endpoint.** PR-A's fields ride the same image as everything else on `main`, and 0003 §0c binds the gate to the image digest, so PR-A may merge but its public deploy waits for the gated 2.2.0 image like 0003 Phase 1 itself. Merging PR-A is not blocked.
+- **Origin:** founder decision D-EXP-13 (research-suite `research-methodology/expansion-plan-2026-10-30.md` §6j: "four PRs per research output"; item 3 is this repo). Items an open plan already covers went to that plan as evidence comments instead (§0c).
+- **Date:** 2026-10-30
+
+## 0. Intent
+
+- **Claim.** The research found three things the open MCP plans do not cover. (1) HGC competes in many software categories beyond CRM — the compete map has 77 rows (32 full depth, 38 partial, 7 thin) — but the server can only answer "CRM for X". A buyer's assistant asking "does HelloGrowth do freight-forwarding software / salon software / applicant tracking?" gets no category-level fact. (2) The server's own description of itself is wrong: it serves "12 AI Agents. 3 Autonomy Levels" (the Product Truth Audit v5 rates this a P1 phantom: 4 agents are registered) and says the MCP connects assistants "directly to your CRM data", which describes a different server. (3) Nobody measures the fourth founder score, **Agent/MCP Discoverability**, so no plan can show it moved.
+- **Mechanism.** Rev 2: **three** additive build PRs here (PR-D moved to the research suite, §10a). PR-A adds a per-entry `status` and accurate descriptions **alongside** the existing agent copy (nothing removed or relabelled — D-EXP-16) and a machine-readable `access` block. PR-B adds a CI check that pins served capability statuses to a snapshot of the Product Truth Audit (LIVE vs LIVE-LIMITED, limits carried). PR-C serves category records — built from data #95 and #96 already carry, plus the compete map — as one resource and as a `kind` inside 0004's `search`/`fetch`. The Discoverability score script (rev 1 PR-D) now belongs to the research suite.
+- **Observable.** An assistant can read one resource and learn, per category, the depth, the status, the limits and the canonical page, or that no dedicated page exists. The manifest says plainly that the public server is read-only and holds no CRM data. A monthly research-suite run prints one score row with every component sourced.
+- **Risk.** Category records could overclaim depth (a "partial" read as "is a TMS"). A truth check that is too strict blocks honest edits. A copy correction could be read as removing a claim the founder wants. Score components could be read as one merged "AI visibility" number, which D-EXP-11 forbids. Mitigations in §8.
+
+## 0a. Necessary changes   (planned-file coverage)
+
+PR-A — per-entry status, accurate descriptions alongside, access model (no dependency). PR #108 opened on this plan
+- [ ] `src/tools/agents.ts` — **rev 6 (D-EXP-22): this whole bullet is `DEFERRED — build first (D-EXP-22)`.** `status`, `status_source`, `verified_summary`/`verified_detail`/`verified_tagline`, `status_summary`, `servers[]`, `summary_qualifier`, `badge_qualifier` and `authoritative_fields` all place a limit, downgrade or "these are current" precedence beside existing live copy, so none is built. The text below is kept as evidence. Build in hellocrm instead (§16). **rev 2 (Review 1 finding 1, verified: `AGENTS` holds 12 records — voice, journey, cold-outreach, lead-routing, post-call, call-coach, sales-assistant, crm-command, deal-risk, account-health, mcp, ai-email-composer — and `AgentRecord` has no status field).** Additive: (1) add `status: "LIVE" | "LIVE-LIMITED" | "PLANNED" | "UNKNOWN"` to `AgentRecord` and to **every** entry, from the Product Truth Audit v5 rows, plus `status_source` (audit file + row) and `hgc_verified_at`; (2) add `verified_summary` / `verified_detail` beside the existing `summary` / `detail` (rev 4, Review 2 finding 2, verified: `AgentRecord` has no `description` — the card copy is `summary`, the H1/meta title is `tagline`, the hero/meta description is `detail`) where the audit differs (e.g. Deal Risk: "runs on demand" shadows the `detail` text), leaving the existing text in place; a `tagline` correction, if any, is `verified_tagline` on the same rule; (3) add a **derived** `status_summary` (e.g. `{live: n, live_limited: n, planned: n, unknown: n}`, computed from the entries, never hand-typed) next to the existing badge. On the `mcp` entry keep slug, route and copy, and add `servers: [{kind:"public-knowledge", access:"read-only", auth:"none", crm_data:false}, {kind:"tenant-crm", status:"LIVE-LIMITED", auth:"per-workspace scoped key, admin setup", verified_clients:[…]}]`. Bump the `SYNCED_AT` stamp (Review 1 finding 6).
+  - **Rev 4 — adjacent qualifiers (rev 6: `DEFERRED — build first (D-EXP-22)`, do not build).** Additive only, existing copy untouched: (i) on the `mcp` entry, `summary_qualifier: "Applies to the tenant CRM MCP server (per-workspace key, admin setup). This public server is read-only and holds no CRM data — see servers[]."` directly after `summary` ("…directly to your CRM data…"); (ii) beside the hub badge ("12 AI Agents. 3 Autonomy Levels. One CRM."), `badge_qualifier` derived from `status_summary` (e.g. "Marketing count. Registered status per agent: see status_summary.") — never hand-typed numbers; (iii) a manifest-level `authoritative_fields: ["status", "status_summary", "servers", "verified_summary", "verified_detail", "access"]` with `authoritative_fields_note: "Where these disagree with marketing copy in the same record, these are current."` in `agents_list`, `agents_get` and `/.well-known/mcp.json`. A test asserts every record whose copy is contradicted by its status or `servers` carries the qualifier. **Rewriting the old copy (summary, badge, Deal Risk wording, "Only CRM MCP") stays DEFERRED (D-EXP-16)** and is founder decision **F6**.
+  - **DEFERRED — founder hold (D-EXP-16):** changing the badge text "12 AI Agents. 3 Autonomy Levels" to the registered count; replacing Deal Risk "24/7"/"real time" with "on demand"; removing "The Only CRM MCP Server with Native WhatsApp Tools" and "90% of deals close on WhatsApp"; removing or trimming any of the 12 agents. Evidence kept: `grep -n "12 AI Agents\|24/7\|real time\|The Only CRM MCP" src/tools/agents.ts`, audit v5 `overclaims_phantoms` rows for `/agentic-ai`. Not built.
+- [ ] `src/well-known.ts` — add `access: {public:"read-only", auth:"none", crm_data:false, operator_write_tools:"bearer-gated, not for buyers"}` to `/.well-known/mcp.json` and the server card. The existing prose ("Public read-only website mirror … No customer data, no CRM actions") **stays verbatim**; a test asserts the block and the prose agree (Review 1 finding 4, partially accepted — see §10a)
+- [ ] ~~`src/data/deny-claims.ts` — `twelve-agents`, `public-mcp-read-write`, `only-crm-mcp` deny entries~~ — **DEFERRED — founder hold (D-EXP-16)**: a deny entry would fail the build until the existing strings are removed. Kept as evidence; when #103 merges, they may be added as **report-only warnings** if the founder agrees
+- [ ] `test-data/fixtures/tools-list-<date>.json` + `test-data/fixtures/resources-<date>/*.json` — **rev 2 (Review 1 finding 2, verified: `test-data/` does not exist on this branch; the 0004 fixture is in an open plan, not built code)** — PR-A captures its own `tools/list`, resource and `agents_list`/`agents_get` fixtures from `main` before any edit
+- [ ] `src/tools/__tests__/agents-status.test.ts`, `src/__tests__/well-known-access.test.ts` — the gates (every entry has a status; `status_summary` equals the count derived from entries; every pre-existing field is unchanged)
+
+PR-B — truth sync against the Product Truth Audit (after #95 and #96 merge; **fallback:** if either stalls, PR-B pins only the audit rows for what this server already serves — agents, pricing, integrations — and adds the #95/#96 joins when they merge)
+- [ ] `test-data/product-truth/2026-10-24/` — pinned CSV subset (rev 4, Review 2 finding 7: this repo is public, so before pinning, the subset is checked column by column for tenant names, tenant ids, emails, phone numbers, internal-only notes and code paths outside this repo; such columns are dropped from the subset, and `SHA256SUMS` covers the redacted file. A reviewer signs that check in the PR body) (`verified_capabilities`, `industries_detail`, `planned_not_built`, `unknown-verified-2026-10-30`, and the `overclaims_phantoms` rows for pages this server mirrors) plus `SHA256SUMS`
+- [ ] `scripts/check-product-truth.mjs` + `package.json` script `check:product-truth`, added to `verify`
+- [ ] `src/tools/__tests__/product-truth.test.ts` — runs the check on the pinned snapshot and on two failing fixtures
+
+PR-C — category facts (after PR-B; the `search` kind after 0004 Phase B)
+- [ ] `scripts/build-category-map.mjs` — builds the records from the pinned compete-map rows joined to #95 capability ids and #96 vertical keys
+- [ ] `src/data/category-map.ts` — generated output, header carries source sha and `as_of`
+- [ ] `src/server.ts` — one resource `hellocrmwebsite://site/categories` (application/json)
+- [ ] `src/knowledge-index.ts` (0004 Phase B file) — index the records as `kind:"category"`. **Fallback (Review 1 finding 3):** if 0004 Phase B has not merged, PR-C ships the resource alone and this leg waits
+- [ ] `src/data/__tests__/category-map.test.ts` — shape, qualification and negative tests
+
+PR-D — Agent/MCP Discoverability score — **rev 2: moved out of this repo (Review 1 finding 5, accepted).** It reads the research suite's `hellogrowthcrm_mcp_submission_tracker.csv` and 0004's query-suite output and prints a row back to the research suite; D1 and D2 cannot be computed from this repo. It becomes a research-suite item (D-EXP-13 item 4), reading this server's pinned `tools/list` fixture from PR-A for D3/D4. No file in this repo.
+
+## 0b. What we already know   (G4)
+
+| Source | What it said | What this plan does about it |
+|---|---|---|
+| Learning brief (`lessons.mjs brief`) | 0 lessons in the corpus; the merged-PR read **FAILED** (GraphQL blocked) | Recorded as a failed read. Merged PRs were read by REST instead: #91, #97, #99, #101, #104, #105 |
+| PLAN-HELLOG-0002 (#98, closed) | Astra REJECTed rev 4 on three points: approval must bind to a digest of the exact claim payload; a vertical that references an `on_request` / enterprise / other-industry capability loses that qualification; a committed-data criterion contradicted the data model. Closed as "largely implemented" by #97 and #99 | PR-B binds the truth check to a snapshot **sha256**, and refreshing it is a human PR. AC-02 makes qualification inheritance a test. Records are generated, never hand-edited, so no criterion can contradict the data |
+| PLAN-HELLOG-0003 (#102) + strategy doc | Truth policy (status vocabulary, deny list, freshness), Phase 2 tools including `capability_check` and `buyer_get_industry_fit`; additive only; tool selection degrades past about 30–50 tools | Reused, not repeated. ~~PR-A adds deny entries to its list.~~ Deny entries are DEFERRED (D-EXP-16, §0a); PR-A adds none. PR-C adds **no tool**, so the tool count is unchanged. Category records are input `capability_check` can read when 0003 Phase 2 is built |
+| PLAN-HELLOG-0004 (#106) | Registry, `search`/`fetch`, tool split, `outputSchema`, client setup docs, directory pack, 4-prompt query suite | Not repeated. PR-C adds one `kind` to its index. PR-D reads its query-suite result as one input |
+| #95 (46 capabilities), #96 (52 verticals, `kind` dedicated/alias/configuration_only) | Both name "generate from the product inventory" as a follow-up | PR-B and PR-C are that follow-up, bound to the audit snapshot |
+| #52 (AI citation audit script) | Monthly 10-prompt citation run | Out of scope here; Citation Share is a different score (§9) |
+| #94 vs #107 | #94 serves Free task boards as "100 tasks"; #107 says Task Boards are a Growth module, not on Free | Conflict posted as evidence on both (§0c). PR-B's check would flag it once the ruling is in the snapshot |
+
+## 0c. Covered elsewhere — evidence posted, not re-planned
+
+| Research item | Already covered by | Evidence comment posted |
+|---|---|---|
+| Registry listing; competitor registry presence | #106 Phase A | #106: US-1 found 19 of 238 open US competitors with an official MCP in the registry; pilot found 8 of 11 via vendor docs, only monday in the registry |
+| `search`/`fetch`; tool naming, descriptions, `outputSchema`; per-client setup docs; directories | #106 Phases B–F | #106: competitor patterns (Attio docs MCP, Pipedrive in Claude and ChatGPT directories, HighLevel via agent directories, Zoho per-client pages); website MCP page lacks Claude Code and VS Code steps |
+| Verified-claims record, freshness stamps, monthly live eval | #102 §6 and §8 | #102: audit status counts and the `/agentic-ai` overclaims this server mirrors |
+| Capability facts | #95 | #95: 147 rows in `unknown-verified-2026-10-30` (80 LIVE, 66 LIVE-LIMITED, 1 HIDDEN) are candidates to extend the catalogue |
+| Vertical facts | #96 | #96: audit `module_matrix` — 34 of 63 modules, all industry verticals, have 0 % public-MCP coverage |
+| Free-plan facts | #94, #107 | both: the two PRs disagree with each other, and research §6d flags website 100 vs app 500 |
+
+## 1. Premise   (G8)
+
+| Claim | Type | Evidence gathered | Running system? |
+|---|---|---|---|
+| No category-level facts are served | missing_feature | `content_list_industries` (`src/tools/content.ts`) returns only name + `crm-for-*` URL; no tool or resource on `main` takes a category; #95 is horizontal features in 8 categories; #96 is verticals. Requirement: compete map (77 rows) and §6d "copy says business software, never just a CRM" | not required |
+| The server describes itself wrongly | documentation | `src/tools/agents.ts`: badge "12 AI Agents. 3 Autonomy Levels. One CRM."; `mcp` entry "Connect ChatGPT, Claude, or Gemini directly to your CRM data", "The Only CRM MCP Server with Native WhatsApp Tools", "90% of deals close on WhatsApp". Authority: audit v5 `overclaims_phantoms` (`/agentic-ai`: 12 agents = NOT FOUND/P1; 4 registered; Deal Risk "run on demand"; MCP connector LIVE-LIMITED, ChatGPT not confirmed). `scripts/sync-website-mirror.mjs` lists `agents` as a MANUAL surface assembled from the website's MCP page, so the website's "read/write" framing flows in here | not required |
+| The audit statuses are not checked against served data | missing_feature | No test on `main` reads the audit; #95 and #96 bodies both defer generation; #103 deny list has 8 entries, none on agents | not required |
+| No Discoverability score exists | missing_feature | Requirement: spec addendum 2026-10-30 item 1 and expansion plan §6i (four scores, never merged). Repo: no score script; #52 measures citations only | not required |
+
+The live server was not queried in this session; the claims above are about `main`. The research recorded the live build as 2.0.0 while `main` is 2.1.0 (0004 §1), so the BUILD PRs re-check live output before quoting it.
+
+## 2. What changes
+
+Smallest shippable version: PR-A alone (per-entry status, accurate descriptions alongside, `access` block, own fixtures) — it has **no** external dependency in rev 2. Then PR-B, which makes PR-C safe, then PR-C. PR-D is research-suite work.
+
+**Category record** (PR-C), one per compete-map row:
+`{ category, aliases[], hgc_area, modules: [{type:"capability"|"vertical", id, kind?}], depth: "full"|"partial"|"thin", status: "LIVE"|"LIVE-LIMITED"|"PLANNED"|"UNKNOWN", availability: "native"|"partial"|"integration"|"not_available"|"unverified", evidence: [{source, row}], hgc_verified_at, competitor_checked_at, limitations[], not_built[], canonical_urls[], no_dedicated_page: bool, markets[], as_of, source: {file, sha256, row} }`
+
+- **D-EXP-17 (rev 2):** `availability` is the honest-table legend in machine form — ✓ Native = `native`, ◐ Partial = `partial`, ↗ Integration = `integration`, — Not available = `not_available`, ? Could not verify = `unverified` — with `evidence` per record and the two last-verified dates (`hgc_verified_at`, `competitor_checked_at`). A record with no evidence is `unverified`, never `native`. Any served text rendering these records uses the same legend.
+
+- Served text never says "HGC **is** a <category> tool" for `partial` or `thin`; it says the depth and the limits.
+- Competitor names and the compete map's marketing angle are **not** served. Comparisons belong to the alternatives tools.
+- `canonical_urls` lists only live sitemap URLs. If there are none, `no_dedicated_page: true` — never a guessed URL.
+- A `thin` or `UNKNOWN` row is served with that status, not dropped. G13: nothing silently narrowed.
+
+**Score** (rev 2: research-suite item, not built here — kept for reference): five components, each `{value, source, as_of}`, or `null` with a reason — never 0 for "not measured".
+D1 registry listing present · D2 directory listings that describe the server correctly (from `hellogrowthcrm_mcp_submission_tracker.csv`) · D3 protocol surface (`search`/`fetch` present, `outputSchema` share, annotation completeness, valid manifest and card) · D4 description lint pass rate · D5 correct tool use from 0004's query suite. D1 and D3 are also computed for competitor servers from the research registry scan, so the score has a benchmark. It is printed as one row for the research suite to file; this repo does not write there.
+
+## 3. Affected files
+
+| Area | Files | Why |
+|---|---|---|
+| Served copy | `src/tools/agents.ts` | PR-A truth fix |
+| Discovery manifest | `src/well-known.ts` | PR-A `access` block |
+| Truth guard | `scripts/check-product-truth.mjs`, `test-data/product-truth/**`, `test-data/fixtures/**` (deny entries DEFERRED, D-EXP-16) | PR-A fixtures, PR-B |
+| Category data | `scripts/build-category-map.mjs`, `src/data/category-map.ts`, `src/server.ts`, `src/knowledge-index.ts` | PR-C |
+| Measurement | — (rev 2: PR-D moved to the research suite) | — |
+
+## 5. Blast radius and caller inventory
+
+- **Backward.** Callers of `agents_list` / `agents_get` (any MCP client on `/sse`, `/mcp`) get **unchanged existing text** plus new fields (`status`, `status_summary`, `servers`, `verified_*`, qualifiers, `authoritative_fields`); no existing value changes (D-EXP-16). Consumers of `/.well-known/mcp.json` and `/.well-known/mcp/server-card.json` (registries, Smithery, `scripts/audit-live-mcp.mjs`) get one extra key. `resources/list` gains one entry; the 9 existing URIs are unchanged. `tools/list` is unchanged.
+- **Forward.** No new network host or database read. PR-B and PR-C read bundled files only; the research-suite score script reads PR-A's pinned tool-list fixture.
+- **Sideways.** hellocrmwebsite owns the MCP page (`/agentic-ai/mcp`) whose "read/write access" line seeds `agents.ts`; a manual re-sync could bring the old wording back, so PR-A's test pins it. The website fix is in the website plan PR for this research output. hellocrm owns `crm-mcp-server`; PR-A states its status from the audit and does not test it.
+
+## 6. Acceptance criteria
+
+- **AC-01** — `resources/read hellocrmwebsite://site/categories` returns one record per pinned compete-map row (77 for the 2026-10-30 snapshot). Every record has `category`, `depth`, `status`, `as_of` and `source.sha256`. `limitations` is non-empty whenever `depth != "full"` or `status == "LIVE-LIMITED"`.
+- **AC-02** — Qualification is inherited: a record that references a #96 vertical with `kind` alias or configuration_only, or a #95 capability with an availability note, carries that `kind` or note unchanged (test over every record).
+- **AC-03 NEGATIVE** — No **new** served record or string presents a `planned_not_built` item as available; **no new string asserts CRM data access on the public server** (rev 4, Review 2); no category record contains a competitor name; no category record has `availability: "native"` without evidence. **AC-03c (rev 4; rev 6: `DEFERRED — build first (D-EXP-22)`, not built)** — every record whose existing copy is contradicted by its `status` or `servers` (at least the `mcp` entry and the hub badge) carries the adjacent qualifier, and `authoritative_fields` is present wherever those records are served. (Rev 1's "no served string matches `twelve-agents`…" is DEFERRED with the copy changes — D-EXP-16.)
+- **AC-03b** — Every entry `agents_list` serves (all 12 today) carries a `status`; `status_summary` equals the counts derived from the entries; no entry is removed and every pre-existing field keeps its value (Review 1 finding 1).
+- **AC-04** — `npm run check:product-truth` exits 0 on the pinned snapshot and prints its sha256; it exits 1 on a fixture where a LIVE-LIMITED item has no limitation, and on one where a served status differs from the snapshot.
+- **AC-05** — `/.well-known/mcp.json` and the server card both carry `access.public = "read-only"` and `access.crm_data = false`; ~~`agents_get {slug:"mcp"}` returns two `servers` entries with different `kind`s~~ (`DEFERRED — build first (D-EXP-22)`). The block **formalises an existing statement** (`authentication.note` and the llms text already say read-only, no customer data); a test asserts the two agree.
+- **AC-06** — moved to the research suite with PR-D (rev 2).
+- **AC-07 REGRESSION** — `tools/list` names, `inputSchema`s and annotations are identical to **PR-A's own** pinned fixture (captured from `main` before any edit — 0004's fixture does not exist on `main`); of the 9 existing resource URIs, the **7 static ones** return byte-identical output; `hellocrmwebsite://blog/recent` and `hellocrmwebsite://help/categories` are DB-backed (`blog_posts`, `help_categories` via Supabase in `src/server.ts`), so for those two only the JSON shape (keys and types) is compared (rev 4, Review 2 finding 3).
+
+## 7b. Smoke test — Expected only
+
+Env: local `npm run dev` on the build branch, then the deployed host after the 0003 gate · Login: none (anonymous) · Role: MCP client (SDK `Client`, streamable HTTP)
+
+| # | Action | Expected |
+|---|---|---|
+| 1 ⭐ | `resources/list` | contains `hellocrmwebsite://site/categories` **(new)** |
+| 2 | `resources/read` that URI; find `"freight forwarding software"` | `depth: "full"`, module `freight_forwarding` (compete-map row) **(new)** |
+| 3 ⭐ | `GET /.well-known/mcp.json` | `"access": {"public": "read-only", …}` **(new)** |
+| 4 | `agents_get {slug:"mcp"}` | two `servers`; the `public-knowledge` one says `crm_data: false` **(new)** |
+| 5 NEGATIVE | search the categories output for "e-invoice" | appears only under `not_built` (#96 note: manufacturing e-invoice / e-way bill planned, not built) **(new)** |
+| 6 REGRESSION | `tools/list` | same names and count as **PR-A's own** pinned fixture (captured from `main` before any edit) |
+| 7 ⭐ | `agents_list` | still 12 entries; each now has `status` **(new)**; existing text unchanged |
+
+## 7e. Competitors
+
+Legend (D-EXP-17): ✓ Native · ◐ Partial · ↗ Integration · — Not available · ? Could not verify. **HGC last verified: 2026-10-30** (`main` code; live server not queried) · **Competitors last checked: 2026-10-30** (research-suite CSVs; live pages not re-checked this session). Gaps kept.
+
+| Product | Public knowledge MCP | Tenant-data MCP | Category-level facts | In MCP Registry | Evidence |
+|---|---|---|---|---|---|
+| **HelloGrowth** | ✓ Native (this server) | ◐ Partial (LIVE-LIMITED per audit v5; ChatGPT not confirmed) | — Not available (PR-C adds it) | — Not available (#106) | `src/server.ts`, `src/well-known.ts`; audit v5 |
+| Attio | ✓ Native (`docs.attio.com/mcp`) | ✓ Native | ? Could not verify | ? Could not verify | research `mcp-competitors.csv` |
+| Salesforce | ◐ Partial (Metadata Grounding, Discover/Describe — own data model) | ✓ Native | — Not available (none found; tool inventory pending, not proof of absence) | ? Could not verify | same |
+| HubSpot | ? Could not verify | ✓ Native (OAuth, CRM search API) | ? Could not verify | ? Could not verify | same |
+| Vonage + 18 others | ? Could not verify | ? Could not verify | ? Could not verify | ✓ Native (listed) | `registry-official-us-x1-2026-10-30.csv` |
+
+No competitor MCP found serves category-level "does it do X for Y" facts, but tool inventories (A2) are pending for most, so this is **not proof of absence**. Astra: **BLOCKED** (no key). Anthropic live-page check: **UNVERIFIABLE** in this session (not run); the BUILD PR for PR-C re-checks Attio and Salesforce before quoting.
+
+## 7f. Compatibility test
+
+- PR-A captures the `tools/list` fixture itself (AC-07) and `test-data/fixtures/resources-<date>/*.json` for the 9 existing resources, from `main` before any edit (byte comparison for the 7 static ones, shape for the 2 DB-backed ones).
+- `agents_get`: a test asserts every pre-existing key is still present with the **same value**; only new keys are added (D-EXP-16 — no existing value changes).
+- Manifest and card: a test asserts every pre-existing key is unchanged; `access` is additive.
+
+## 8. Risks and edge cases
+
+- **Depth overclaim.** Mitigated by the served-text rule in §2 and AC-01/AC-02. Founder decides whether a `partial` category is listed at all (F1).
+- **Stale snapshot.** The audit is dated 2026-10-24 and v6 is in progress. `as_of` is served; refreshing the snapshot is a human PR that changes the sha, so approval binds to the exact payload (0002 blocker 1).
+- **Check too strict.** PR-B reports overclaim matches as warnings for the first release, and fails only on status mismatch and missing limitation.
+- **Copy correction read as a removal.** Rev 2 settles this with **D-EXP-16**: no existing copy is changed or removed; accurate status and descriptions are served **alongside**. The copy corrections are DEFERRED with their evidence. No tool, field, route or agent entry is removed.
+- **Score misuse.** Kept as five separate components and never folded into the other three scores (D-EXP-11).
+- **Tenant MCP facts.** Stated from the audit only; verified clients come from hellocrm, not from this repo (F2).
+
+## 9. What this deliberately does NOT do
+
+- No new tool; `capability_check` and the profile split stay with 0003 Phase 2 and 0004 Phase C.
+- No registry, `search`/`fetch`, schema or setup-doc work — that is #106.
+- No AI Recommendation, Citation or Knowledge Share measurement, and no monthly citation reverse-engineering: those are research-suite (capability child 6) and website work; #52 holds the citation script.
+- No website change. The "read/write access" line and the missing Claude Code / VS Code steps on `/agentic-ai/mcp` go in the hellocrmwebsite plan for this research output.
+- No price, plan-limit or Free-plan ruling (#94 / #107).
+
+## 10. Review record
+
+| Reviewer | Plan version | Verdict | Accepted | Rejected, and why |
+|---|---|---|---|---|
+| Sol | rev 1 | **BLOCKED** — `AZURE_SOL_API_KEY` / `AZURE_OPENAI_API_KEY` not set | — | — |
+| Astra (blind) | rev 1+fold | **BLOCKED** — `AZURE_ASTRA_API_KEY` not set | — | — |
+| Review 1 (PROVISIONAL, D-EXP-10) | rev 1 | **ACCEPT_WITH_CHANGES** (PR comment 6523387659) | F1 per-entry status (badge *derived* as an added `status_summary`, not by editing the badge) · F2 own fixtures · F3 dependency fallbacks · F4 access block formalises existing prose · F5 PR-D out · F6 bump `SYNCED_AT` · estimate | F1 "derive the badge count" by changing the badge text → **DEFERRED (D-EXP-16)**; F4 "derive the prose from the block" → rejected, it rewrites existing prose; a consistency test is used instead. §10a |
+| Review 2 — blind PROVISIONAL substitute for Astra | rev 2 (+§13) | **ACCEPT_WITH_CHANGES** (PR comment 6523614601; plan text only, review record stripped) | 7 findings + AC-03 addition, all accepted (§14) | none rejected; finding 1's precedence rule is accepted as an *additive* qualifier, with the copy rewrite DEFERRED (D-EXP-16) and put to the founder (F6) |
+
+Commands to run when the keys exist (from a hellocrm checkout):
+
+```bash
+node .claude/skills/rss-plan-pr/scripts/ask-sol.mjs --file /home/user/wt-mcp-plan/docs/plans/2026-10-30-plan-hellog-0005-mcp-category-truth-discoverability.md --role plan --out /tmp/0005-sol-r1.md
+node .claude/skills/rss-plan-pr/scripts/ask-sol.mjs --file /home/user/wt-mcp-plan/docs/plans/2026-10-30-plan-hellog-0005-mcp-category-truth-discoverability.md --role plan --model astra --out /tmp/0005-astra-r2.md
+```
+
+- **What left the machine (G9b):** nothing from this repo beyond the plan text the parent gave to the provisional reviewer.
+
+### 10a. Rev 2 fold — each Review 1 finding, verified before it was accepted
+| # | Finding | Verified how | Decision |
+|---|---|---|---|
+| 1 | Badge fix leaves 12 served agents with no status | `grep -n "slug:" src/tools/agents.ts` → 12 entries in `AGENTS` (plus 4 `vs-*` comparisons); `interface AgentRecord` has no `status` | **Accepted (additive):** `status` on every entry, `status_summary` derived and added beside the badge, AC-03b. Editing the badge and removing agents → **DEFERRED (D-EXP-16)** |
+| 2 | AC-07 fixture missing | `ls test-data` → no such directory on this branch | **Accepted:** PR-A captures its own fixtures |
+| 3 | Four dependencies, no fallback | `ls src/data/deny-claims.ts src/knowledge-index.ts` → neither exists | **Accepted:** fallbacks stated for PR-A (none needed now), PR-B, PR-C |
+| 4 | `access` block restates prose | `grep -n "read-only" src/well-known.ts` → `authentication.note` and llms text already say it | **Partially accepted:** AC-05 says it formalises an existing statement; deriving the prose from the block **rejected** (rewrites existing copy, D-EXP-16) — a consistency test instead |
+| 5 | PR-D is research work | PR-D inputs live in the research suite; D1/D2 not computable here | **Accepted:** PR-D moved to the research suite |
+| 6 | Freshness stamps | `SYNCED_AT 2026-06-11` comments in `agents.ts` | **Accepted:** PR-A bumps the stamp; its tests pin the added fields |
+| est | ~20 % high; PR-A 0.7–0.9M | — | **Accepted:** §12 rev 2 |
+
+Founder rules applied in rev 2: **D-EXP-16** — badge text, Deal Risk wording, the two unsourced lines, the deny entries and any removal of the 12 agents are DEFERRED with evidence; only additions ship. **D-EXP-17** — §7e rewritten with the legend, evidence and both dates; category records carry `availability` + `evidence` + two dates.
+- **Founder decisions owed:** (rev 4 adds F6, F7 — §14) F1 — list `partial` and `thin` categories publicly, or `full` only? (rev 2: under D-EXP-16 the default is to list all, with honest `availability`; "full only" would be a trim and needs the founder.) F2 — describe the tenant CRM MCP on the public server at all, and with which verified clients? F3 — targets for D1–D5 (research suite). **F4 (D-EXP-16 hold)** — when, if ever, to apply the DEFERRED copy corrections in `agents.ts`.
+
+## 12. Estimated token cost
+
+Estimate, not a quote (method: research-suite `growth/token-estimate-method.md`). **Reuse** builds on #95, #96, the #103 deny list, 0004's index and query suite. **Fresh** re-derives vertical and capability data, a truth guard and a query harness.
+
+| PR | Components (reuse) | Low | Expected | High |
+|---|---|---|---|---|
+| PR-A | orientation 200k · 2 files 140k (additive fields, access block) · fixture capture 60k · 2 tests 100k · gate 150k · +20 % +25 % | 0.6M | 0.8M | 1.2M |
+| PR-B | orientation 350k · script + fixtures 220k · 2 adapters 180k · 2 tests 120k · gate 300k | 1.2M | 1.7M | 2.6M |
+| PR-C | orientation 350k · data + generator 270k · server + index 130k · 2 tests 120k · gate 300k | 1.2M | 1.7M | 2.6M |
+| ~~PR-D~~ | moved to the research suite (rev 2) | — | — | — |
+| **Total, reuse (rev 2)** | | **3.0M** | **4.2M** | **6.4M** |
+| **Total, fresh (rev 2)** | + vertical/capability derivation 1.0M · own guard 0.8M · own index 0.5M | 4.6M | 6.5M | 9.8M |
+
+Why it moved (rev 1: 6.1M reuse): Review 1 called rev 1 ~20 % high and PR-A 0.7–0.9M; PR-A also shrank because D-EXP-16 removed its copy edits and deny entries, and PR-D (1.4M) left this repo. PR-B and PR-C are unchanged (Review 1: fair). Low assumes #95/#96 merge first; high assumes the PR-B fallback path and a re-pin when audit v6 lands.
+
+At a $3/M input rate: rev 2 reuse ≈ $13 expected, fresh ≈ $20 (rev 1: $18 / $27); a top-tier model ≈ 5×. Input tokens only. This plan PR: about 0.2M (anchor: one plan PR = 179k–208k).
+
+## 13. Revision 3 — capability-agent MCP drafts folded into PR-C (category facts) (D-EXP-14, 2026-10-30)
+
+**Sources:**
+- OPP-CAP5-MCP-CATEGORIES, plus the per-category drafts OPP-BOQ/TRAVEL/SALON/GYM/TMS/FREIGHT/INSURANCE-001: research PR #53, `claude/cap5-verticals` @ `c6c86cd`.
+- Per-category U8 audits for ATS, BOQ, GYM, SALON, TMS and TRAVEL: research PR #58, `claude/cap6-marketing-ai` @ `1c57d69`.
+- OPP-ATS-001 `mcp.md` part 1: research PR #56, `claude/cap4-operations` @ `46ce0db`.
+- Ten cap2 buyer-term drafts: research PR #57, `claude/cap2-communication` @ `f7c444d`.
+- cap1 notes: research PR #55 @ `16e1e89`.
+
+**Decision: one shared change, folded into PR-C. There is no new MCP plan PR and no per-category PR.** Each draft independently found the same gap: none of the 77 tools in `raw/mcp-tools/hellogrowthcrm/2026-10-29/tools-list.json` exposes software categories. Of the 77 tool definitions, 0 contain "applicant tracking", "ATS", "gym", "salon", "BOQ" or "TMS". `buyer_find_answer_pages` names recruitment only as "CRM for an industry". In the cap6 count, 48 of 77 descriptions frame HGC as "CRM".
+
+### 13.1 What PR-C gains
+
+| # | Addition | From |
+|---|---|---|
+| 1 | **Data source.** Generate the category records from the research truth records `growth/categories/*.yaml`, joined to the compete-map row. The YAML is pinned with a sha256 like the PR-B snapshot and is never hand-edited. If the two disagree, the YAML (newer, per-category, code-checked) wins and the build prints the difference | cap5, cap4, cap6 |
+| 2 | **Record fields added** (additive to §2's record): `buyer_terms[]` (merged into `aliases[]`); `claim_ceiling` (gym and salon have audit depth FULL but a STRONG PARTIAL ceiling while CQ-CAP5-003 and -004 are open); `unverified[]` (table-stakes screens awaiting a code check, never listed under capabilities); `capabilities[]: {capability, availability, note, evidence}` — per-capability rows using rev 2's `availability` vocabulary (`native` ✓ · `partial` ◐ with what is missing · `integration` ↗ named · `not_available` — · `unverified` ?), so the drafts' `could_not_verify` maps to `unverified`. The dates reuse rev 2's `hgc_verified_at` / `competitor_checked_at` (D-EXP-15), taken from the data, never typed. Gap rows are always returned (D-EXP-16/17) | cap5, cap6 |
+| 3 | **Buyer terms per category** (served as `aliases`). Communication categories from cap2: see the list after this table | cap2 ×10, cap4, cap5, cap6 |
+| 4 | **Limits served with the yes.** These are required `limitations[]` / `not_built[]` entries, so a buyer's assistant gets yes + functions + limits: dialer "no predictive/parallel dialing"; call tracking "no per-source tracking numbers (DNI)"; email tracking "off by default"; voicemail drop "coming soon"; shared inbox "Instagram auto-reply and email-to-ticket not built"; WhatsApp calling and coexistence "beta" (served when GA); ATS "no contractor pay-and-bill, no VMS import, job-board posting unverified (CQ-C4-008)"; TMS "route optimisation, shipper portal and GPS unverified (CQ-CAP5-009)"; freight "customs e-filing, warehouse, tracking API unverified (CQ-CAP5-010)"; insurance "rater, ACORD, IVANS unverified (CQ-CAP5-021)" | all |
+| 5 | **`search`/`fetch` routing.** Index the records as `kind:"category"` (§0a) so buyer terms hit the record first, then the canonical page once it is live (`canonical_urls` stays empty and `no_dedicated_page: true` until the website PRs ship — hellocrmwebsite #2004 rev 3, #2009) | cap5 §4, cap6 |
+| 6 | **Tests.** One fixture per category; travel is first (contract in research `plans-draft/OPP-TRAVEL-001/mcp.md` §2). Five buyer questions per category from each `plans-draft/<OPP>/mcp.md` join the founder §45 query suite (0004 Phase F). One regression query per cap2 buyer term (e.g. "Does HelloGrowthCRM have an AI receptionist?" → yes + functions + limits) | cap2, cap5, cap6 |
+
+Buyer terms for row 3:
+
+- **AI voice agents:** AI receptionist, AI phone answering, virtual receptionist, AI calling, AI voice agent.
+- **Email verification:** email verification, email bounce checker.
+- **Shared inbox:** shared inbox, team inbox software.
+- **Dialer:** power dialer, auto dialer, click-to-call.
+- **SMS:** bulk SMS, business texting.
+- **WhatsApp:** WhatsApp broadcast, WhatsApp chatbot, CRM with WhatsApp. These are served as one channel in the suite; a test asserts no served string says "WhatsApp-first" (R1).
+- **Customisation (OPP-CRM-001):** industry vocabulary, custom labels.
+
+Vertical categories use the `buyer_terms` in each YAML. For ATS these are applicant tracking system, ATS software, recruitment software, recruitment agency software, candidate pipeline and careers page.
+
+### 13.2 Conflicts with this plan, and how they resolve
+
+| # | Draft proposes | This plan says | Resolution |
+|---|---|---|---|
+| M1 | New tools `categories_list` and `category_get` (cap4, cap5, cap6) | **No new tool** (§9). The tool count stays unchanged because selection degrades past about 30–50 tools (0003) | The same data and contract ship as the **resource plus the `kind:"category"` search/fetch entry**. The draft tool contracts (inputs, `unknown_category` error, outputSchema) become the resource's JSON shape and the `fetch` response. The tool form is **DEFERRED to 0003 Phase 2 `capability_check`**, which reads these records. **RESOLVED rev 5 (F5, §15): no category tools; resource plus `kind:"category"` stands** |
+| M2 | List only FULL / STRONG PARTIAL / PARTIAL; never THIN or UNKNOWN (cap5) | Serve THIN and UNKNOWN with that status; nothing silently narrowed (G13) | Already founder question **F1**. Default until F1 is answered: serve them, marked |
+| M3 | A `category` input on `buyer_find_answer_pages`, `content_list_tools`, `templates_list`, `content_list_case_studies`; a `categories` topic; outputSchema for `alternatives_get` and `content_get_comparison` (cap4, cap5, cap6) | Input-schema and outputSchema work belongs to #106 (0004 Phase C) | Evidence posted on #106. Not re-planned here. Description additions (buyer terms) are additive and land with PR-C |
+| M4 | Tenant-server workflow tools on `crm-mcp-server` (`jobs_list`, `candidates_search`, `members_list`, `renewals_due`, …; cap6 CQ6-010) | Out of scope: `crm-mcp-server` lives in hellocrm (§5 "Sideways") | **Routed to the parent for the hellocrm product plans.** Not in this repo |
+| M5 | Per-vertical tools (`travel_*`, `salon_*`) | — | Rejected by cap5 itself ("out of scope"). Agreed |
+
+Founder question added: **F5** — keep categories as resource plus search kind (default), or add the two tools now? **RESOLVED rev 5 — resource plus search kind (§15).**
+
+### 13.3 Drafts that need no MCP change now (recorded, no PR)
+
+- OPP-LEADCAPTURE-002 and OPP-PROSPECTING-001 (#55) need only a mirror refresh after the product ships.
+- OPP-SCHEDULING-001 is to be assessed in the scheduling launch pack. Whether the tenant MCP can create a booking link or poll is unknown, so it is routed to the parent.
+- OPP-WHATSAPP-002/003 and OPP-INBOX-003 (#57) are added when the features reach GA or ship.
+- OPP-TELEPHONY-002 (call source on the call log) is added after the integration ships.
+- OPP-CAP6-0004 (Zapier MCP docs) is evidence on #106 (setup docs).
+
+### 13.4 Token estimate delta
+
+- The shared category work is counted **once**: cap5 estimates 0.5M / 0.75M / 1.2M (low / expected / high) for two tools.
+- As a resource plus search kind it fits inside PR-C's existing 1.2M / 1.7M / 2.6M, with about 0.3M added for the YAML adapter, the buyer-term aliases, the cap2 limits and the per-category fixtures.
+- New PR-C estimate: **1.5M / 2.0M / 3.0M**. The rev-2 total (reuse) moves from 3.0M / 4.2M / 6.4M to **3.3M / 4.5M / 6.8M**.
+
+### 13.5 Review record (rev 3)
+
+| Reviewer | Status |
+|---|---|
+| Sol | **BLOCKED** (no Azure key) |
+| Astra (blind) | **BLOCKED** (no Azure key) |
+| Provisional reviewer 1 (independent) | **PENDING** (parent session) |
+| Provisional reviewer 2 (blind) | **PENDING** (parent session) |
+
+## 14. Revision 4 — blind Review 2 folded (2026-10-30)
+
+Review 2 is the blind PROVISIONAL substitute for Astra (PR comment 6523614601): it read the plan text only, with the review record stripped. Verdict **ACCEPT_WITH_CHANGES**. It does **not** satisfy the T2 Sol → Astra requirement: **Sol and Astra stay BLOCKED** (no keys), and the plan stays draft. Each finding was checked against `origin/main` `5190a02` before it was accepted. §13 (rev 3) is unchanged by this fold.
+
+| # | Finding | Verified how | Decision |
+|---|---|---|---|
+| 1 | Additive fields put contradicting facts side by side ("directly to your CRM data" vs `crm_data:false`; "12 AI Agents" vs about 4 live) | `grep -n "directly to your CRM data\|12 AI Agents" src/tools/agents.ts` → the `mcp` entry's `summary` and the hub `badge` | **Accepted, additively.** Old copy is **not** removed or trimmed (D-EXP-16). PR-A adds `summary_qualifier` on the `mcp` entry, a derived `badge_qualifier`, and a machine-readable `authoritative_fields` rule; AC-03c tests it. The rewrite of the old copy is **DEFERRED (D-EXP-16)** and is founder decision **F6** |
+| 2 | `AgentRecord` has no `description` | `sed -n '/interface AgentRecord/,/^}/p' src/tools/agents.ts` → `summary`, `tagline`, `detail` | **Accepted.** `verified_summary` / `verified_detail` (/ `verified_tagline`) name the field each correction shadows |
+| 3 | Two resources are DB-backed, so not byte-stable | `grep -n "blog_posts\|help_categories" src/server.ts` → `blog/recent`, `help/categories` read Supabase | **Accepted.** AC-07 byte-identity is limited to the 7 static resources; shape-only for the 2 DB ones; §7f matches |
+| 4 | Rev-1/2 leftovers contradict D-EXP-16 | read §0b, §5, §7f, smoke 6 | **Accepted.** All four now say "no existing value changes"; smoke 6 compares to PR-A's own fixture |
+| 5 | Does PR-A count as a new anonymous surface under the 0003 gate? | header "Freeze in force?" named only PR-C | **Accepted.** Stated: plan reading = not new; PR-A's deploy waits for the gate unless confirmed (**F7**) |
+| 6 | Status vocabularies differ | §0a agents enum has `PLANNED`; §2 category `status` does not | **Accepted.** One vocabulary for both: `LIVE \| LIVE-LIMITED \| PLANNED \| UNKNOWN`. Category records add `PLANNED` (a planned category is served as planned, never as available; `availability` stays the D-EXP-17 legend) |
+| 7 | Audit CSVs into a public repo | repo is public | **Accepted.** PR-B scans and redacts the subset before pinning; a reviewer signs the check |
+| AC-03 | Add "no new string asserts CRM data access" | — | **Accepted.** AC-03 |
+| est | 4.2M reuse credible; PR-A 0.8M fits | — | **Small change:** PR-A adds qualifiers, a precedence field and two tests ≈ +0.1M → PR-A **0.7M / 0.9M / 1.3M**. With §13.4, the reuse total moves from 3.3M / 4.5M / 6.8M to **3.4M / 4.6M / 6.9M** |
+
+Rev 4 vocabulary edit, applied in §2's category record: `status` gains `"PLANNED"`, so agents and categories share `LIVE | LIVE-LIMITED | PLANNED | UNKNOWN`.
+
+**Founder decisions added in rev 4:**
+- **F6 (D-EXP-16 hold) — RESOLVED rev 5 (§15): not now; DEFERRED — founder hold (D-EXP-16).** The question was: when, if ever, to rewrite the contradicted copy itself — the `mcp` entry's "directly to your CRM data", the "12 AI Agents" badge, Deal Risk "24/7"/"real time", "The Only CRM MCP Server with Native WhatsApp Tools". Until then the qualifiers and `authoritative_fields` carry the correct fact beside the old one. (F4 covered the same copy in rev 2; F6 adds the qualifier interim.)
+- **F7 — RESOLVED rev 5 (§15): the gate is per deploy; PR-A merges, its deploy waits.** The question was: confirm that new fields on existing anonymous responses are not a "new anonymous surface" under the 0003 G1–G5 gate. If yes, PR-A may deploy before the gate; if no, it waits.
+
+**Review record (rev 4):** Sol **BLOCKED** · Astra (blind) **BLOCKED** · Review 1 (provisional) folded in rev 2 · Review 2 (blind provisional substitute for Astra) folded here. The §13.5 rows marked PENDING are superseded by this line.
+
+## 15. Reviewer decisions (delegated by founder, 2026-10-30)
+
+The founder delegated F5, F6 and F7 to the delegated reviewer ("ask the reviewer and do as per the reviewer", 2026-10-30). Each was checked against `origin/main` `5190a02` and against 0003 §0c (#102). Rules applied: D-EXP-16 (additive only), D-EXP-17 (honest legend), least exposure on the public server, nothing unverified served, and one tool-vs-resource stance shared with PLAN-HELLOG-0006 (#109 §13). F1–F4 (rev 2) stay with the founder.
+
+| # | Decision | Reason | Effect on the plan |
+|---|---|---|---|
+| **F5** | **Resource plus `kind:"category"` in `search`/`fetch`; no `categories_list` / `category_get` tools.** The draft tool contracts stay as the resource's JSON shape and the `fetch` response, so a tool can be added later as a thin wrapper without a data change. The tool form stays DEFERRED to 0003 Phase 2 `capability_check` | A category record is a lookup by id or by buyer term, which `fetch` and `search` already express; a tool adds nothing a resource cannot do and spends tool-selection budget (0003: selection degrades with count; the server is at 89). **Shared stance with #109:** a tool is added only when (i) a founder decision names it and (ii) it takes query inputs a resource cannot carry (filters). Category records meet neither; #109's `claims_list` (status/region/score filters, named in D-EXP-18) meets both | §13.2 M1 marked RESOLVED. PR-C scope, AC-01..AC-07 and the §13.4 estimate (1.5M / 2.0M / 3.0M) unchanged — they were already written for the resource form. #109 §0c row "`categories_list` / `category_get`" reads "not added" with no conditional branch |
+| **F6** | **rev 6: superseded by D-EXP-22 — the qualifiers named below are themselves DEFERRED — build first (D-EXP-22).** Rev 5 text: **Not now. DEFERRED — founder hold (D-EXP-16).** The contradicted copy (`mcp` entry "directly to your CRM data", the "12 AI Agents" badge, Deal Risk "24/7"/"real time", "The Only CRM MCP Server with Native WhatsApp Tools") is left in place; PR-A's `summary_qualifier`, derived `badge_qualifier`, `verified_*` fields and `authoritative_fields` carry the correct fact beside it. The earliest a rewrite may be *proposed* is after PR-B's pinned truth check exists, so any new wording is tested against the audit snapshot rather than hand-asserted; the rewrite itself stays a founder decision, raised as its own PR with the before/after text | D-EXP-16 forbids rewording-down existing content now, and the founder has not lifted it for this copy. A verified fact beside the old copy, with a machine-readable precedence rule, is the honest additive form (D-EXP-17) and removes the harm without the hold being broken | No scope change. AC-03c stands as the guard. Rev 2 F4 and rev 4 F6 collapse into this one entry. No token change |
+| **F7** | **New fields on existing anonymous responses are covered by the 0003 gate — because the gate is per deploy, not per surface.** PR-A may **merge** once reviewed; its **public deploy** waits for the gated 2.2.0 image, exactly as 0003 Phase 1 does. No separate "surface" test is needed or written | 0003 §0c binds G1–G5 to the candidate image digest and promotes that same digest; there is no way to deploy PR-A's fields without deploying every other change on `main`. PR-A also edits `/.well-known/mcp.json`, one of the files 0003 names as directory-ingested (0003 moved its own `/.well-known` change to Phase 1b for that reason). Least exposure: the gate holds | Header "Freeze in force?" reworded (no conditional). PR-A's deploy checklist line reads "deploys with the next gated image; no separate deploy". No AC or token change |
+
+**What did not change:** nothing is removed, trimmed or reworded (D-EXP-16). F1–F4 (rev 2 §11) remain with the founder. Sol and Astra stay BLOCKED; these are reviewer decisions, not a Sol/Astra verdict.
+
+## 16. D-EXP-22 audit (rev 6, 2026-10-30)
+
+**Rule (founder, verbatim):** "do not have anything which reduces the things we have instead we can do a pr in hellocrm to fix that or build that. pls audit that across this session". PR-A's `status`, `servers[]`, qualifier and `authoritative_fields` fields sat beside existing live copy and said it is limited or superseded. They are deferred. **PR-A now contains only:** the `access` block on `/.well-known/mcp.json` and the server card (it formalises an existing statement and reduces no claim) and the `SYNCED_AT` bump. Not affected: the PR-C category resource and its `availability` legend (new data, D-EXP-17), the PR-B truth check (CI only), and the F6 rewrite hold (D-EXP-16).
+
+| Item | Where | Reducing step | Status | Build in hellocrm / website |
+|---|---|---|---|---|
+| `mcp` entry "directly to your CRM data", "Native WhatsApp Tools" | `src/tools/agents.ts` | `summary_qualifier`, `servers[]` (tenant-crm `LIVE-LIMITED`, ChatGPT not confirmed) | DEFERRED — build first (D-EXP-22) | NEW PLAN NEEDED: verify and ship the ChatGPT connector for the tenant CRM MCP server so the claim is true for ChatGPT, Claude and Gemini |
+| Hub badge "12 AI Agents. 3 Autonomy Levels." | `src/tools/agents.ts` | `badge_qualifier`, `status_summary`, per-agent `status` (4 registered) | DEFERRED — build first (D-EXP-22) | PLAN-HGC-0601 (#9661) AI capability gaps covers some agents. Registering the remaining agents so 12 are real: NEW PLAN NEEDED |
+| Deal Risk "24/7" / "real time" | `src/tools/agents.ts` | `verified_detail` "runs on demand" | DEFERRED — build first (D-EXP-22) | NEW PLAN NEEDED: scheduled continuous deal-risk scoring |
+| `authoritative_fields` precedence rule | `agents_list`, `agents_get`, `/.well-known/mcp.json` | "these are current where they disagree with marketing copy" | DEFERRED — build first (D-EXP-22) | Follows the three builds above; no separate build |
+| PR-C category records `limitations[]` (dialer "no predictive/parallel dialing", call tracking "no per-source tracking numbers", email tracking, voicemail drop, WhatsApp calling and coexistence "beta", ATS/TMS/freight/insurance gaps) | new resource | none: new data with the D-EXP-17 legend | Not affected | Records flip as hellocrm ships: PLAN-HGC-0585 (#9602), PLAN-HGC-0586 (#9603), PLAN-HGC-0569 (#9588), PLAN-HGC-0610 (#9680), PLAN-HGC-0634 (#9802), PLAN-HGC-0635 (#9803) |
