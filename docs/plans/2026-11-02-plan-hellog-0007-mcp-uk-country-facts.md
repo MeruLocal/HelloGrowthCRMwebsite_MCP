@@ -41,7 +41,7 @@
 
 **PR-B: gates and billing currency** (blocked, §2a)
 - [ ] `gates.json` UK rows set to `met` by an approved diff; `src/data/market-facts.ts` regenerated; `src/data/website-mirror.ts` UK price-row `currencyCode`/`currencySymbol` to `USD`/`$` plus additive `billing_currency`; `COUNTRIES` UK `currency` unchanged.
-- [ ] `src/tools/pricing.ts`: `MARKET_SCOPE.outside_india` drops the token "the UK (GBP)" (0008 drops "UAE (GBP)"; one token each).
+- [ ] `src/tools/pricing.ts`: `MARKET_SCOPE.outside_india` drops the token "the UK (GBP)" (0008 drops "UAE (AED)"; one token each).
 - [ ] Update `pricing-country-aware.test.ts`, `pricing-truth.test.ts`. `soc2-scope` is activated in its own PR after decision F3 closes.
 
 Client documentation: `README.md` gains a short section on market facts, the pending-price state, `withheld`, and (where applicable) additional-market discovery and the hub-only `countries_list.count`. Version and changelog: each BUILD bumps per `npm run check:versions` and adds a `CHANGELOG.md` line. **PR-C (market competitors in `alternatives_list`) is DEFERRED for this plan:** the route-status evidence it needs is not in the research export, and it does not repair an unsupported claim. It is recorded, not planned (§9).
