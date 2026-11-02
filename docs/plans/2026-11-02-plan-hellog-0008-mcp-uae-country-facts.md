@@ -1,6 +1,6 @@
 # Plan — MCP: United Arab Emirates country facts (pricing, payments, markets, security attestation)
 
-- **Revision:** 2 (2026-11-02), Astra blind review of rev 1 folded (§14). Built on the contract of PLAN-HELLOG-0007 (#110) after its Astra review; this plan restates what it needs so it can be read alone.
+- **Revision:** 3 (2026-11-02), Astra blind review of rev 1 folded; shared-contract updates from the 0009 review (§14). Built on the contract of PLAN-HELLOG-0007 (#110) after its Astra review; this plan restates what it needs so it can be read alone.
 - **Plan id:** PLAN-HELLOG-0008, allocated 2026-11-02 as the next free number after PLAN-HELLOG-0007 (#110). Sources: remote `plan/` branches and the REST PR list (highest plan title before this one: 0007). The adapter's `git fetch origin master` and GraphQL reads fail here (trunk is `main`; GraphQL is blocked), so the REST list is the check of record. Re-run `plan-id.mjs check` after the branch is pushed.
 - **Branch:** `plan/hellog-0008-mcp-uae-country-facts` · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (head `5190a02`)
 - **Mode:** PLAN (plan only, no code). Each BUILD is its own PR carrying `Implements: PLAN-HELLOG-0008 (PR-x)`.
@@ -43,7 +43,7 @@
 - [ ] `src/tools/pricing.ts`: `MARKET_SCOPE.outside_india` drops the token "UAE (AED)" (0007 drops "the UK (GBP)"; one token each).
 - [ ] Update `pricing-country-aware.test.ts`, `pricing-truth.test.ts`.
 
-Version and changelog: each BUILD bumps per `npm run check:versions` and adds a `CHANGELOG.md` line. **PR-C (market competitors in `alternatives_list`) is DEFERRED for this plan:** the route-status evidence it needs is not in the research export, and it does not repair an unsupported claim. It is recorded, not planned (§9).
+Client documentation: `README.md` gains a short section on market facts, the pending-price state, `withheld`, and (where applicable) additional-market discovery and the hub-only `countries_list.count`. Version and changelog: each BUILD bumps per `npm run check:versions` and adds a `CHANGELOG.md` line. **PR-C (market competitors in `alternatives_list`) is DEFERRED for this plan:** the route-status evidence it needs is not in the research export, and it does not repair an unsupported claim. It is recorded, not planned (§9).
 
 ## 0b. What we already know   (G4)
 
@@ -83,7 +83,7 @@ The live server was not queried in this session. Every claim is about `main` and
 | uae.pay.tamara | payment | roadmap | Planned, not available: Tamara buy-now-pay-later for tenants. It is queued and is not a way to pay HelloGrowthCRM | none; evidence: founder instruction 2026-11-02 |
 | uae.market.hub | market | capability | The UAE hub is `/uae`, language en-AE. Hreflang values are those computed by the MCP's port of the website function (self en-AE); no Arabic alternate is asserted | none; evidence: `COUNTRIES` row, `getHreflangTags` port, observed 2026-11-02 |
 | uae.security.soc2 | attestation | capability | A SOC 2 Type II examination of Soor LLC for 2025-02-01 to 2025-06-30 was completed by Precision Assurance CPA LLC (criteria: Security, Availability, Privacy, Confidentiality, Processing Integrity). The report is available under NDA on request | soc2-scope; expires_on |
-| uae.positioning.suite | positioning | capability | HelloGrowthCRM is a full-stack business suite (pipeline, communication, commerce, operations, customers, marketing, intelligence); WhatsApp is one channel next to email, SMS, voice and live chat. It is not a sales-only tool | none; evidence: CLAUDE.md §1.1 product definition (founder, 2026-08-13) and the hellocrm `FEATURE_INVENTORY.md` |
+| uae.positioning.suite | positioning | capability | HelloGrowthCRM is a full-stack business suite (pipeline, communication, commerce, operations, customers, marketing, intelligence); WhatsApp is one channel next to email, SMS, voice and live chat. | none; evidence: CLAUDE.md §1.1 product definition (founder, 2026-08-13) and the hellocrm `FEATURE_INVENTORY.md` |
 
 Evidence for SMS, voice and live chat in the positioning fact is the hellocrm `FEATURE_INVENTORY.md` entries (cited by id in the data file) and the founder product definition; the PR records the grep it ran.
 
@@ -95,19 +95,46 @@ One predicate, `isPublished(item, now)` in `src/lib/market-publication.ts`, is t
 
 | gate_id | `met` requires | Approver |
 |---|---|---|
-| website-deploy | The hellocrmwebsite price correction is deployed: build id read from the fetched price page, fetch time, and a re-scan showing no HGC price other than USD 12 per user per month or USD 120 per user per year upfront | Rushabh (website release owner) |
+| website-deploy | The hellocrmwebsite price correction is deployed: build id read from the fetched price page, fetch time, and a coverage report of the affected-route inventory (every route importing a changed price module, not one page: for example the 31 conflicting content modules in a site of about 4,000 pages), its count and sha256, and a re-scan showing no HGC price other than USD 12 per user per month or USD 120 per user per year upfront | Rushabh (website release owner) |
 | stripe-flow1 | Live-mode evidence, not test mode: account identity, paginated active Price objects, payment-method settings and enabled presentment currencies, and checkout tests (one seat, several seats, monthly, annual) recording currency, quantity, recurrence, upfront total, buyer eligibility, **tax behaviour**, invoice treatment and renewal amount, plus the treatment of existing subscribers, renewals and seat changes. Raw exports stay in the restricted evidence store; the manifest holds a reference id, sha256, date and redaction note | Rushabh |
-| soc2-scope | An authorised reading of the report confirms the system boundary and its mapping to HelloGrowthCRM services; public wording approved; the expiry policy of decision F3 closed. Report contents are never copied | Rushabh |
+| soc2-scope | An authorised reading of the report confirms the attested entity, the criteria list, the system boundary and its mapping to HelloGrowthCRM services, and that the report is available under NDA; public wording approved; the expiry policy of decision F3 closed. The statement is historical and must not imply current assurance. Report contents are never copied | Rushabh |
 
 Rules that follow:
+- **Lifecycle (no ambiguity).** The generator writes **every** fact, with its gate list, into `src/data/market-facts.ts`; "absent" always means absent from the **served response** (the predicate), never from the generated data. Publishing is therefore a data-and-gates change: PR-B changes `gates.json`, `SHA256SUMS` and the regenerated `market-facts.ts` (the gates are compiled in) and, for a market with a hub row, that row's currency fields and one `MARKET_SCOPE` token; nothing else. A clean-build test walks a fixture through unmet, then met, then revoked, regenerating each time, and asserts the served response at each step.
+- **Authorisation is enforced, not attributed.** `approver` is a name; enforcement is a `CODEOWNERS` entry for `test-data/market-facts/**/gates.json` requiring Rushabh's review, the repository's branch-protection setting requiring owner review (a human repository setting, recorded in the PR), and `check:market-facts` failing any gate that is `met` without `evidence_sha256`, `observed_on` and `expires_on`.
+- **Evidence freshness.** A price-gate `expires_on` is at most 90 days after `observed_on` and the gate is re-observed after any website change touching a price route; a matching version string proves internal consistency only, so the gate evidence, not the version string, is what is re-checked.
+- **Evidence boundary.** `gates.json` and the fact files validate with `additionalProperties: false`: only reference ids, hashes, dates and approved wording can enter generated assets; Stripe exports, report material and NDA content stay in the restricted store and never reach assets, logs, fixtures or URLs. The redaction scan is a backstop, not the boundary.
 - **Price facts** carry `applies_to: "list price for new subscriptions"`. If the stripe-flow1 evidence does not settle existing subscribers, renewals and seat changes, the gate stays unmet.
 - **Billing currency is not market currency.** `country.currency` (where a hub row exists) stays the market's local currency as metadata; the price rows carry USD and a new additive `billing_currency: "USD"`.
-- **Until a price is published, the response says so.** Price fields are `null` with `price_status: "pending_verification"` and the note "Pricing for this market is being confirmed. See pricing_get_plans for the USD ladder outside India." This applies from PR-A, so the server never serves a known wrong price while waiting for the evidence.
+- **Until a price is published, the response says so.** The structured price is `null` with `price_status: "pending_verification"` and the note "Pricing for this market is being confirmed. The global USD ladder in pricing_get_plans is not confirmation of availability, checkout terms or tax treatment for this market." Where a hub row exists this applies from PR-A, so the server never serves a known wrong price while waiting for the evidence. A multi-tool test asks `country_get` then `pricing_get_plans` and checks that the pending note travels with the answer.
 - **The SOC 2 fact is unpublished** (gate unmet) until decision F3 is closed. Past `expires_on` the fact is withheld at request time and the `soc2-report-period` topic is served instead.
+- **Where the checks live (0007 PR-A implements them; later plans only add data):** drift check in `scripts/build-market-facts.mjs --check`; release-evidence agreement in `scripts/check-release-evidence.mjs`; redaction in `scripts/check-market-facts-redaction.mjs`; all three run in `npm run verify`. The post-release cross-surface check is a checklist in `deploy/` plus the smoke table, owned by the PR author.
 - **Drift check:** every fact's `release_evidence_version` must equal the manifest's; the PR body cites the website build id and the commit ids of the website, product and MCP sources; CI fails on a mismatch. A post-release cross-surface check runs after the deploy and after any rollback.
-- **Skew.** With the unpublished-price rule there is no window in which the MCP and the website contradict each other. The website deploys first, then the MCP gate PR; maximum 48 hours between them; if the website is rolled back, the gate PR is reverted in the same window (rollback owner: the PR author; authority: Rushabh). Response caching is the existing HTTP layer's (`Cache-Control: no-store` on the main paths, `max-age=300` on one endpoint, per `src/server.ts`); each BUILD records the measured value for the affected tool and the rollback waits that long.
+- **Release invariant and rollback.** The MCP never publishes a price the website does not serve. Planned order: website deploy, then the MCP gate PR. **Before any planned website rollback, the MCP price is withdrawn first** (revert of the gate PR plus deploy). Emergency revocation: a `MARKET_FACTS_KILL_SWITCH` environment variable (comma-separated gate ids, or `all`), read from `process.env` on every request (no network call), set by the hosting configuration; it makes the predicate return false without a rebuild. Maximum exposure is the time to change the hosting configuration (target 1 hour, measured and recorded in each BUILD PR) plus response cache lifetime (`Cache-Control: no-store` on the main paths, `max-age=300` on one endpoint, per `src/server.ts`; the measured value for each changed tool is recorded). Rollback authority: Rushabh; owner: the PR author.
 - **Release verification.** Before PR-A, capture the live baseline of every fixture call from the deployed server (BLOCKED if unreachable, then the `main` fixtures stand in and that is stated). After deploy, run the smoke table with a 30-second timeout per call; any failure or any pattern match in the scan is a rollback.
 - **Redaction check:** a release check scans the generated data and every response for Stripe ids, customer, tenant or credential strings and NDA report content.
+
+
+### 2c. Wire contract and fixtures
+
+`market_facts` (nested in `country_get`; the market-only form puts it beside a minimal `country`):
+
+```json
+{
+  "market": "<cc>", "as_of": "2026-11-02", "fact_set_version": 1,
+  "market_facts_contract": 1, "release_evidence_version": "2026-11-02.1",
+  "source": { "file": "test-data/market-facts/2026-11-02/<cc>.json", "sha256": "<hex>" },
+  "price": { "price_status": "pending_verification", "billing_currency": "USD",
+             "monthly": null, "annual": null,
+             "note": "Pricing for this market is being confirmed. The global USD ladder in pricing_get_plans is not confirmation of availability, checkout terms or tax treatment for this market." },
+  "facts": [ ],
+  "withheld": [ { "topic": "price-pending", "message": "HelloGrowthCRM has not published a verified statement on this topic." } ]
+}
+```
+
+Published state: `price` becomes `{ price_status: "published", billing_currency: "USD", monthly: { amount: 12, unit: "per user per month" }, annual: { amount: 120, unit: "per user per year, charged once upfront" }, applies_to: "list price for new subscriptions", qualifier: "<approved public_price_qualifier>", valid_until: "<earliest gate expires_on>" }` and the `price-pending` topic is removed. Expired state: back to `pending_verification` at request time. Error state: unknown code returns `fail` listing hubs and additional markets. Each of the four is a committed fixture used by the tests (AC-A7).
+
+`tools/list` differences are limited to additive `outputSchema` properties of the changed tools; every other field of `tools/list` is byte-identical to the baseline.
 
 
 ### 2a. Dependency order (single order)
@@ -137,20 +164,21 @@ Not touched: `access.ts`, `index.ts`, `server.ts`, `server.json`, `smithery.yaml
 **PR-A**
 - **AC-A1** Compatibility matrix (§7f) holds: only the listed keys and values differ from the `main` fixtures, per tool.
 - **AC-A2** No response for the UAE contains any string from the P-list: `Telr`, `Tabby`, `Network International`, `bank transfer`, `Tamara`, `UAE PDPL compliant`, `ESR`, `AED`, `د.إ`; the only exceptions are the roadmap facts named in §2, whose statements start "Planned, not available:". Topic identifiers are checked against the enum, not against these patterns.
-- **AC-A3** Prose fields (`statement`, `message`) match none of `/residen/i`, `/ISO ?27001/i`, `/HIPAA/i`, `/WhatsApp-first/i`, `/sales[- ]only/i`, `/certified/i`.
+- **AC-A3** Prose fields (`statement`, `message`, `note`, `qualifier`) match none of `/residen/i`, `/ISO ?27001/i`, `/HIPAA/i`, `/WhatsApp-first/i`, `/sales[- ]only/i`, `/sales[- ]first/i`, `/certified/i`.
 - **AC-A4** Every fact validates against `scripts/market-facts.schema.json`; roadmap facts have `is_capability: false`; the roadmap facts in §2 are the only ones.
-- **AC-A5** The positioning fact lists WhatsApp as one channel among several and names the suite areas; it does not say sales-only.
+- **AC-A5** The positioning fact is positive: it names the suite areas and lists WhatsApp as one channel among several. (A negation such as "not sales-only" is not used, because AC-A3 bans the phrase.)
 - **AC-A6** Generator negative tests run over this plan's data file: hash mismatch, duplicate `fact_id`, unknown status or gate, unmet or expired gate (fact absent and `GATED` logged), roadmap with `is_capability: true`, missing `verified_on` or `release_evidence_version`, banned phrase, byte-identical output on two runs, and **adding this market's file leaves every other market's generated bytes unchanged** (regeneration preserves already-published facts and gates).
-- **AC-A7** Serialized results of every changed tool validate against their `outputSchema`, including nullable fields and the unknown-code failure path.
+- **AC-A7** Fixtures for the pending, published, expired and error states (§2c) are committed; serialized results of every changed tool validate against their `outputSchema`; `tools/list` differs from the baseline only by additive `outputSchema` properties of the changed tools.
 - **AC-A8** Price fields are `null` with `price_status: "pending_verification"` while a gate is unmet.
-- **AC-A9** Expiry without rebuild: a built server with an injected clock crosses `expires_on` and the SOC 2 fact disappears, the `soc2-report-period` topic appears; revoking a gate in `gates.json` and rebuilding removes the dependent fact and price. The SOC 2 fact is absent while `soc2-scope` is unmet.
+- **AC-A9** Exact boundary and malformed input: a built server with an injected clock serves the fact at `expires_on - 1ms` and withholds it at `expires_on`; a missing or malformed `expires_on`, an unknown gate id and a `revoked` gate all withhold; `MARKET_FACTS_KILL_SWITCH` withholds without a rebuild; a response never outlives `valid_until` (it carries it). The clean-build walk (unmet, met, revoked) of §2b passes. The SOC 2 fact is absent while `soc2-scope` is unmet.
+- **AC-A11** The baseline fixtures are captured from the **merge commit of 0007 PR-A** (not from today's `main`), so inherited changes are not counted as this plan's.
 - **AC-A10** Tool count equals the `main` count; the SDK client round trip (initialize, `tools/list`, call) succeeds; `annotations.test.ts` and `registry.test.ts` pass.
 
 **PR-B**
 - **AC-B1** With both price gates met: price rows carry USD 12 per user per month and USD 120 per user per year upfront with `applies_to`, `billing_currency: "USD"`; with either unmet, they are `null` and pending (the build does not fail, the server fails closed).
 - **AC-B2** `MARKET_SCOPE.outside_india` no longer lists the UAE in AED; the other five local currencies are unchanged; `country.currency` stays `AED` (market metadata) and `billing_currency` is `USD`.
 - **AC-B3** `release_evidence_version` agrees across the data file, `gates.json` and the PR body's cited commit ids.
-- **AC-B4** The PR body contains the website build id, the measured cache behaviour and the rollback target.
+- **AC-B4** The PR body contains the website build id, the affected-route coverage report, the measured cache behaviour and kill-switch time, and the rollback target; `CODEOWNERS` review by the approver is shown.
 
 ## 7b. Smoke test   (expected only; the BUILD PR records observed results)
 
@@ -246,3 +274,5 @@ Astra, blind, role plan, 2026-11-02: **reject** on rev 1 (five blockers). Each f
 | 5 | Compatibility rules contradicted the changes | Accepted | Per-tool, per-PR matrix in §7f; nullable and status fields in the schemas |
 
 Risks and missing items taken: skew and cache (measured value, rollback authority), tax and eligibility evidence (not copy suppression), existing-subscriber scope (`applies_to`), billing currency separate from `country.currency`, redaction check, regeneration preserves other markets (AC-A6), evidence for positive claims, release verification, closed decisions. Not taken: nothing was rejected. The review ran once; rev 2 was not re-reviewed.
+
+Shared-contract updates taken from the Astra review of PLAN-HELLOG-0009 (same contract, no second review of this plan): lifecycle (all facts generated, absence is a served-response property, PR-B regenerates data), the wire contract and fixtures (§2c), the release invariant and kill switch, enforced approval, evidence boundary and freshness, the global-ladder note, the public price qualifier, baselines taken after 0007 PR-A merges, exact-boundary tests, and positive-only positioning wording.
