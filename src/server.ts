@@ -6,6 +6,7 @@
  *   stdio           — stdin/stdout for MCP host processes
  */
 
+import { productTruth, requestInstant } from "./lib/product-truth.js";
 import http from "http";
 import { randomUUID } from "node:crypto";
 // NOSONAR — the low-level `Server` is intentionally used for this advanced,
@@ -930,11 +931,14 @@ export async function runServer(): Promise<void> {
         // green /health. A stale mirror is now a DEGRADED server, and the
         // audit script fails on it.
         const freshness = getContentFreshness();
+        // Pinned Product Truth validity. Reported here, never used for liveness: a stale pin
+        // withholds facts and degrades this status, it does not fail the probe or force a restart.
+        const truthPin = productTruth.pinInfo(requestInstant());
         send(
           200,
           "application/json; charset=utf-8",
           `${JSON.stringify({
-            status: freshness.ok ? "ok" : "degraded",
+            status: freshness.ok && !truthPin.alert ? "ok" : "degraded",
             version: SERVER_VERSION,
             mcp_spec: MCP_SPEC_REVISION,
             uptimeSeconds: Math.floor(process.uptime()),
@@ -950,6 +954,7 @@ export async function runServer(): Promise<void> {
             // value sent probes to a 404.
             endpoint: "/sse",
             content_freshness: freshness,
+            product_truth: truthPin,
           })}\n`,
           "no-store",
         );

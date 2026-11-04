@@ -1,0 +1,11 @@
+# SYNTHETIC contract fixture. Not product truth. Every id here is invented.
+surfaces:
+  website:
+    states: [plans.free.limits.leads, plans.free.limits.tasks, plans.free.limits.landing_pages, plans.growth.limits.custom_fields, claims.synthetic.draft, claims.synthetic.approved]
+    scan_files: []
+  mcp:
+    states: [plans.free.limits.leads]
+    scan_files: []
+  app:
+    states: [plans.free.limits.leads, plans.free.limits.custom_fields]
+    scan_files: []

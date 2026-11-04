@@ -1,0 +1,25 @@
+# Limit literals still hand-written in served text. SHRINK-ONLY (CODEOWNERS): PR-B removes entries; a test fails if this file grows against its git base.
+# Format: <file>  <sha256-12 of the trimmed line>  # <id=value> :: <excerpt>
+src/tools/alternatives.ts  3e1bbe182f78  # forbidden: 200 leads :: ["Free plan", "Yes — 200 leads forever", "14-day trial only"],
+src/tools/alternatives.ts  5211a457b75b  # forbidden: 200 leads :: ["Free plan", "Yes — 200 leads, forever", "14-day trial only"],
+src/tools/alternatives.ts  97181383e62f  # forbidden: 200 leads :: { title: "Free-plan limits you hit in week 3", desc: "Trello free caps
+src/tools/alternatives.ts  a6938f16f33b  # forbidden: 200 leads :: ["Free plan", "Yes — up to 200 leads, forever", "No free plan"],
+src/tools/alternatives.ts  b078565020ae  # forbidden: 200 leads :: ["Free plan", "Yes — up to 200 leads", "Free tier — very limited (1 pi
+src/tools/alternatives.ts  e5f327a29ca6  # forbidden: 200 leads :: ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+src/tools/alternatives.ts  e5f327a29ca6  # forbidden: 200 leads :: ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+src/tools/alternatives.ts  e5f327a29ca6  # forbidden: 200 leads :: ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+src/tools/alternatives.ts  e5f327a29ca6  # forbidden: 200 leads :: ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+src/tools/faqs.ts  4703a411e662  # forbidden: 200 leads :: a: "Yes. HelloGrowthCRM offers a genuinely free plan with up to 200 le
+src/tools/pricing.ts  1e35104ea5aa  # plans.free.limits.leads=150 :: billing: "Free forever · No credit card · 1 user · 150 leads · Never e
+src/tools/pricing.ts  1e35104ea5aa  # plans.free.limits.leads=150 :: billing: "Free forever · No credit card · 1 user · 150 leads · Never e
+src/tools/pricing.ts  28a1acf7e086  # plans.free.limits.email_templates=2 :: //     2 templates (this file claimed 200 / 50 / 500 / 5).
+src/tools/pricing.ts  394cb1fa1ab0  # plans.free.limits.accounts=20 :: //   • The Free tier caps tightened: 150 leads / 20 accounts / 100 tas
+src/tools/pricing.ts  72781fc0a4cb  # plans.free.limits.leads=150 :: { q: "Is there a minimum number of users?", a: "No minimum. The Free p
+src/tools/pricing.ts  74bd3ae4df45  # plans.free.limits.tasks=100 :: "Task Board (100 tasks, Kanban only)",
+src/tools/pricing.ts  74bd3ae4df45  # plans.free.limits.tasks=100 :: "Task Board (100 tasks, Kanban only)",
+src/tools/pricing.ts  a3e9cd15b68b  # plans.free.limits.custom_fields=3 :: "3 Custom Fields",
+src/tools/pricing.ts  a3e9cd15b68b  # plans.free.limits.custom_fields=3 :: "3 Custom Fields",
+src/tools/pricing.ts  bcfe81c1f98c  # plans.free.limits.leads=150 :: "Lead & Contact Management (150 leads/contacts cap)",
+src/tools/pricing.ts  bcfe81c1f98c  # plans.free.limits.leads=150 :: "Lead & Contact Management (150 leads/contacts cap)",
+src/tools/pricing.ts  c3e0c4ac05ba  # plans.free.limits.accounts=20 :: limits: { users: 1, leads: 150, accounts: 20, pipelines: 1, tasks: 100
+src/tools/pricing.ts  d93b77490270  # plans.free.limits.accounts=20 :: limits: { leads: 150, accounts: 20, pipelines: 1, tasks: 100 },

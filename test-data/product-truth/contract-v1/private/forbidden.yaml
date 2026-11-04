@@ -1,0 +1,5 @@
+# SYNTHETIC contract fixture. Not product truth. Every id here is invented.
+forbidden:
+  - pattern: "200 leads"
+    reason: "synthetic retired value"
+    fact_id: plans.free.limits.leads

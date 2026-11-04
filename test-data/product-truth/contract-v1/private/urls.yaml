@@ -1,0 +1,4 @@
+# SYNTHETIC contract fixture. Not product truth. Every id here is invented.
+allowed_hosts:
+  - hellogrowthcrm.com
+facts: []

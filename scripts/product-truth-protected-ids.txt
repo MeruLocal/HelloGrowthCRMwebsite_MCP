@@ -1,0 +1,11 @@
+# Ids PT-A has exported to this consumer (ids only, no values). A pin that drops one of these from both
+# `limits` and `withheld` fails check:truth, so a removed fact cannot reopen a hand-written fallback.
+plans.free.limits.leads
+plans.free.limits.tasks
+plans.free.limits.accounts
+plans.free.limits.email_templates
+plans.free.limits.landing_pages
+plans.free.limits.custom_fields
+plans.free.limits.csv_rows
+plans.growth.limits.custom_fields
+plans.growth.limits.csv_rows

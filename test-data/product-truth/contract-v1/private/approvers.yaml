@@ -1,0 +1,3 @@
+# SYNTHETIC contract fixture. Not product truth. Every id here is invented.
+approvers:
+  - fixture-approver
