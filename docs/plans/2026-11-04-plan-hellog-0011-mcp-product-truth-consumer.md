@@ -2,6 +2,9 @@
 
 - **Revision:** 3 (2026-11-04), aligned to the Product Truth Contract v1 of PLAN-HGC-0749 (MeruLocal/hellocrm #10297, section 2a); sibling consumer PLAN-HCW-0257 (hellocrmwebsite #2358)
 - **Plan id:** PLAN-HELLOG-0011, allocated 2026-11-04 as the next free number after PLAN-HELLOG-0010 (#113). Sources: the REST PR list and the remote `plan/` branches (highest before this one: 0010). `plan-id.mjs next` could not fetch trunk `master` or use GraphQL here (trunk is `main`), so the REST list is the check of record. Re-run `plan-id.mjs check` after the branch is pushed.
+
+**Dependency update (2026-11-04).** PLAN-HGC-0749 (hellocrm #10297) was split. The content contract this plan consumes is now **PT-A, PLAN-HGC-0752 (hellocrm #10307)**, section 2 and 2d: fact record, closed state/lifecycle/availability vocabularies, `withheld` reasons, per-surface projections, `truth_version`, immutable snapshots and an **unsigned** evaluation report (`generated_at`, `next_transition`, `valid_until`). Prices, regions, tax and promotions arrive with PT-B (#10308, held for the founder's money-copy word; until approved the projections carry no `pricing`); the optional resolver and route are PT-C (#10310). **Not provided by PT-A to PT-D:** signed envelopes, pointer, signed `withdrawn.json`/`revocations.json`, key custody and a live-database comparison (PT-A section 9 records them as a deferred finding). Where this plan requires one of those, that requirement is BLOCKED and is replaced for now by: a git-reviewed refresh PR, the pinned sha256 of the snapshot, and the unsigned report's `valid_until`, with the consumer saying so and never describing the pin as verified.
+
 - **Branch:** `plan/hellog-0011-mcp-product-truth-consumer` · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (head `5190a02`)
 - **Mode:** PLAN (plan only, no code). Each BUILD is its own PR carrying `Implements: PLAN-HELLOG-0011 (PR-x)`.
 - **Change tags:** `public_api`, `product`
