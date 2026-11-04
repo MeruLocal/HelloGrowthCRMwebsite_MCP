@@ -11,6 +11,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+Implements PLAN-HELLOG-0011 (PR-B): plan limits in served text now read the pinned Product
+Truth export instead of hand-typed numbers. **Breaking for one parser pattern (named):** a
+backed limit that is withheld, stale or unknown is `null`, not a number, in `pricing_get_plans`.
+
+### Fixed
+- The Free plan is **150 leads** everywhere (was 200 in `faqs_get_site` and in the
+  `switch_get_guide` feature rows and reasons; 200 "contacts" in four switch-guide rows).
+  `features_list` / `features_get` said Task Boards were 500 tasks on Free; the registry says 100.
+
+### Added
+- `pricing_get_plans`: per plan the export backs, `limits_detail` (status, value, unit,
+  `verified_on` per limit) and `limits_source` (scope, `truth_version`, `valid_until`, pinned
+  snapshot sha256, `stale`), plus `withheld` when a backed fact is not served. Existing numeric
+  `limits` fields keep their type when served; no other key carries provenance.
+- A response guard (`product-truth-guard.test.ts`) that fails if any closed-world tool or prompt
+  states a Free-plan limit that differs from the registry, and a build-time check that every
+  `{{plans.<plan>.limits.<key>}}` template names an id the pin holds.
+
+### Changed
+- `check:truth` ratchet also recognises "contacts"; its allowlist is now empty (23 entries removed).
+
+#### Earlier in this release: PR-A
+
 Implements PLAN-HELLOG-0011 (PR-A): infrastructure for serving plan limits from the
 Product Truth export. **No tool response changes.**
 

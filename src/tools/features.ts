@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { productTruth, requestInstant } from "../lib/product-truth.js";
+import { renderTruth } from "../lib/truth-template.js";
 import { defineTool, fail, ok } from "./tool-types.js";
 
 // ── Static feature data ───────────────────────────────────────────────────────
@@ -379,7 +381,7 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Paid tiers add broader views, hygiene support, and more operational depth",
       "Works especially well for sales ops, onboarding, and recurring follow-up workflows",
     ],
-    free: "500 tasks",
+    free: "{{plans.free.limits.tasks}} tasks",
     t1: "Unlimited + views",
     t2: "Unlimited + managed hygiene",
     t3: "Unlimited + dependencies",
@@ -1033,6 +1035,7 @@ export const featuresList = defineTool({
         );
       }
 
+      const at = productTruth.at(requestInstant());
       return ok({
         total: results.length,
         coverage: FEATURES_COVERAGE,
@@ -1042,7 +1045,7 @@ export const featuresList = defineTool({
           title: f.title,
           category: f.category,
           summary: f.summary,
-          availability: { free: f.free, t1: f.t1, t2: f.t2, t3: f.t3 },
+          availability: { free: renderTruth(f.free, at), t1: f.t1, t2: f.t2, t3: f.t3 },
           learnMoreHref: f.learnMoreHref
             ? f.learnMoreHref.startsWith("http")
               ? f.learnMoreHref
@@ -1088,6 +1091,7 @@ export const featuresGet = defineTool({
         );
       }
 
+      const at = productTruth.at(requestInstant());
       return ok({
         slug: feature.slug,
         title: feature.title,
@@ -1095,7 +1099,7 @@ export const featuresGet = defineTool({
         summary: feature.summary,
         bullets: feature.bullets,
         availability: {
-          free: feature.free,
+          free: renderTruth(feature.free, at),
           t1_software_only: feature.t1,
           t2_growth_engine: feature.t2,
           t3_revops_partner: feature.t3,

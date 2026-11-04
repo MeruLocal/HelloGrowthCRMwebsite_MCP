@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { productTruth, requestInstant } from "../lib/product-truth.js";
+import { renderTruth } from "../lib/truth-template.js";
 import { defineTool, ok } from "./tool-types.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +80,7 @@ const SITE_FAQ_ITEMS: SiteFaqItem[] = [
   },
   {
     q: "Is HelloGrowthCRM really free?",
-    a: "Yes. HelloGrowthCRM offers a genuinely free plan with up to 200 leads, pipeline Kanban, task boards, basic email templates, and scheduling. No credit card required, no time limit. Paid plans start at ₹899/user/mo with a 14-day free trial and a 14-day money-back window on annual plans (7-day on monthly renewals).",
+    a: "Yes. HelloGrowthCRM offers a genuinely free plan with up to {{plans.free.limits.leads}} leads, pipeline Kanban, task boards, basic email templates, and scheduling. No credit card required, no time limit. Paid plans start at ₹899/user/mo with a 14-day free trial and a 14-day money-back window on annual plans (7-day on monthly renewals).",
     links: [{ text: "Start with the free plan", href: "/free-crm-for-small-business" }],
   },
   {
@@ -150,7 +152,10 @@ export const faqsGetSite = defineTool({
     },
   },
   async handle(args) {
-    let items = SITE_FAQ_ITEMS;
+    // One captured instant for the whole response; plan limits are read from the pinned Product Truth.
+    const at = productTruth.at(requestInstant());
+    const all = renderTruth(SITE_FAQ_ITEMS, at);
+    let items = all;
     if (args.search) {
       const q = args.search.toLowerCase();
       items = items.filter(
@@ -163,7 +168,7 @@ export const faqsGetSite = defineTool({
         {
           group: "site_faq",
           source: "src/lib/site-faqs.ts (homepage FAQ block + /faq page)",
-          total: SITE_FAQ_ITEMS.length,
+          total: all.length,
           filtered_count: items.length,
           items,
         },

@@ -25,7 +25,7 @@ const PIN_ROOT = join(repo, "test-data/product-truth");
 
 /** Words each limit key is written with in prose. */
 const TERMS = {
-  leads: "leads?",
+  leads: "leads?|contacts?",
   tasks: "tasks?",
   accounts: "accounts?",
   email_templates: "email templates?|templates?",

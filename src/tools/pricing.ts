@@ -2,6 +2,8 @@ import { z } from "zod";
 import { defineTool, ok } from "./tool-types.js";
 import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirror.js";
 import { applyMarketPricing } from "../lib/market-publication.js";
+import { productTruth, requestInstant } from "../lib/product-truth.js";
+import { renderTruth, type TruthAt } from "../lib/truth-template.js";
 // The integration figure is DERIVED from the mirrored catalog rows (see
 // src/tools/integrations.ts). Typing a digit here is how "630+ integrations"
 // survived three months inside a plan feature bullet after the website
@@ -18,8 +20,9 @@ import { LIVE_INTEGRATION_COUNT, INTEGRATION_CATEGORY_COUNT } from "./integratio
 //   • "Professional" was renamed to "Growth" and its monthly rate moved
 //     $12 → $13. AI credits were 2,500/user/mo, not 50,000.
 //     Founder set USD monthly Growth back to $12 on 2026-10-15 (USD annual $10 unchanged).
-//   • The Free tier caps tightened: 150 leads / 20 accounts / 100 tasks /
-//     2 templates (this file claimed 200 / 50 / 500 / 5).
+//   • The Free tier caps tightened. They are no longer typed in this file: every
+//     plan limit is a template token resolved per request from the pinned Product
+//     Truth export (src/lib/product-truth.ts, src/lib/truth-template.ts).
 //   • "Growth Engine" and "RevOps Partner" are NOT CRM plan tiers. They are
 //     Managed RevOps service retainers — Growth lists the service as an add-on
 //     and Enterprise bundles it. They are exposed by pricing_get_managed_revops
@@ -37,18 +40,18 @@ const GLOBAL_PLANS = [
     slug: "free",
     price_annual: "$0",
     price_monthly: "$0",
-    billing: "Free forever · No credit card · 1 user · 150 leads · Never expires",
+    billing: "Free forever · No credit card · 1 user · {{plans.free.limits.leads}} leads · Never expires",
     best_for: "Our default starter — not a trial",
     ai_credits: "50 total",
-    limits: { users: 1, leads: 150, accounts: 20, pipelines: 1, tasks: 100 },
+    limits: { users: 1, leads: "{{plans.free.limits.leads}}", accounts: "{{plans.free.limits.accounts}}", pipelines: 1, tasks: "{{plans.free.limits.tasks}}" },
     features: [
-      "Lead & Contact Management (150 leads/contacts cap)",
-      "Accounts (20 cap) + 1 deal pipeline",
+      "Lead & Contact Management ({{plans.free.limits.leads}} leads/contacts cap)",
+      "Accounts ({{plans.free.limits.accounts}} cap) + 1 deal pipeline",
       "Pipeline Management (Kanban)",
-      "Task Board (100 tasks, Kanban only)",
+      "Task Board ({{plans.free.limits.tasks}} tasks, Kanban only)",
       "Basic activity logging",
-      "2 Basic Email Templates",
-      "3 Custom Fields",
+      "{{plans.free.limits.email_templates}} Basic Email Templates",
+      "{{plans.free.limits.custom_fields}} Custom Fields",
       "WhatsApp click-to-chat only (no API-backed inbox)",
       "AI Writing Assistant (capped, 5 uses/month)",
       "AI Chatbot — 1 conversation/month",
@@ -131,24 +134,70 @@ const GLOBAL_PLANS = [
   },
 ];
 
+// ── Product Truth provenance (PLAN-HELLOG-0011 section 2c1) ─────────────────────
+// Plan limits are template tokens resolved per request from the pinned
+// Product Truth export. Provenance is attached ONLY to the keys the export backs; every other
+// key of `limits` (users, pipelines, Growth leads/tasks/accounts, seats) is hand-written and
+// carries none. These are published plan defaults, not entitlements: a tenant override or
+// grandfather window can differ.
+const BACKED_LIMIT_KEYS: Record<string, string[]> = {
+  free: ["leads", "tasks", "accounts", "email_templates", "landing_pages", "custom_fields", "csv_rows"],
+  growth: ["custom_fields", "csv_rows"],
+};
+
+type ProvenanceReader = TruthAt & {
+  limit: (planId: string, key: string) => ReturnType<TruthAt["fact"]>;
+  pinInfo: () => { truth_version: string; source_sha256: string; valid_until: string; stale: boolean };
+};
+
+/** Render a plan's tokens and, for plans the export backs, add limits_detail + limits_source (additive keys). */
+function renderPlan<P extends { slug: string }>(plan: P, at: ProvenanceReader): Record<string, unknown> {
+  const rendered = renderTruth(plan, at) as unknown as Record<string, unknown>;
+  const keys = BACKED_LIMIT_KEYS[plan.slug];
+  if (!keys) return rendered;
+  const detail: Record<string, unknown> = {};
+  const withheld: { id: string; reason: string }[] = [];
+  for (const key of keys) {
+    const r = at.limit(plan.slug, key);
+    if (r.status === "served") detail[key] = { status: "served", value: r.value, unit: r.unit, verified_on: r.verified_on };
+    else if (r.status === "withheld") {
+      detail[key] = { status: "withheld", reason: r.reason };
+      withheld.push({ id: `plans.${plan.slug}.limits.${key}`, reason: r.reason });
+    } else detail[key] = { status: "unknown" };
+  }
+  const info = at.pinInfo();
+  return {
+    ...rendered,
+    limits_detail: detail,
+    limits_source: {
+      scope: "limits_detail",
+      truth_version: info.truth_version,
+      valid_until: info.valid_until,
+      snapshot: { kind: "pinned", ref: `test-data/product-truth/${info.truth_version}/truth.mcp.json`, sha256: info.source_sha256 },
+      ...(info.stale ? { stale: true } : {}),
+    },
+    ...(withheld.length ? { withheld } : {}),
+  };
+}
+
 const INDIA_PLANS = [
   {
     name: "Free Forever",
     slug: "free",
     price_annual: "₹0",
     price_monthly: "₹0",
-    billing: "Free forever · No credit card · 1 user · 150 leads · Never expires",
+    billing: "Free forever · No credit card · 1 user · {{plans.free.limits.leads}} leads · Never expires",
     best_for: "Default starter — not a trial",
     ai_credits: "50 total",
-    limits: { leads: 150, accounts: 20, pipelines: 1, tasks: 100 },
+    limits: { leads: "{{plans.free.limits.leads}}", accounts: "{{plans.free.limits.accounts}}", pipelines: 1, tasks: "{{plans.free.limits.tasks}}" },
     features: [
-      "Lead & Contact Management (150 leads/contacts cap)",
-      "Accounts (20 cap) + 1 deal pipeline",
+      "Lead & Contact Management ({{plans.free.limits.leads}} leads/contacts cap)",
+      "Accounts ({{plans.free.limits.accounts}} cap) + 1 deal pipeline",
       "Pipeline Management (Kanban)",
-      "Task Board (100 tasks, Kanban only)",
+      "Task Board ({{plans.free.limits.tasks}} tasks, Kanban only)",
       "Basic activity logging",
-      "2 Basic Email Templates",
-      "3 Custom Fields",
+      "{{plans.free.limits.email_templates}} Basic Email Templates",
+      "{{plans.free.limits.custom_fields}} Custom Fields",
       "WhatsApp click-to-chat only (no API-backed inbox)",
       "AI Writing Assistant (capped, 5 uses/month)",
       "AI Chatbot — 1 conversation/month",
@@ -264,7 +313,7 @@ const PRICING_FAQ = [
   { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($12 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
   { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: paid via Stripe. India prices are exclusive of GST — 18% GST is added on top (₹899 bills as ₹1,060.82). Call pricing_get_country_plans for a specific market." },
-  { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
+  { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user ({{plans.free.limits.leads}} leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
 ];
@@ -308,18 +357,19 @@ export const pricingGetPlans = defineTool({
   },
   async handle(args) {
     let result: Record<string, unknown> = {};
+    const at = productTruth.at(requestInstant());
 
     if (args.region === "global" || args.region === "both") {
-      const plans = args.plan
+      const plans = (args.plan
         ? GLOBAL_PLANS.filter((p) => p.slug === args.plan)
-        : GLOBAL_PLANS;
+        : GLOBAL_PLANS).map((p) => renderPlan(p, at));
       result.global_usd = { currency: "USD", plan_count: plans.length, plans };
     }
 
     if (args.region === "india" || args.region === "both") {
-      const plans = args.plan
+      const plans = (args.plan
         ? INDIA_PLANS.filter((p) => p.slug === args.plan)
-        : INDIA_PLANS;
+        : INDIA_PLANS).map((p) => renderPlan(p, at));
       result.india_inr = { currency: "INR", plan_count: plans.length, plans };
     }
 
@@ -389,7 +439,7 @@ export const pricingGetFaq = defineTool({
     },
   },
   async handle(args) {
-    let faqs = PRICING_FAQ;
+    let faqs = renderTruth(PRICING_FAQ, productTruth.at(requestInstant()));
     if (args.search) {
       const q = args.search.toLowerCase();
       faqs = faqs.filter((f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q));
@@ -429,14 +479,15 @@ export const pricingComparePlans = defineTool({
     if (!a) return ok({ error: `Plan "${args.plan_a}" not found. Available: ${available}` });
     if (!b) return ok({ error: `Plan "${args.plan_b}" not found. Available: ${available}` });
 
+    const at = productTruth.at(requestInstant());
     return ok({
       region: args.region,
       comparison: {
         plan_a: { name: a.name, price_annual: a.price_annual, price_monthly: a.price_monthly, ai_credits: a.ai_credits, best_for: a.best_for },
         plan_b: { name: b.name, price_annual: b.price_annual, price_monthly: b.price_monthly, ai_credits: b.ai_credits, best_for: b.best_for },
       },
-      plan_a_features: a.features,
-      plan_b_features: b.features,
+      plan_a_features: renderTruth(a.features, at),
+      plan_b_features: renderTruth(b.features, at),
     });
   },
 });
