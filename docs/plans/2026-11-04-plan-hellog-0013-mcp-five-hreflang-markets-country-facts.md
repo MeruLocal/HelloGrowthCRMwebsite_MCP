@@ -1,6 +1,6 @@
 # Plan — MCP: country facts for five South and South-East Asian markets (PH, ID, BD, LK, NP)
 
-- **Revision:** 1 (2026-11-04). A second tranche on the contract of PLAN-HELLOG-0012 (#115), which is open and unmerged. It reuses 0012's mechanism, fact table, gates, `withheld` enum and acceptance criteria by reference and states only what differs, so it can be read next to 0012 and does not restate it.
+- **Revision:** 2 (2026-11-04), blind-review changes folded (Review record). A second tranche on the contract of PLAN-HELLOG-0012 (#115), which is open and unmerged. It reuses 0012's mechanism, fact table, gates, `withheld` enum and acceptance criteria by reference and states only what differs, so it can be read next to 0012 and does not restate it.
 - **Plan id:** PLAN-HELLOG-0013, allocated 2026-11-04 as the next free number after PLAN-HELLOG-0012 (#115). Sources: the REST PR list (all states) and the remote `plan/` branches; the highest plan number before this one is 0012. Re-run `plan-id.mjs check` after the branch is pushed.
 - **Branch:** `plan/hellog-0013-mcp-five-hreflang-markets-country-facts` · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (head `5190a02`)
 - **Mode:** PLAN (plan only, no code). Each BUILD is its own PR carrying `Implements: PLAN-HELLOG-0013 (PR-x)`.
@@ -26,17 +26,17 @@
   6. **Data residency:** nothing is said, in any field, test or fixture.
   7. HelloGrowthCRM is a full-stack business suite (pipeline, communication, commerce, operations, customers, marketing, intelligence). It is never "WhatsApp-first"; WhatsApp is one channel next to email, SMS, voice and live chat.
 - **Mechanism.** Reuse, no new machinery. Five data files on 0007's generator and gates, served through 0009's `additional_markets` on the existing `country_get` and `countries_list`, using 0012's fact table with the differences in §2. **No new tool and no new resource.** All five markets have a hub or country route, so 0012's `route_prefix: null` extension is not needed here.
-- **Observable.** "What does HelloGrowthCRM cost in Manila, and can I pay with GCash?" returns a pending-price state until the gates are met, then USD 12 per user per month or USD 120 per user per year upfront with 150 free leads; subscriptions paid via Stripe; GCash and Maya as "Planned, not available", never as connected. "Is there a Bahasa Indonesia interface?" returns the list of available languages, which does not include Bahasa, and says native translations are English and French (Canada) only. "Is HelloGrowthCRM compliant with the Philippine Data Privacy Act?" returns the `data-protection-law` topic as withheld, never a yes and never a no.
+- **Observable (tool contract; the assistant evaluation in §7b is advisory, not a gate).** `country_get` for a code returns the facts and `withheld[]` below, and the same tool never returns a yes or a no on compliance. In plain terms, "What does HelloGrowthCRM cost in Manila, and can I pay with GCash?" returns a pending-price state until the gates are met, then USD 12 per user per month or USD 120 per user per year upfront with 150 free leads; subscriptions paid via Stripe; GCash and Maya as "Planned, not available", never as connected. "Is there a Bahasa Indonesia interface?" returns the list of available languages, which does not include Bahasa, and says native translations are English and French (Canada) only. "Is HelloGrowthCRM compliant with the Philippine Data Privacy Act?" returns the `data-protection-law` topic as withheld, never a yes and never a no.
 - **Risk.** A price served before the website and Stripe agree; a roadmap gateway read as live; a hreflang tag (`id-ID` on a page, `bn-BD`) read as an interface language; an automatic translation read as a native one; a compliance, tax or e-invoicing statement served as fact; residency language; "WhatsApp-first"; a local-currency figure; a second, conflicting language fact next to 0012's (§2b).
 
 ## 0a. Necessary changes   (planned-file coverage)
 
-**Dependencies:** 0007 PR-A, 0009 PR-A and 0012 PR-A (which establishes the twelve-market file layout, the `approved_default` evidence type and the enum members this plan reuses). If 0012 PR-A has not merged, this plan's PR-A carries the two schema enum members it needs (§2a). Conformance of 0007 and 0009 is the first step (AC-A11 of 0012).
+**Dependencies (hard, pinned):** 0007 PR-A, 0009 PR-A and 0012 PR-A, all merged. 0012 PR-A supplies the file layout, fixture template, the `approved_default` evidence type, the schema enum members and the policy this plan reuses. This PR-A starts only from a recorded merge commit that contains all three, and its PR body pins that commit and the commit of the research branches #113–#117 it read. There is no fallback that carries 0012's prerequisites.
 
 **PR-A: five markets as additional markets** (no mirror price row exists for any of the five, so nothing is withdrawn)
 - [ ] `src/tools/countries.ts`: **extend** `ADDITIONAL_MARKETS` with five entries (`ph`, `id`, `bd`, `lk`, `np`), each with a route prefix (`/ph`, `/id`, `/bd`, `/lk`, `/np`).
 - [ ] `test-data/market-facts/2026-11-04/{ph,id,bd,lk,np}.json`, `SHA256SUMS`, and the matching rows in `gates.json` (gates `website-deploy:<cc>`, `stripe-flow1:<cc>`, `pages-observed:<cc>`; no SOC 2 row).
-- [ ] `scripts/market-facts.schema.json`: additive only if absent after 0012: the `approved_default` evidence type and the one fact kind or enum use named in §2 for the plan-limit fact.
+- [ ] `scripts/market-facts.schema.json`: no change expected. The plan-limit fact uses the existing `market` kind (F2); if the 0007 policy does not permit that, the prerequisite is resolved in its own PR before this BUILD.
 - [ ] `src/data/market-facts.ts`: regenerated, never hand-edited.
 - [ ] `README.md` (one line per added market, the hreflang-is-not-interface note, the automatic-versus-native translation note), `CHANGELOG.md`, version strings (`npm run check:versions`), fixtures `test-data/fixtures/market-facts-<cc>-{pending,published,expired,error}.json` (20 files, generated from the one template 0012 introduces).
 - [ ] Tests: `src/tools/__tests__/market-facts-five-asia-markets.test.ts` (parameterised over the five codes, one case table), plus the language and wallet scans of AC-A2 to AC-A5 below.
@@ -81,7 +81,7 @@ Fact fields, `status` semantics, the publication predicate, the wire contract an
 |---|---|---|---|---|---|
 | `<cc>.price.monthly` | price | capability | Growth is USD 12 per user per month | `website-deploy:<cc>`, `stripe-flow1:<cc>`; `approved_default` D-EXP-40/44/45 | all 5 |
 | `<cc>.price.annual` | price | capability | Growth is USD 120 per user per year, charged once upfront | same | all 5 |
-| `<cc>.plan.free` | market | capability | The Free plan includes 150 free leads | none; `approved_default`, founder 2026-11-04, consistent with MCP #107; the kind is `market` unless the 0007 policy has a plan-limit kind (F2) | all 5 |
+| `<cc>.plan.free` | market | capability | The Free plan includes 150 free leads | none; `approved_default`, founder 2026-11-04, consistent with MCP #107; the kind is the existing `market` (F2) | all 5 |
 | `<cc>.pay.hgc-subscription` | payment | capability | HelloGrowthCRM subscriptions are paid via Stripe, the global subscription processor. Whether buyers in this market can purchase, and with which methods, is not confirmed here | none; D-EXP-41 flow 1 only | all 5 |
 | `<cc>.market.pages` | market | capability | HelloGrowthCRM has these pages for this market, listed with their declared hreflang and content language (only routes with deployment evidence) | gate `pages-observed:<cc>`; a route without evidence is omitted; with no verified route the fact is absent | all 5; expected routes: PH `/ph`, ID `/id`, BD `/bd`, LK `/lk` and `/crm-sri-lanka`, NP `/np` and `/crm-nepal`, to be confirmed by fetch |
 | `<cc>.language.app-ui` | market | capability | The app interface is available in English, Hindi, Gujarati, Spanish and French through automatic translation. Native translations exist for English and French (Canada) only | none; code answer 2026-11-04 | all 5 |
@@ -100,15 +100,15 @@ Served-fact count when every gate is met: PH 8, ID 9, BD 9, LK 9, NP 9 (six base
 ### 2a. Dependency order
 
 1. 0007 PR-A, then 0009 PR-A; each passes its conformance script on the merge commit.
-2. 0012 PR-A, if it has merged. If it has not, this plan's PR-A carries the schema enum members and the `approved_default` evidence type itself, in an identical form so whichever merges second rebases with no conflict (AC-A18). The two plans touch disjoint data files and one shared array, `ADDITIONAL_MARKETS`; the second to merge appends its entries.
+2. 0012 PR-A merged. The two plans touch disjoint data files and one shared array, `ADDITIONAL_MARKETS`; this plan appends its five entries on top of 0012's.
 3. **PR-A** (this plan).
-4. **PR-B** per market, blocked on `website-deploy:<cc>` and `stripe-flow1:<cc>` (Stripe access not granted; no resolution date, so PR-A already serves the pending state). The Stripe evidence follows 0012 §2a: the actual subscription flow, currency USD, unit amount, recurrence, per-seat quantity, monthly versus annual upfront, tax configuration, and buyer eligibility for this market. If checkout adds tax or a charge inconsistent with the approved qualifier, the gate stays unmet.
+4. **PR-B** per market, blocked on `website-deploy:<cc>` and `stripe-flow1:<cc>` (Stripe access not granted; no resolution date, so PR-A already serves the pending state). Gate transitions are approved by the release approver (Rushabh) through a `CODEOWNERS`-reviewed diff; restricted evidence (Stripe identifiers, checkout data) stays outside the repo and only a sanitized attestation id and hash enter it. The Stripe evidence follows 0012 §2a: the actual subscription flow, currency USD, unit amount, recurrence, per-seat quantity, monthly versus annual upfront, tax configuration, and buyer eligibility for this market. If checkout adds tax or a charge inconsistent with the approved qualifier, the gate stays unmet.
 5. **0003 G1–G5** blocks public deploy of every BUILD; release approver Rushabh; smoke owner the PR author.
 
 ### 2b. Two proposed refinements to 0012, recorded and not applied here
 
-- **Language fact.** 0012 states "available in English, Hindi, Gujarati, Spanish and French". The founder's code answer separates automatic translation from native translation. This plan serves the precise form. Left unchanged, 0012 and 0013 would serve two different language facts, so the 0012 owner is asked to adopt the same wording before either merges (F4). A shared test asserts the two strings are identical once both exist (AC-A19).
-- **Plan-limit fact.** 0012 deliberately publishes no limit; this plan publishes 150 free leads on the founder's instruction. Whether the same fact should be added to the twelve is F2.
+- **Language fact.** 0012 states "available in English, Hindi, Gujarati, Spanish and French". The founder's code answer separates automatic translation from native translation. This plan serves the precise form. Left unchanged, 0012 and 0013 would serve two different language facts, so the 0012 owner is asked to adopt the same wording before either merges (F4). Because this is a global app fact, not a per-market one, equality is mandatory (AC-A19).
+- **Plan-limit fact.** 0012 deliberately publishes no limit; this plan publishes 150 free leads on the founder's instruction for these five markets only. It does not expand 0012's twelve.
 
 ## 3. Affected files
 
@@ -134,9 +134,11 @@ The criteria of 0012 §6 (AC-A1, A4, A6 to A17 and AC-B1 to B3) apply to the fiv
 - **AC-A2** No response for any of the five contains a local-currency token or symbol (`PHP`, `₱`, `IDR`, `Rp`, `BDT`, `৳`, `LKR`, `NPR`, `Rs`), and none contains a wallet or gateway name (`GCash`, `Maya`, `QRIS`, `OVO`, `DANA`, `GoPay`, `bKash`, `Nagad`, `Rocket`, `LankaQR`, `PayHere`, `eSewa`, `Khalti`, `Fonepay`) or an aggregator or acquirer name (`Xendit`, `Midtrans`, `PayMongo`, `SSLCommerz`, `aamarPay`, `ShurjoPay`) outside the roadmap facts of §2, whose statements start "Planned, not available:". Topic identifiers are checked against the enum, not these patterns.
 - **AC-A3** Prose fields (`statement`, `message`, `note`, `qualifier`) match none of `/residen/i`, `/data (region|location|center|centre)/i`, `/ISO ?27001/i`, `/HIPAA/i`, `/WhatsApp-first/i`, `/sales[- ]only/i`, `/sales[- ]first/i`, `/certified/i`, `/compliant/i`, `/aligned/i`, nor any of `Data Privacy Act`, `NPC`, `BIR`, `EIS`, `UU PDP`, `e-Faktur`, `Coretax`, `Mushak`, `NBR`, `RAMIS`, `IRD`, `CBMS`, `PDPA`, `Individual Privacy Act` (identifiers are exempt).
 - **AC-A5** Language claims: every language named as available in a `language.app-ui` fact is in `[en, hi, gu, es, fr]`; the fact says automatic translation and names English and French (Canada) as the only native translations; no fact or prose names Bahasa Indonesia, Indonesian, Bangla, Bengali, Sinhala, Tamil, Nepali, Filipino or Tagalog as available; the `not-offered` facts exist exactly for ID, BD, LK and NP; the `market.pages` fact never uses a hreflang tag (`id-ID`, `bn-BD`) as an interface claim.
-- **AC-A18** Order independence: PR-A applied before 0012 PR-A and after it yields identical generated bytes for the five markets; schema additions are identical text.
-- **AC-A19** Once both exist, the `language.app-ui` string is byte-identical across the 0012 and 0013 markets, or the difference is a recorded decision (F4).
+- **AC-A18** Dependency pin: the PR body records the merge commit containing 0007, 0009 and 0012 PR-A, and the first CI step is their conformance scripts on that commit. Baseline fixtures are captured there.
+- **AC-A19** The `language.app-ui` string is byte-identical across the 0012 and 0013 markets; a difference fails the build unless verified market-specific behaviour is cited. The language claim is pinned to a hellocrm commit and locale-file path in the data file's evidence.
 - **AC-A20** The plan-limit fact states exactly "150 free leads", agrees with `pricing_get_plans` and the Free-plan facts of MCP #107, and names no other plan limit.
+- **AC-A22** Cross-tool: while a market's price gate is unmet, `country_get` and `pricing_get_plans` are called in both orders; the pending note stays in the `country_get` answer and the global ladder is not presented as purchase availability. Expiry is evaluated at serving time (injected clock at `expires_on - 1ms` and `expires_on`, UTC, invalid timestamp withholds, revocation withholds, kill switch withholds), including in a long-lived process.
+- **AC-A23** Prose scans (AC-A3, AC-A5) run on word boundaries, case-folded after Unicode NFKC normalisation, over every string field of every served fact, `withheld` message and `note`; short tokens (`Rp`, `Rs`, `IRD`, `BIR`, `EIS`, `NPC`) match whole tokens only. Topic identifiers are exempt.
 - **AC-A21** Every roadmap fact's evidence names the founder statement and, until a hellocrm plan PR names the wallet, says so (F1); none is `is_capability: true`.
 
 ## 7b. Smoke test   (expected only; the BUILD PR records observed results)
@@ -146,7 +148,7 @@ The criteria of 0012 §6 (AC-A1, A4, A6 to A17 and AC-B1 to B3) apply to the fiv
 | 1 | `country_get({"code":"ph"})` after PR-A | market-only form with `url` for `/ph`; facts: free plan (150), Stripe, languages, positioning, wallets roadmap (GCash, Maya), plus `pages` only if evidenced; price absent; `price_status: pending_verification`; `withheld` lists the base topics plus `price-pending` |
 | 2 | `country_get({"code":"id"})` | same shape; wallets roadmap names QRIS, OVO, DANA; a `not-offered` fact for Bahasa Indonesia |
 | 3 | `country_get({"code":"bd"})`, `lk`, `np` | wallets roadmap (bKash and Nagad; LankaQR and PayHere; eSewa and Khalti); `not-offered` for Bangla, Sinhala, Nepali respectively |
-| 4 | Ask for the Philippine Data Privacy Act, UU PDP, IRD e-invoicing | the matching withheld topic, no yes and no no |
+| 4 | `country_get` for each code | `withheld[]` contains `data-protection-law` and `e-invoicing`; no served string states compliance or non-compliance. Advisory only: an assistant evaluation on the natural-language questions (Data Privacy Act, UU PDP, IRD e-invoicing) answers from `withheld`, not a yes or no |
 | 5 | `countries_list()` | `count: 8`, `countries` unchanged, `additional_markets` includes the five codes |
 | 6 | `country_get({"code":"np"})` after PR-B with both `np` gates met | USD 12 per user per month, USD 120 per user per year upfront; `price-pending` gone; the other four still pending |
 | 7 | `country_get({"code":"lk"})` with a clock past a price gate's `expires_on` | price absent and `price-pending` present again |
@@ -192,9 +194,9 @@ Deferred, with the reason: market competitors in `alternatives_list` (the resear
 ## 10. Decisions owed
 
 - **F1 (open, founder)** No hellocrm plan PR names GCash, Maya, QRIS, OVO, DANA, bKash, Nagad, LankaQR, PayHere, eSewa or Khalti; the research product drafts say "none covers this market" and point at the shared adapter #10095. This plan serves them as roadmap facts on the founder's word. Confirm that "Planned, not available" is the right wording, or attach plan PR numbers when they exist. Until then the evidence field says the plan PR is absent.
-- **F2 (proposed)** The plan-limit fact kind (`market` or a new policy kind) and whether the same 150-lead fact is added to 0012's twelve markets.
-- **F3 (open)** Confirm in the hellocrm locale files that Filipino and Tamil are not available either. The founder's list names four languages; the available set is closed, so the plan treats both as unavailable and never names them as available.
-- **F4 (open)** The 0012 owner adopts the automatic-versus-native wording for the twelve markets, or the two plans record why they differ.
+- **F2 (closed here)** The plan-limit fact uses the existing `market` kind. If the 0007 policy forbids it, that prerequisite is its own PR; this plan does not widen 0012.
+- **F3 (open, blocking BUILD)** Confirm and pin to a hellocrm commit, in the locale files, that Filipino and Tamil are not available either. The founder's list names four languages; the available set is closed, so the plan treats both as unavailable and never names them as available.
+- **F4 (open, blocking BUILD)** The 0012 owner adopts the automatic-versus-native wording for the twelve markets before either BUILD merges; AC-A19 enforces equality.
 - **F5 (open)** Whether `/ph` language pages (`tl`) and `/bd/crm-bangla` are live, and their hreflang. PR-A lists only routes the deployed fetch confirms.
 
 ## 11. Findings outside this plan   (D-EXP-14: recorded, not fixed here)
@@ -205,17 +207,11 @@ To be linked in the PR-A body to the owning website plan before PR-A merges. Non
 - The research product drafts propose Bahasa, Bangla and Nepali interfaces as new builds. They are product decisions, not MCP facts.
 - The usePricing hook maps `Asia/Manila` to PHP (research claims file): a website matter.
 
-## 12. Estimated token cost
+## 12. Owners, effort and rollback
 
-Estimate, not a quote; input tokens at $3/M.
-
-| PR | Low | Expected | High |
-|---|---|---|---|
-| PR-A (five data files, fixtures from one template, tests) | 0.4M | 0.6M | 0.9M |
-| PR-B (gate PRs; one per market at most) | 0.15M each | 0.2M each | 0.3M each |
-| **Total** | **1.2M** | **1.6M** (about $4.80) | **2.4M** |
-
-Operational effort beyond tokens: website route fetches per market (PR-A) and Stripe evidence per market (PR-B, owner Rushabh). This plan PR: about 0.3M.
+- Owners: release approver and Stripe evidence, Rushabh; smoke, the PR author; website findings (§11), the owning website plan for each market (links added to the PR-A body).
+- Effort beyond code: one deployed route fetch per market (PR-A), one Stripe evidence record per market (PR-B).
+- Withdrawal: an expired or revoked gate returns that market to pending without a rebuild (AC-A22); the per-market and global kill switches are the rollback, and the rollback target is the previous release tag recorded in the PR body. A calendar reminder owned by the approver re-observes each gate before its 90-day expiry.
 
 ## 13. Validation (this plan PR)
 
@@ -225,3 +221,7 @@ Operational effort beyond tokens: website route fetches per market (PR-A) and St
 - **PASS**: the 0012 plan file read at its branch head (open, draft).
 - **UNVERIFIABLE**: live server; the deployed website; locale files in hellocrm; competitor MCP inventories.
 - **BLOCKED**: Stripe flow-1 evidence per market (Rushabh); Product Truth export (#114).
+
+## Review record
+
+One blind second-opinion review of revision 1 (verdict: accept-with-changes, three blockers). Folded in revision 2: (1) the dependency is hard and pinned to a merge commit containing 0007, 0009 and 0012 PR-A, the fallback is gone (§0a, §2a, AC-A18); (2) language equality with 0012 is mandatory, evidence pinned to a hellocrm commit, F3 and F4 block BUILD (AC-A19); (3) the observable is narrowed to the tool contract, the assistant evaluation is advisory (§0, smoke 4). Also taken: cross-tool and serving-time expiry scenario (AC-A22), token-boundary prose scans (AC-A23), gate approval and sanitized attestation (§2a), the token-cost section replaced by owners and rollback (§12), F2 closed without widening 0012. Not taken: external SDK inventory (not obtainable from the repository; the README and CHANGELOG document the additive change) and a separate manifest (the pin in AC-A18 serves). F1 stays open and is a founder call. No second review was run.
