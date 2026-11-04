@@ -1,361 +1,270 @@
-# Plan — MCP: serve the Product Truth Registry (one set of facts for pricing, plans, features, promotions and claims)
+# Plan — MCP: serve Free-plan limits from the Product Truth export (consumer of PT-A)
 
-- **Revision:** 3 (2026-11-04), aligned to the Product Truth Contract v1 of PLAN-HGC-0749 (MeruLocal/hellocrm #10297, section 2a); sibling consumer PLAN-HCW-0257 (hellocrmwebsite #2358)
-- **Plan id:** PLAN-HELLOG-0011, allocated 2026-11-04 as the next free number after PLAN-HELLOG-0010 (#113). Sources: the REST PR list and the remote `plan/` branches (highest before this one: 0010). `plan-id.mjs next` could not fetch trunk `master` or use GraphQL here (trunk is `main`), so the REST list is the check of record. Re-run `plan-id.mjs check` after the branch is pushed.
-
-**Dependency update (2026-11-04).** PLAN-HGC-0749 (hellocrm #10297) was split. The content contract this plan consumes is now **PT-A, PLAN-HGC-0752 (hellocrm #10307)**, section 2 and 2d: fact record, closed state/lifecycle/availability vocabularies, `withheld` reasons, per-surface projections, `truth_version`, immutable snapshots and an **unsigned** evaluation report (`generated_at`, `next_transition`, `valid_until`). Prices, regions, tax and promotions arrive with PT-B (#10308, held for the founder's money-copy word; until approved the projections carry no `pricing`); the optional resolver and route are PT-C (#10310). **Not provided by PT-A to PT-D:** signed envelopes, pointer, signed `withdrawn.json`/`revocations.json`, key custody and a live-database comparison (PT-A section 9 records them as a deferred finding). Where this plan requires one of those, that requirement is BLOCKED and is replaced for now by: a git-reviewed refresh PR, the pinned sha256 of the snapshot, and the unsigned report's `valid_until`, with the consumer saying so and never describing the pin as verified.
-
+- **Revision:** 4 (2026-11-04), rewritten as a consumer of PT-A (PLAN-HGC-0752, MeruLocal/hellocrm #10307) sections 2 and 2d only; earlier revisions are in git history
+- **Plan id:** PLAN-HELLOG-0011, allocated 2026-11-04 as the next free number after PLAN-HELLOG-0010 (#113) (REST PR list and remote `plan/` branches; trunk is `main`, so `plan-id.mjs next` could not fetch it; re-run `plan-id.mjs check` after the branch is pushed)
 - **Branch:** `plan/hellog-0011-mcp-product-truth-consumer` · **Repo:** MeruLocal/HelloGrowthCRMwebsite_MCP · **Trunk:** `main` (head `5190a02`)
 - **Mode:** PLAN (plan only, no code). Each BUILD is its own PR carrying `Implements: PLAN-HELLOG-0011 (PR-x)`.
 - **Change tags:** `public_api`, `product`
 - **Tier:** T2. Owed: acceptance_criteria, blast_radius, caller_inventory, compatibility_test, competitor_scan, intent, necessary_changes, planned_file_coverage, premise_check, smoke_test
-- **Restricted areas touched:** none. The server states prices; it does not bill.
-- **Freeze in force?** Yes: the PLAN-HELLOG-0003 (#102) release gate G1–G5 blocks public deploy of every BUILD.
-- **Origin:** founder brief of 2026-11-04, decision D-EXP-51 ("website, MCP and LLM answers consume the same facts"). Brief: `research-methodology/product-truth-engine-founder-brief-2026-11-04.md` in the research repo.
-- **Research evidence:** MeruLocal/Hellogrowthcrm-Researchsuite#43
-- **Opportunity ID:** OPP-PRODUCT-TRUTH-001
+- **Restricted areas touched:** none. The server states plan limits; it does not bill.
+- **Freeze in force?** Yes: the PLAN-HELLOG-0003 (#102) release gate G1-G5 blocks public deploy of every BUILD.
+- **Dependency:** **PT-A, PLAN-HGC-0752 (hellocrm #10307), section 2 and 2d, and nothing else.** This plan defines no fact, field, state, version or hash. Prices, tax, trial terms and promotions are PT-B (#10308, held for the founder's money-copy word); the optional resolver and route are PT-C (#10310); in-app consumers are PT-D. Phase 1 needs none of them.
+- **Sibling consumer:** PLAN-HCW-0257 (hellocrmwebsite #2358)
+- **Origin:** founder brief of 2026-11-04, decision D-EXP-51 ("website, MCP and LLM answers consume the same facts"). Founder rules held: Free leads 150; Free email templates 2 now and 5 target (the server states 2 until the product changes); USD 12 per user per month or USD 120 per user per year upfront outside India with no tax line (held for PT-B, section 2c); nothing on data residency; no FAQPage schema; seat cap unchanged; no billing writes.
+- **Research evidence:** MeruLocal/Hellogrowthcrm-Researchsuite#43 · **Opportunity ID:** OPP-PRODUCT-TRUTH-001
 - **Date:** 2026-11-04
 
 ## 0. Intent
 
-- **Claim.** On `main`, the MCP server states product facts from hand-typed values in five places, and they disagree with each other and with the product:
-  1. `src/tools/alternatives.ts` says "up to 200 leads" on the Free plan in eight comparison rows, and `src/tools/faqs.ts` says "up to 200 leads". The product enforces 150 (Wave 1 singletons audit; `pricing.ts` already says 150). PR #107 corrects these by hand; this plan removes the need to.
-  2. `src/data/website-mirror.ts` `COUNTRY_PRICING` and `src/tools/pricing.ts` carry prices as strings per country (`₹899/user/mo + GST`, `$10/user/mo`, `£8/user/mo`). Recorded decisions D-EXP-25/33/40/44/45: USD 12 per user per month or USD 120 per user per year upfront outside India, no tax line.
-  3. `src/tools/features.ts` serves availability as `free / t1 / t2 / t3`, tier names that are not the live plan ids (Free, Growth, Enterprise).
-  4. No tool serves promotions, and `claims_*` (PLAN-HELLOG-0006, #109) is planned on a research snapshot with no product owner.
-  5. Plans 0007 to 0010 (#110–#113) each hand-write a country's price, payment and compliance statements into a per-market data file.
-- **Mechanism.** The MCP becomes a **consumer** of the HelloGrowthCRM Product Truth Registry. A build-time snapshot of the registry's `mcp` projection and its signed envelope is pinned in this repo (phase 1); a client of the Product Truth API replaces the snapshot as the primary source in a later, separately reviewed plan once the API ships (§2e). Every number, plan limit, price, availability and approved claim the tools serve is read from that export; the hand-written copies are deleted, and a ratchet check fails the build if one comes back. Every response from a tool **that has been migrated** carries `truth_version`, `released_on`, `valid_until` and `snapshot`, and each quoted fact carries its own `verified_on`; a tool is migrated, and only then labelled, in the PR where all of its served facts pass through the registry reader, the public filter and the release gates (no label on a hand-written answer).
-- **Observable.** "How many leads on the Free plan?" returns 150 from `plans_get`, `features_get`, `alternatives_get` and `faqs_get_site`, with the same `truth_version`. "What does Growth cost in Egypt?" returns USD 12 per user per month or USD 120 per user per year upfront, no tax line, from `pricing_get`. "Does HelloGrowth have X in Nigeria?" returns the plan and country availability, and a roadmap item is never returned as available.
-- **Risk.** A snapshot served stale; a draft or roadmap fact served as live; two truth snapshots (this plan and 0005/0006) disagreeing; a registry change that the MCP silently renders wrong; tool-count growth (0003: selection degrades past about 30–50 tools; 91 `defineTool(` calls on `main`); replacing the 0007–0010 values mid-flight.
+- **Claim.** On `main`, the MCP server states plan limits from hand-typed values in several places and they disagree with each other and with the product: `src/tools/alternatives.ts` and `src/tools/faqs.ts` say "up to 200 leads" on Free while the product enforces 150 and `pricing.ts` already says 150. Phase 1 makes every plan limit **that PT-A exports** (Free: leads, tasks, accounts, email templates, landing pages, custom fields, CSV rows; Growth: custom fields, CSV rows) a read of one pinned PT-A export, so those limits cannot differ between tools and a retired value cannot return. Limits PT-A does not export (users, pipelines, Growth leads and tasks, seats) stay hand-written and are not attributed to the pin.
+- **Mechanism.** The repo pins PT-A's `truth.mcp.json`, `evaluation.json`, `index.json` and the conformance fixture by sha256, through a human-reviewed refresh PR. A generator turns the pin into `src/data/product-truth.ts`; `src/lib/product-truth.ts` is the only reader and looks a fact up by its PT-A id in its one location; served text becomes a template over the reader; a ratchet check fails the build if a limit literal comes back. There is no runtime network call, no signing and no live API, because PT-A provides none (PT-A section 9).
+- **Observable.** "How many leads on the Free plan?" returns 150 from `pricing_get_plans`, `alternatives_get`, `faqs_get_site` and `buyer_answers`, and the `limits` object of `pricing_get_plans` carries the same `truth_version`. A planted `200 leads` fails `verify`.
+- **Risk.** A pin that is wrong but green (PT-A guarantees only that the registry equals the repository's declared defaults); a pin served past its validity; a withheld or unknown fact answered with a default; two truth sources (this plan and 0005/0006) disagreeing; tool-count growth (0003: 91 `defineTool(` calls on `main`); scope creep into prices before PT-B exists.
 
-## 0a. Necessary changes   (planned-file coverage)
+## 0a. Necessary changes (planned-file coverage)
 
-**PR-A: infrastructure only: snapshot, generator, reader, gates, test harness** (blocked on the registry export contract, §2a). No tool response changes in PR-A.
-- [ ] `test-data/product-truth/<truth_version>/truth.mcp.json`, `release.mcp.<target>.json` and `SHA256SUMS`: the pinned `mcp` projection and its signed release envelope (contract v1). Refreshing it is a human PR that changes the sha, so approval binds to the exact payload.
-- [ ] `scripts/product-truth.schema.json` (the consumed contract, §2) and `scripts/build-product-truth.mjs`: verifies the envelope signature, digest, target and `result: pass` (public key committed; no credentials), validates the projection against the registry's public schema, and writes `src/data/product-truth.ts` with the source sha256, `truth_version`, `released_on` and `valid_until` in the header. The projection already contains only `state: approved` records; the reader re-checks. Deterministic, never hand-edited. Unknown `schema_version` fails the build.
-- [ ] `src/lib/product-truth.ts`: the only reader. `getPlan(id)`, `getPrice(plan, country, cycle)`, `getLimit(plan, key)`, `getFeatureAvailability(feature, country)`, `getApprovedClaims()`, and `truthEnvelope()` returning `{ truth_version, released_on, valid_until, snapshot }`. Every `get*` returns the discriminated result of section 2c1, never a bare value. Resolution order is the registry's (defaults, plan, region, country override, promotion, eligibility); the MCP does not re-implement it, it reads the resolved view the export carries per country (§2).
-- [ ] `src/tools/tool-types.ts`: `ok()` accepts an optional envelope merged at top level; no tool passes one in PR-A.
-- [ ] The reader applies, in one place, the state check, the temporal check (`effective_from` / `effective_until` against the request clock) and the 0007 release-gate predicate (§2a step 3), so every later PR inherits withholding. The freshness rule (§2c) is enforced here.
-- [ ] `scripts/check-product-truth.mjs`: `--check` fails if `src/data/product-truth.ts` differs from the pinned export; `--literals` is the ratchet of §2c. `package.json`: `check:truth`, added to `verify`.
-- [ ] `src/tools/__tests__/product-truth-reader.test.ts` and the consistency and forbidden-value test **harness** (§6); each migration PR adds its tool to the harness.
-- [ ] `README.md`, `CHANGELOG.md`, version strings.
+**PR-A: infrastructure only: pin, generator, reader, ratchet, test harness.** No tool response changes.
+- [ ] `test-data/product-truth/<truth_version>/truth.mcp.json`, `evaluation.json`, `index.json` and `SHA256SUMS`: verbatim PT-A output. Refreshing it is a human PR that changes the sha, so approval binds to the exact payload.
+- [ ] `test-data/product-truth/contract-v1/`: verbatim copy of PT-A's `fixtures/contract-v1/` (the synthetic private input, valid public projections, invalid reader fixtures), pinned by its `SHA256SUMS`, excluded from any served asset.
+- [ ] `scripts/build-product-truth.mjs`: verifies the sha256, validates the file against PT-A's public schema, rejects an unknown `schema_version` major and a wrong `surface`, and writes `src/data/product-truth.ts` with the source sha256, `truth_version`, `generated_at`, `valid_until` and `next_transition` in the header. Deterministic, never hand-edited, and the generator emits only data (no handcrafted content; a test asserts the file is exactly the generator's output). **`evaluation.json` is validated as input**: it must match PT-A's evaluation schema; `generated_at`, `next_transition` and `valid_until` are ISO UTC instants with `valid_until >= generated_at`; its `content_digests` must equal the `content_digest` of the pinned snapshot files (so the report provably belongs to that payload); an absent or null `next_transition` is handled as PT-A's schema defines it (validity is then bounded by `valid_until` alone); `effective_from` / `effective_until` on a fact are optional and their absence is valid. Fixtures cover a report for a different snapshot, a `valid_until` before `generated_at`, and a malformed instant.
+- [ ] `test-data/product-truth/FLOOR`: the lowest `truth_version` the repo accepts, changed only by a CODEOWNERS-reviewed PR; the reader and `check:truth` reject a pin below it, **This guards a forward re-pin only. It is not an anti-rollback control: an application rollback also rolls back the floor and the index, so the guarantee is withdrawn and the exposure is bounded by the older pin's own `valid_until`.** Ordering comes from PT-A's `index.json`, never from comparing hashes.
+- [ ] `src/lib/product-truth.ts`: the only reader. `fact(id)`, `limit(planId, key)` (builds the id `plans.<planId>.limits.<key>`; an id the pin lacks is unknown), `withheldReason(id)` and `pinInfo()`. Every `get` returns the result type of section 2b, never a bare value. The request clock is injected and **captured once per request** and used for the whole response; no reader result is captured at module initialisation (`GLOBAL_PLANS`, buyer-intent strings, prompts and resource text are computed per request).
+- [ ] `src/tools/tool-types.ts`: `ok()` accepts an optional `limits_source` block merged at top level; no tool passes one in PR-A.
+- [ ] `scripts/check-product-truth.mjs`: `--check` fails if `src/data/product-truth.ts` differs from the pinned export, if the pinned `truth_version` is not the last entry of the pinned `index.json` (a rollback needs a stated reason in the PR), or if a pinned file differs from `SHA256SUMS`; `--literals` is the ratchet of section 2b. `package.json`: `check:truth`, added to `verify`.
+- [ ] `src/tools/__tests__/product-truth-reader.test.ts` and the consistency and forbidden-value test harness (section 6); each migration PR adds its tool to the harness.
+- [ ] `README.md`, `CHANGELOG.md`, version strings (`npm run check:versions`).
 
-**PR-B: plans, pricing and country prices read the registry** (after PR-A; after 0007 PR-A, §2a)
-- [ ] `src/tools/pricing.ts`: `pricing_get_plans` gains an optional `plan` input (what the brief calls `plans_get`) and `pricing_get_country_plans` is what the brief calls `pricing_get` (it already takes `country`); `GLOBAL_PLANS`, the India plan list, `MARKET_SCOPE` and the payment answer of `pricing_get_faq` read `src/lib/product-truth.ts`. **No alias tool is registered**: the brief's names are mapped in `README.md` only, because a description does not make `tools/call("pricing_get")` resolve (decision F1).
-- [ ] **Prerequisite owned by this PR (was §11):** the positioning text in `alternatives.ts` that calls HelloGrowthCRM WhatsApp-first or sales-first is rewritten from the registry's positioning claim in the same PR that migrates `alternatives_get`; the AC-B3 scan cannot pass otherwise, so the migration cannot merge without it.
-- [ ] `src/data/website-mirror.ts`: `COUNTRY_PRICING` price and payment fields read the registry view; the hand strings are removed.
-- [ ] `src/tools/countries.ts`, `src/tools/output-schemas.ts`: envelope fields and nullable price fields (nullable or pending prices are a visible change, listed in §7f, not described as additive).
-- [ ] `src/tools/alternatives.ts`, `src/tools/faqs.ts`, `src/tools/buyer-answers.ts`, `src/data/buyer-intents.ts`: every plan limit and price in served text becomes a template over `getLimit` / `getPrice`. (Absorbs PR #107's hand fix; whichever lands second rebases.)
+**PR-B: plan limits in served text read the pin.**
+- [ ] `src/tools/pricing.ts`: the `limits` of `GLOBAL_PLANS` read the reader; `pricing_get_plans` gains an optional `plan` input (what the brief calls `plans_get`) and `limits_detail` plus a `limits_source` block (section 2c1). **No alias tool is registered**; the brief's names are mapped in `README.md` only (F1).
+- [ ] `src/tools/alternatives.ts`, `src/tools/faqs.ts`, `src/tools/buyer-answers.ts`, `src/data/buyer-intents.ts`, and any prompt, resource or `llms.txt` text found by the PR-A inventory: every plan limit in served text becomes a template over `limit()`. (Absorbs PR #107's hand fix; whichever lands second rebases.)
 
-**PR-C: feature availability and approved claims** (after PR-A; `claims_*` from 0006 PR-A if merged)
-- [ ] `src/tools/features.ts`: `features_get` and `features_list` gain optional `plan` and `country` inputs and an `availability_by_plan` object keyed by the live plan ids (`free`, `growth`, `enterprise`), each `{ availability: available | not_available | unknown, verified_on }` (`unknown` is a withheld result, never a statement that the feature is unavailable) plus the feature's `lifecycle` (`live | beta`). The legacy `availability.{free,t1,t2,t3}` keys are **derived from the same registry values** through a documented mapping (free to `free`, t1 to `growth`, t2 and t3 to `enterprise`, as the existing meaning of the tiers is confirmed by the PR's grep), so the two shapes cannot disagree; a test asserts agreement. Where `main` served a legacy value the registry contradicts, the registry value is served (a named correction under the §7f exception). The Managed RevOps retainers stay under their own tool. A feature whose `lifecycle` is `roadmap` is served only inside `roadmap[]` with `is_capability: false` and a statement starting "Planned, not available:", and is `not_available` in every availability field, legacy keys included.
-- [ ] `src/tools/claims.ts` (created by 0006 PR-A, or by this PR if 0006 has not merged and then rebased): `claims_get` and `claims_list` serve **approved claims only** from the registry's claims section, in place of the research snapshot. A claim carries `claim_id`, `statement`, `scope`, `evidence_ref`, `verified_on`. SOC 2 is served with its attested scope only (Soor LLC, Type II, period 2025-02-01 to 2025-06-30), as a historical attestation, never as "certified".
-- [ ] `src/tools/output-schemas.ts`, tests (§6).
+**PR-B0: hand copy corrections, a separate PR with no registry dependency (reviewable on its own).** Not registry-backed and labelled as such in the PR body: remove the unsupported `HIPAA and IRS filings` statement in the USA mirror row of `src/data/website-mirror.ts`; rewrite the WhatsApp-first and sales-first positioning rows in `src/tools/alternatives.ts` (the exact rows are the PR-A inventory hits of `grep -n "WhatsApp-first\|Sales-first\|sales-first" src/tools/alternatives.ts`). These are corrections toward the recorded facts, not claims a build could make true. PR-B does not start its AC-B3 scan until PR-B0 is merged or rebased in.
 
-**Deferred, not planned here (reviewer cut, §9):** `promotions_list` and the Product Truth API client. Neither has its precondition: no approved offer exists in the registry and the temporal and eligibility semantics are unresolved; the API's security, versioning and revocation contracts do not exist. Each gets its own plan when the precondition is met (requirements already recorded in §2e).
+**Later phase, not part of this plan's phase 1** (each needs PT-B, a real claim seed, or a separately authorised plan; section 2c): prices and the country plan tools, `tax_line`, India wording, `country_get` compliance text, `features_get` availability, `claims_*`, `promotions_list`, the Product Truth API client, withdrawal and signed control data.
 
-Client documentation: `README.md` gains a section on the truth envelope, the snapshot source, the plan and country inputs, the mapping of the brief's tool names to the existing tools, and the withheld-section reasons. Version and changelog: each BUILD bumps per `npm run check:versions` and adds a `CHANGELOG.md` line.
-
-## 0b. What we already know   (G4)
+## 0b. What we already know (G4)
 
 | Source | What it said | What this plan does about it |
 |---|---|---|
-| Founder brief 2026-11-04 (research repo) | Free leads 150, one source of truth, API consumed by the MCP, cross-surface consistency, "approved claims, not booleans" | The design above |
-| Brief §2 reconciliation | Recorded decisions win over the brief's examples: USD 12 or USD 120 upfront outside India; no tax line; nothing on data residency; SOC 2 within attested scope; HGC is a full-stack suite | Encoded in §2 as consumer-side rules and tests |
-| PLAN-HELLOG-0007…0010 (#110–#113) | 0007 PR-A owns the multi-market machinery (generator, schema, policy, gates, predicate, kill switch); markets are data on it | Reused, not rebuilt (§2a): this plan replaces the hand-written values in those data files with registry reads and keeps the gates as release conditions |
-| PLAN-HELLOG-0006 (#109) | `claims_list` / `claims_get` on a research snapshot | Same tools, source switched to the registry's approved claims (PR-C) |
-| PLAN-HELLOG-0005 (#108) | Category-level capability facts and a discoverability score | Not touched; a registry feature id maps to a category id through the name map when 0005 PR-C lands |
-| PLAN-HELLOG-0003 (#102) | No tool growth; one release gate | No new tool; G1–G5 applies |
+| PT-A (#10307) section 2, 2d | One content contract: fact record, closed `state`, `lifecycle` and `withheld` vocabularies, one location per value, per-surface projections, `truth_version`, immutable snapshots, unsigned `evaluation.json`; no price, tax or promotion in the registry | Consumed as written (section 2a); nothing redefined |
+| PT-A section 9 | No signed envelope, pointer, withdrawal list, key custody or live-database comparison; a pin is accepted because a person reviewed the refresh PR and the sha256 matches | Said plainly; the pin is never called verified |
+| Founder brief 2026-11-04 | Free leads 150, one source of truth, approved claims not booleans | The design above, limited to what PT-A exports |
+| PLAN-HELLOG-0007..0010 (#110-#113) | 0007 PR-A owns the multi-market machinery; markets are data on it | Untouched in phase 1: PT-A exports no market fact. Their hand-written price values stay until the later phase |
+| PLAN-HELLOG-0006 (#109) | `claims_list` / `claims_get` on a research snapshot | Untouched: PT-A seeds no real claim |
+| PLAN-HELLOG-0005 (#108) | Category-level capability facts | Not touched |
+| PLAN-HELLOG-0003 (#102) | No tool growth; one release gate | No new tool; G1-G5 applies |
 | PR #107 (open) | Hand fix of 200 to 150 in `faqs` and `alternatives` | Superseded by PR-B's templating; it can merge first |
-| PLAN-HGC-0749 (hellocrm #10297) | The registry owner plan; section 2a is the one contract (names, states, cadence, fallback, signed envelope, conformance fixture) | Consumed as written; this plan defines no field of its own (§2b) |
-| `scripts/sync-website-mirror.mjs` | Auto-syncs only integrations, glossary, templates, guides and changelog; alternatives, faqs, solutions and agents are `MANUAL_SURFACES`; `COUNTRY_PRICING` and `pricing.ts` are in neither list | PR-B's fields cannot be overwritten by a mirror sync; a test asserts the sync script's target list excludes them |
+| `scripts/sync-website-mirror.mjs` | Auto-syncs only some surfaces; `COUNTRY_PRICING` and `pricing.ts` are in neither list | A test asserts the sync target list excludes the PR-B fields |
 
-## 1. Premise   (G8)
+## 1. Premise (G8)
 
 | Claim | Type | Evidence gathered | Running system? |
 |---|---|---|---|
 | Free-plan leads are stated as 200 in served text | wrong_fact | `grep -rnE "200 leads" src --include=*.ts` (non-test): 10 lines in `alternatives.ts` and `faqs.ts` | not required |
 | The same fact is 150 elsewhere in the same server | wrong_fact | `GLOBAL_PLANS` Free limits `leads: 150`; 8 lines say 150 in `pricing.ts` | not required |
-| Prices are typed per country, not read | missing_feature | `COUNTRY_PRICING` in `website-mirror.ts`: India `₹899/user/mo + GST`, USA `$10/user/mo` and `$12/user/mo monthly`; non-USD rows carry local-currency strings | not required |
-| Feature availability uses non-live tier names | wrong_fact | `PlanAvailability` fields `t1`, `t2`, `t3` in `features.ts`; live plans are Free, Growth, Enterprise | not required |
-| No tool serves promotions | missing_feature | no tool name contains `promo` or `offer` (`grep -n 'name: "' src/tools/*.ts`) | not required |
+| Prices are typed per country, not read | missing_feature | `COUNTRY_PRICING` in `website-mirror.ts` | not required; **later phase (PT-B)** |
+| Feature availability uses non-live tier names | wrong_fact | `PlanAvailability` fields `t1`, `t2`, `t3` in `features.ts` | not required; **later phase** |
 | `truth_version` / `verified_on` are not served | missing_feature | `grep -rn "truth_version\|verified_on" src` returns no hit | not required |
-| A pinned export plus generator pattern works in this repo | context | `scripts/sync-website-mirror.mjs` and `check:mirror` already gate the mirror in `verify` | not required |
-| The registry export exists | external | Planned in hellocrm #10297 (PLAN-HGC-0749); not built | **BLOCKED**: PR-2 of that plan (artifact and fixture) |
+| The registry export exists | external | Planned in PT-A (#10307) | **BLOCKED**: BUILD waits for PT-A's generated `product-truth/dist/` and fixture |
 
 The live server was not queried in this session. Every claim is about `main`.
 
 ## 2. What changes
 
-### 2a. Dependency order (single order)
+### 2a. Consumed contract (PT-A, by reference)
 
-1. **Registry export contract.** PLAN-HGC-0749 section 2a owns the schema. PR-A starts only when that plan's `mcp` projection, its envelope and the conformance fixture `product-truth/fixtures/contract-v1/` exist. If the owner changes a field, §2b here is amended first; the MCP does not guess fields.
-2. **PR-A** is infrastructure: it changes no served value and adds no response key. It is the owner of the reader, the filter, the gate hook and the test harness.
-3. **PR-B** after PR-A and after 0007 PR-A (the multi-market machinery). 0008, 0009 and 0010 PR-A are data on that machinery; where they have not merged when PR-B starts, PR-B's data step replaces their values in the same PR. The market-facts **gates** (`website-deploy`, `stripe-flow1`, `soc2-scope`) are enforced **in the common reader**, so a price, a claim or a limit is withheld for a market whose gate is unmet wherever it appears: country plans, FAQs, comparisons, buyer answers, prompts, resources and `llms.txt` text. A registry value is not a satisfied gate.
-4. **PR-C** after PR-A; reuses 0006 PR-A's tools if merged, otherwise creates them and 0006 PR-A rebases onto this.
-5. **0003 G1–G5** blocks public deploy; release approver Rushabh; smoke owner the PR author.
+The MCP reads PT-A's `mcp` projection exactly as PT-A defines it. Names used here are PT-A's: `schema_version` (accept its own major), `truth_version` (`<UTC date>.<12 hex>`), `surface`, `limits`, `features`, `claims`, `urls`, `currencies`, `countries`, `withheld[{id, reason}]`, `consumers`, `forbidden_values`; per fact `value`, `unit`, `plans`, `countries` (explicit list or `global`), optional `effective_from` / `effective_until`, `lifecycle` (`live | beta | pilot | roadmap`), `provenance` (`enforced | decision | derived`), `verified_on`, `evidence_ref`; `unlimited` is the string `unlimited`; `withheld` reasons are exactly `draft`, `undecided`, `withdrawn`, `expired`, `future`, `surface_not_approved`; the report `evaluation.json` (`generated_at`, `next_transition`, `valid_until`, `content_digests`) is unsigned and mutable. `pricing`, `tax` and `promotions` are reserved by PT-A and absent until PT-B; a pin carrying one fails the build until the later phase is approved. The MCP defines no field of its own and no money type.
 
-**Consumer migration manifest** (every fact-bearing surface is assigned before BUILD; PR-A's inventory run completes it and any surface not listed is a blocker):
+### 2b. Rules the MCP enforces on what it reads
 
-| Surface | Files | PR |
+1. **Lookup.** A fact is read by its id in its one location. Absent from its section and not in `withheld` is **unknown**; absent never means a default. PT-A forbids scope variants and a resolver, so the MCP does none.
+2. **Result type.** `{status: "served", value, unit, verified_on, lifecycle}` or `{status: "withheld", reason}` where `reason` is one of PT-A's six or the consumer-side `stale`; unknown ids return `{status: "unknown"}`. Prose rendering of a withheld or unknown result: "Not available from this server right now; check the pricing page." A response that mixes served and withheld facts lists the withheld ids; the wire shape is frozen in section 2c1.
+3. **Validity at request time.** The server has a request clock, so unlike a static site it enforces validity per request: a fact is served only when `effective_from <= now < effective_until`; every fact is withheld as `stale` once `now >= valid_until` of the pinned `evaluation.json` or once `now >= next_transition`, unless a newer pin has been deployed. `/health` reports truth freshness, with an alert when fewer than 3 days remain; liveness stays separate so staleness never causes a restart loop. Responses of truth-backed tools carry `Cache-Control: no-store`, asserted through the deployed HTTP path.
+4. **Published defaults, not entitlement (PT-A 2d item 6).** The README and tool descriptions state that limits are published plan defaults; no tool derives a quota or authorisation from them. A tenant override or grandfather window can differ.
+5. **Provenance is attached to the backed keys, not the tool or the whole `limits` object.** A `limits_source` block with `scope: "limits_detail"` sits beside `limits_detail`, and each backed limit carries its own `verified_on` (section 2c1). No whole-tool label is added in phase 1 because no tool is fully registry-backed until PT-B supplies prices; labelling a hand-written answer, or a mixed object as a whole, is not allowed. Handwritten commercial terms next to the limits (prices, `COUNTRY_PRICING`) are not made to look registry-approved: the README says they are not yet covered.
+6. **Ratchet.** `check-product-truth.mjs --literals` scans non-test source for limit literals of ids present in the pin and for the pin's `forbidden_values` (initially `200 leads`), against the allowlist `scripts/product-truth-literals.allow` (CODEOWNERS; a test compares it with its git base and fails if it grew). It excludes `src/data/product-truth.ts` and tests, and scans template pieces, not only whole values. Values assembled in prose are covered by the AC-B3 response scan, which sees the final text.
+7. **Pin integrity (interim, unsigned).** Authenticity is git review of `test-data/product-truth/**` (CODEOWNERS) plus the sha256. The refresh PR states "git-reviewed, sha256-pinned, unsigned" and shows the changed fact ids, lifecycle, scope and withholding changes. The adversarial fixtures of AC-A3 are required before a pin is merged. Because the signature mechanism does not exist, "verified" appears nowhere.
+8. **Public-only boundary.** PT-A's public schema has closed objects and excludes `owner`, `approved_surfaces`, `history`, `pending_change`, `evidence_notes`, `approved_by` and `approval_ref`. The build fails, not filters, on any of them. Free email templates: the server states the public value (2); a pin in which the string `pending_change` appears fails.
+9. **Recorded decisions win over the brief's examples.** Nothing on data residency (a test fails if a served string asserts a data location, targeted patterns, not the bare word). No programme values served (startup, NGO, partner are undecided). HGC is a full-stack suite: `/WhatsApp-first/i`, `/sales[- ]only/i`, `/sales[- ]first/i` fail the scan (MCP-local hygiene, not a registry fact).
+
+### 2c. Dependency matrix: what PT-A provides, and what this plan therefore does
+
+| Item the MCP needs | In PT-A sections 2 and 2d? | Phase 1 action |
 |---|---|---|
-| Plans, prices, payment text | `src/tools/pricing.ts`, `src/data/website-mirror.ts` `COUNTRY_PRICING` | B |
-| Country tools | `src/tools/countries.ts` | B |
-| Comparison, FAQ, buyer text | `src/tools/{alternatives,faqs,buyer-answers,solutions}.ts`, `src/data/buyer-intents.ts` | B |
-| Prompts, `llms.txt`, resources, well-known text | `src/prompts.ts`, `src/tools/llms-txt.ts`, `src/server.ts` resources, `src/well-known.ts` | B (facts) |
-| Agents and changelog text that quote limits or SOC 2 | `src/tools/agents.ts`, `src/tools/changelog.ts` | B (inventory decides; a changelog line is history and stays) |
-| Feature availability | `src/tools/features.ts` | C |
-| Claims | `src/tools/claims.ts` | C |
-| Transports | HTTP and stdio call the same `tools` registry; both are in the SDK round trip | A |
+| Free leads 150, tasks 100, accounts 20, email templates 2 (public), landing pages 0, custom fields 3, CSV rows 200; Growth custom fields and CSV rows `unlimited` | Yes (`limits`, AC-01, AC-05) | Consume (PR-A, PR-B) |
+| Free email templates target 5 | Private `pending_change`; in no snapshot | Server states 2 until the product value changes |
+| Growth leads and tasks `unlimited`; Free users; Free pipelines | No (PT-A seeds only what a migration states) | Stay as they are today, not claimed as registry-backed |
+| Plan names (Free, Growth) | Yes (`plans`, identity only) | Consume for plan names |
+| `forbidden_values`, `consumers`, `withheld`, `truth_version` | Yes | Consume (ratchet, harness, reader) |
+| Prices, annual total, `tax_line`, India GST wording, currencies per market, trial terms, offers, promotions | **No.** Reserved and absent until PT-B | **Later phase, depends on PT-B.** `pricing_get_country_plans`, `country_get`, `countries_list`, `COUNTRY_PRICING` and every price string stay as they are; the USD 12 / USD 120 target is delivered by the later phase |
+| Feature availability by plan and country | Schema plus a seed limited to `feature_key`s in `FEATURE_REGISTRY` that a migration or the registry gates | **Later phase.** `features_get` keeps its legacy shape until the pin covers enough features that a tool is entirely registry-backed; coverage is read from the pin at that time |
+| Approved claims (SOC 2 scope, Arabic coverage) | Schema only; **no real claim seeds** | Out. `claims_*` stays on its current source; SOC 2 wording is untouched |
+| Market gates (0007) | Not a PT-A concept | Not needed in phase 1: every phase-1 fact is `country_scope: global`. They return with market facts in the later phase |
+| Signed envelope, `released_on`, key id, revocation file, withdrawal list, pointer, serving-time withdrawal, live-database comparison | **No. Deferred by PT-A section 9** | **BLOCKED.** Interim: git-reviewed pin, sha256, request-time `valid_until` and `next_transition` enforcement. A withdrawal is a registry revert, a new pin and a redeploy; it reaches a running process only by restart or replacement deployment, and the README says so (stdio installs and conversation history are outside any window) |
+| Promotions, Product Truth API client | No | Deferred, as before; requirements recorded in section 2e |
 
-### 2b. Consumed contract (by reference)
+### 2c1. Wire contract (phase 1, frozen here)
 
-The MCP consumes PLAN-HGC-0749 section 2a unchanged and redefines nothing: the `mcp` projection and its layout (`plans`, `limits`, `pricing`, `tax`, `features`, `claims`, `countries`, `withheld`, `consumers`, `forbidden_values`), the names (`schema_version`, `truth_version`, `generated_at`, `valid_until`, `released_on`, per-record `verified_on`), the state vocabulary (`state`: draft, undecided, approved, withdrawn; `lifecycle`: live, beta, pilot, roadmap; `availability`: available, not_available; derived `future`, `expired`), money as integer minor units plus currency (the earlier "amount: 12" wire example becomes `amount_minor: 1200` with `currency`; the wire keeps the integer and adds a formatted `display` string produced by the MCP's formatter), cadence and the single fallback (a previously pinned, verified snapshot until its `valid_until`). Differences from this plan's earlier wording are resolved in favour of the contract: `publication` is `state`; the envelope's date is `released_on` and can never overwrite a fact's `verified_on`.
+**Backed key set.** Exactly the ids PT-A exports: Free `leads`, `tasks`, `accounts`, `email_templates`, `landing_pages`, `custom_fields`, `csv_rows`; Growth `custom_fields`, `csv_rows`. Provenance is attached to these keys only. Every other key of the legacy `limits` object (users, pipelines, Growth leads and tasks, seats) is untouched and carries no provenance.
 
-**Public-only boundary.** The contract's public schema rejects unknown fields, tenant, account, customer and negotiated-price fields and non-public `evidence_ref`s; the build fails rather than filters. Authenticity is the signed envelope plus CODEOWNERS review of `test-data/product-truth/**`; because a signature proves origin and not public suitability, an owner-produced, content-reviewed artifact and the synthetic adversarial fixtures of AC-A3 are both required before a pin is merged.
+**Existing numeric fields keep their type.** `limits.leads` stays a number when served. New, additive keys on `pricing_get_plans`:
 
-### 2c. Rules the MCP enforces on what it reads
-
-- **Recorded decisions win over the brief's examples** (brief §2). Outside India the only prices served are USD 12 per user per month and USD 120 per user per year, charged once upfront, with no tax line; no GBP or EUR price book is served unless the registry carries one that the founder decided. India's tax wording follows the registry's `tax` section (`tax_mode: exclusive` and the GST rule). Until PLAN-HGC-0749 PR-0 closes the open contradiction between the product code and its documentation on whether the GSTIN changes the price, the MCP serves the INR **list** price with the registry's tax note only if the registry marks it verified; otherwise the response says "List price; tax treatment is confirmed at checkout" and `payable_amount` is null. The MCP never writes "+GST" or "inclusive" itself, and the existing `+ GST` strings are replaced when PR-B lands (F3). The Growth plan is named Growth.
-- **Nothing on data residency.** No registry field is mapped to a residency sentence; a test fails if a served string asserts a data location (targeted patterns, not the bare word).
-- **SOC 2** only as the approved claim with its attested scope and period; never "certified", never current assurance.
-- **HGC is a full-stack suite.** Positioning text read from the registry names the suite areas and lists WhatsApp as one channel among several; `/WhatsApp-first/i`, `/sales[- ]only/i`, `/sales[- ]first/i` fail the scan.
-- **Roadmap facts are never capabilities.** A roadmap record is served with `is_capability: false` and "Planned, not available:"; a feature whose `lifecycle` is not `live` or `beta` is `not_available` in every availability field and absent from `features_list` plan filters.
-- **Draft is invisible.** Draft startup, NGO and partner programmes and any `state: draft` price or claim never reach a response. Offers are not served in phase 1 at all (§9).
-- **Base price and effective price are distinct.** The tests assert the registry's `list` price (USD 12 and USD 120 outside India); when a later plan serves offers it adds `effective` beside `list`, never replaces it. Amounts are integers in minor units or exact decimal strings with currency, billing cycle and unit; no float.
-- **Freshness.** One rule, the contract's: the pinned snapshot is accepted for 14 days from `generated_at` and never past its `valid_until`; the refresh pull request is made at least weekly and within two business days of a price, limit or claim change. Past either bound every price, limit and feature record is withheld with the reason `stale` and the prose rendering of §2c1; `/health` reports truth freshness, with an alert when fewer than 3 days remain, and liveness stays separate so staleness never causes a restart loop. Prices, limits and features share one envelope and expire together; that is intended, and the weekly refresh keeps the margin. A claim expires on its own `effective_until` and withholds only that claim. A pinned `truth_version` that appears in the signed withdrawal list is rejected (price changes withdraw superseded versions two business days after a release). `valid_until` already accounts for scheduled private-registry transitions, so a future price or override ends validity at its start. Each record's own `verified_on` is what the response quotes next to its value.
-- **Ratchet against hand-typed facts.** `check-product-truth.mjs --literals` scans non-test source for plan limits, prices, currency symbols next to digits, and registry `forbidden_values` (for example `200 leads`, `$13`, `1,099`), against an allowlist file that may only shrink. A new literal fails `verify`.
-- **No runtime network call on a request.** The snapshot is compiled in.
-- **Ratchet scope.** `--literals` excludes `src/data/product-truth.ts` (generated) and tests; scans served-string literals and template pieces, not only whole values; the allowlist is under CODEOWNERS and may only shrink. Values assembled in prose are covered by the AC-B3 response scan, which is the check that sees the final text.
-
-### 2c1. Reader result and market context
-
-The reader takes `{country?, plan?, surface: "mcp"}` and returns a discriminated result: `{status: "served", value, verified_on, lifecycle?}` or `{status: "withheld", reason}` with `reason` one of the contract's `draft`, `undecided`, `withdrawn`, `future`, `expired`, `surface_not_approved`, plus the consumer-side `stale` and `gate_unmet`. It is evaluated at response construction with the request clock, never at build. Facts are typed `global` or `market` (a country record); a market fact is served only if `isMarketGateMet(country, gate)` is true, an interface injected into the reader whose default in PR-A is **fail closed** (unknown gate or market returns false). 0007 supplies the real implementation; the gates (`website-deploy`, `stripe-flow1`, `soc2-scope`) are release conditions kept from 0007, and a registry value is not a satisfied gate. Prose rendering of a withheld result: "Not available from this server right now; check the pricing page." for prices and limits, and for a claim the same sentence with the claim name. A partial result (some of a response's facts served, some withheld) sets `partial: true` and lists withheld ids.
-
-**Compliance strings.** Every compliance statement in a served surface is assigned to a migration PR and withheld unless backed by an approved claim. `country_get` and the USA mirror row (`SOC 2, HIPAA and IRS filings`) are assigned to PR-B; until PR-B merges, `country_get` carries no truth label, and in PR-B the unsupported HIPAA and IRS filing statements are removed (a correction toward the recorded facts, not a qualification of a claim a build could make true).
-
-### 2c2. Additional reader and wire rules
-
-1. **List price only.** The `pricing` section of the projection is the promotion-free list-price view (PLAN-HGC-0749 contract); promotions are a separate section the MCP does not read in phase 1. The MCP never reconstructs a list price. The conformance fixture includes an active promotion; a test shows it cannot change any phase-1 price or prose.
-2. **Market context.** Each fact has a class: `global` (plan limits, plan names, Growth list price outside India) or `market` (a country record, a tax note, a market gate). A call without `country` returns global facts only and, for market facts, says that a country is needed; it never obtains a gated market fact through a default lookup. A mixed-market response withholds only the affected records and sets `partial: true`. One request clock and one gate-state view are captured at the start of a request and used for the whole response.
-3. **Expiry blocks everything.** Past `valid_until` or the 14-day bound, every truth-backed fact is withheld: prices, limits, claims (claims also individually at their own `effective_until`, with a clock-advance test and no rebuild), feature availability, positioning and payment text, in tools, prompts and resources alike; there is no exception. Unknown availability is `unknown` in the wire (a withheld result), never `not_available`. PR-C tools, prompts and resources are exercised by an integration test that advances the clock after server start and repeats the same calls.
-4. **No materialisation.** Rendered facts are not captured at module initialisation or cached beyond their validity and gate state; `COUNTRY_PRICING`, buyer templates, prompts and resource text are computed per request.
-5. **Concrete wire schemas.** Before BUILD, `output-schemas.ts` freezes one schema and one example each for a served, a partially withheld, a wholly withheld and a stale response, including legacy fields, `price_status`, `partial`, `withheld[{id, reason}]` and the prose rendering. A fact in a response always carries its own `verified_on`; the Free-plan example in §2d shows it.
-6. **Compatibility.** A factual correction is allowed; a structural change (a string becoming null, a new pending variant, changed nesting) is not covered by that allowance. Non-additive changes are listed per tool in §7f, announced in `CHANGELOG.md` with a deprecation period of one release for the old field, and tested with an old-parser fixture per tool, or declared as a breaking release.
-7. **Withdrawal window.** The supported window is the contract's one hour for the centrally hosted HTTP server; stdio installations and LLM conversation history are outside it and the README says so.
-8. **Refresh operations.** `.github/workflows` is billing-blocked, so the refresh is a locally scheduled job (owner: the refresh approver named in §2e) that opens the weekly pull request, with an alert for a failed or missed refresh and a deployment-age metric on `/health`; acceptance: AC-A8.
-9. **Key lifecycle.** The envelope carries a key id; the build verifies against the committed current and next keys and the revocation file; negative tests cover an invalid signature, a wrong target, a non-`pass` result and a rollback to an older still-valid release (rejected when its `truth_version` is below the active one).
-10. **Release conditions tracked.** 0007's real gate implementation and 0005's capability snapshot are release conditions for PR-B and PR-C; a market whose gate is unmet is intentionally withheld. `claims_*` are migrated if 0006 has merged; otherwise PR-C leaves their introduction to 0006 and the tool-count review.
-
-**Decision table (price in a response).** No country: global facts only (plan limits, plan names) and, for a price, the statement that a country is needed (`reason: country_required`). India: the INR list price with the registry tax note, subject to the India gate. Non-India, gate met: USD 12 per user per month and USD 120 per user per year upfront. Non-India, gate unmet: `price_status: pending_verification` for that country's surfaces, although the registry holds the value (AC-B5 therefore applies to markets whose gates are met; AC-B6 to those whose gates are not). Unknown country: `fail` listing valid ids. The Growth list price outside India is a market fact for gating purposes and a global fact only in the sense that the registry holds one value for every non-India region.
-
-### 2d. Wire contract
-
-Every **migrated** tool adds three top-level keys in the PR that migrates it:
-
+*Served:*
 ```json
-{
-  "truth_version": "2026-11-04.3fa9c1d27b0e",
-  "released_on": "2026-11-04",
-  "valid_until": "2026-11-18T00:00:00Z",
-  "snapshot": { "kind": "pinned", "ref": "test-data/product-truth/2026-11-04.3fa9c1d27b0e/truth.mcp.json", "sha256": "<hex>" }
-}
+{ "plan": { "id": "free",
+    "limits": { "leads": 150, "tasks": 100, "accounts": 20 },
+    "limits_detail": { "leads": { "status": "served", "value": 150, "unit": "count", "verified_on": "2026-11-04" },
+                       "tasks": { "status": "served", "value": 100, "unit": "count", "verified_on": "2026-11-04" },
+                       "accounts": { "status": "served", "value": 20, "unit": "count", "verified_on": "2026-11-04" } },
+    "limits_source": { "scope": "limits_detail", "truth_version": "2026-11-04.3fa9c1d27b0e", "valid_until": "2026-11-18T00:00:00Z",
+                       "snapshot": { "kind": "pinned", "ref": "test-data/product-truth/2026-11-04.3fa9c1d27b0e/truth.mcp.json", "sha256": "<hex>" } } } }
 ```
+*Partially withheld* (one backed fact withheld or outside its window): that key's legacy number is `null`, its `limits_detail` entry is `{ "status": "withheld", "reason": "<PT-A reason>" }`, the other keys are served, and a top-level `withheld: [{id, reason}]` lists the ids. *Wholly withheld or stale* (`now >= valid_until` or `next_transition` with no newer pin): every backed key is `null`, every `limits_detail` entry is `{status: "withheld", reason: "stale"}`, `limits_source` stays (it describes the pin) with `"stale": true`, and the answer text is "Not available from this server right now; check the pricing page." An **unknown** id (not in the pin and not in `withheld`) is `{status: "unknown"}` and the legacy field is `null`; an unknown **plan or limit name in the request** returns `fail` listing the valid ids, as an error result. `limits_source` backs exactly the keys in `limits_detail` and says so in `scope`.
 
-`pricing_get_country_plans({"country":"eg"})` (what the brief calls `pricing_get`):
-
-```json
-{ "country": "eg", "billing_currency": "USD",
-  "plans": [ { "id": "growth", "price": { "monthly": { "amount_minor": 1200, "currency": "USD", "display": "USD 12", "unit": "per user per month", "verified_on": "2026-11-04" },
-                "annual": { "amount_minor": 12000, "currency": "USD", "display": "USD 120", "unit": "per user per year, charged once upfront", "verified_on": "2026-11-04" } } } ],
-  "tax_line": null,
-  "truth_version": "…", "released_on": "…", "valid_until": "…", "snapshot": { "kind": "pinned", "ref": "…", "sha256": "…" } }
-```
-
-`pricing_get_plans({"plan":"free"})` (what the brief calls `plans_get`): `{ "plan": { "id": "free", "limits": { "leads": 150, "accounts": 20, "tasks": 100 } }, … }`.
-
-`features_get({"slug":"dialer","plan":"free","country":"ng"})`: `{ …existing keys…, "availability_by_plan": { "free": { "availability": "not_available" }, "growth": { "availability": "available", "lifecycle": "live" } }, "country_availability": { "ng": { "availability": "available", "plans": ["growth","enterprise"] } }, "roadmap": [] , … }`.
-
-`claims_get({"claim_id":"soc2-type-ii"})`: `{ "claim_id": "…", "statement": "A SOC 2 Type II examination of Soor LLC for 2025-02-01 to 2025-06-30 was completed … The report is available under NDA on request.", "scope": "…", "evidence_ref": "…", "verified_on": "…", … }`. Non-approved claim ids return `fail` with the same message as an unknown id.
-
-Unknown country, plan or feature: `fail` listing the valid ids. The failure reaches the client as an error result, not as an empty success.
+**Compatibility exception (named, here, not deferred to BUILD).** For the backed keys only, a number may become `null` when the fact is withheld, stale or unknown; no other key changes type. Old-parser expectations: a parser that reads `limits.leads` as a number sees `null` and must treat it as "not stated"; the README and `CHANGELOG.md` announce it; an old-parser fixture per state (served, partial, wholly withheld, stale, unknown) is part of AC-B5. Prose answers (`faqs_get_site`, `alternatives_get`, `buyer_answers`) render the withheld sentence in place of the number.
 
 ### 2e. Requirements recorded for the deferred follow-ups
 
-For the API client plan: monotonic version ordering against the **active** version (not the snapshot); same version with a different payload rejected; atomic whole-view replacement with the payload and envelope captured together per request; a revoked or withdrawn record persisted so that a restart on an older snapshot does not resurrect it; authenticated fetch with publisher authenticity; bounded fetch time and body size; jittered, serialized refresh per replica. For the promotions plan: price shown with an offer needs `list` and `effective`, a withdrawal path covering every surface that embeds the discounted price, and a time-window answer that is clearly current-only unless the registry supplies intervals.
-
-**Withdrawal in phase 1.** A kill switch is a registry revert, a re-pinned export and a redeploy, as in 0007 §2b; it reaches a running process only through a restart or replacement deployment, and the BUILD PR names the hosting platform (the repository ships a `Dockerfile`) and records a drill with the measured propagation time. Responses of truth-backed tools carry `Cache-Control: no-store`, asserted through the deployed HTTP path. Owners: refresh approver and expiry/revocation responder are the registry owner and Rushabh; rollback authority Rushabh; alert is the `/health` truth-freshness degrade.
+For the API client plan: monotonic version ordering against the **active** version; same version with a different payload rejected; atomic whole-view replacement with the payload captured together per request; a revoked or withdrawn record persisted so a restart on an older snapshot does not resurrect it; authenticated fetch; bounded fetch time and body size; jittered, serialised refresh per replica. For the promotions plan: a price shown with an offer needs `list` and `effective`, a withdrawal path covering every surface that embeds the discounted price, and a time-window answer that is clearly current-only unless the registry supplies intervals. For the price phase: a decision table for country context, the 0007 gates, India tax wording while the product code and documentation disagree on whether the GSTIN changes the price, and nullable price fields listed as visible changes.
 
 ## 3. Affected files
 
 | Area | Files | PR |
 |---|---|---|
-| Snapshot and generator | `test-data/product-truth/**`, `scripts/{product-truth.schema.json,build-product-truth.mjs,check-product-truth.mjs}`, `src/data/product-truth.ts`, `src/lib/product-truth.ts`, `src/tools/tool-types.ts`, `package.json`, `.github/CODEOWNERS` | A |
-| Pricing and plans | `src/tools/pricing.ts`, `src/data/website-mirror.ts`, `src/tools/countries.ts`, `src/tools/output-schemas.ts` | B |
-| Served text with facts | `src/tools/{alternatives,faqs,buyer-answers}.ts`, `src/data/buyer-intents.ts` | B |
-| Features and claims | `src/tools/{features,claims}.ts`, `src/tools/output-schemas.ts` | C |
+| Pin and generator | `test-data/product-truth/**`, `test-data/product-truth/FLOOR`, `scripts/{build-product-truth.mjs,check-product-truth.mjs,product-truth-literals.allow}`, `src/data/product-truth.ts`, `src/lib/product-truth.ts`, `src/tools/tool-types.ts`, `package.json`, `.github/CODEOWNERS` | A |
 | Truth freshness in health | `src/lib/content-freshness.ts`, `src/server.ts` (health) | A |
-| Prompts, resources, well-known, `llms.txt`, solutions | `src/prompts.ts`, `src/server.ts` (resources), `src/well-known.ts`, `src/tools/{llms-txt,solutions}.ts` | B |
+| Limits and served text | `src/tools/{pricing,alternatives,faqs,buyer-answers}.ts`, `src/data/buyer-intents.ts`, `src/tools/output-schemas.ts` | B |
+| Copy corrections | `src/data/website-mirror.ts` (USA compliance string only), the positioning rows of `src/tools/alternatives.ts` | B0 |
+| Prompts, resources, `llms.txt` text that quote a limit | `src/prompts.ts`, `src/server.ts` (resources), `src/tools/llms-txt.ts` (inventory decides) | B |
 | Docs and release | `README.md`, `CHANGELOG.md`, version strings, `deploy/` note | each |
-| Tests | see §6 | each |
+| Tests | see section 6 | each |
 
-Not touched: `access.ts`, `server.json`, `smithery.yaml`, `scripts/sync-website-mirror.mjs`, the bot-governance tools. This plan edits neither hellocrm nor hellocrmwebsite.
+Not touched: `access.ts`, `server.json`, `smithery.yaml`, `scripts/sync-website-mirror.mjs`, the bot-governance tools, `features.ts`, `claims.ts`, `countries.ts`. This plan edits neither hellocrm nor hellocrmwebsite.
 
 ## 5. Blast radius and caller inventory
 
-Tools changed: `pricing_get_plans`, `pricing_get_country_plans`, `pricing_get_faq`, `pricing_compare_plans`, `country_get`, `countries_list`, `features_list`, `features_get`, `alternatives_get`, `faqs_get_site`, `buyer_answers`, `claims_list` and `claims_get`; no new tool. The manifest in §2a assigns every surface; resources, prompts and `llms.txt` text that quote a limit or price are confirmed by `grep -rnE "150|200|₹899|\\$1[02]|£|GBP|SOC ?2" src --include=*.ts` run in PR-A, every hit assigned to B or C. Today: `₹899` in 5 files (48 lines), `$10/user` in 4 files, `£|GBP` in 3 files, `SOC 2` in 6 files, `150 leads` in 1 file, `200 leads` in 2 files. External callers cannot be listed from the repo. The SDK client round trip is not evidence that existing parsers cope, so each migration PR also replays the captured baseline responses, errors and structured output through the new shapes and lists every key whose type or nullability changes.
+Tools changed in phase 1: `pricing_get_plans`, `alternatives_get`, `faqs_get_site`, `buyer_answers`; no new tool. PR-A's inventory is built from the pin, not from one grep: for **every exported limit id** (leads, tasks, accounts, email templates, landing pages, custom fields, CSV rows, `unlimited`) and the legacy spellings of each (users, seats, pipelines are listed as intentionally uncovered), it lists every renderer and template in `src/tools`, `src/data`, `src/prompts.ts`, `src/server.ts` resources and `llms.txt` text, **including `countries.ts`, `country_get` and `countries_list`, which are unchanged in phase 1 and are inventoried for any limit they state**. Every hit is assigned to PR-B, recorded as intentionally uncovered, or recorded as history (a changelog line stays). External callers cannot be listed from the repo. The SDK client round trip is not evidence that existing parsers cope, so PR-B replays the captured baseline responses, errors and structured output through the new shapes and lists every key whose type or nullability changes.
 
-## 6. Acceptance criteria   (per PR; none weakened during implementation)
+## 6. Acceptance criteria (per PR; none weakened during implementation)
 
 **PR-A (infrastructure; no served change)**
 - **AC-A1** Every response of every tool is byte-identical to the baseline fixtures; `tools/list` is identical; tool count equals `main`; SDK round trip succeeds on HTTP and stdio; `annotations.test.ts` and `registry.test.ts` pass.
-- **AC-A2** Generation tests: sha mismatch fails the build; unknown `schema_version` fails; `state` other than `approved` never appears in `src/data/product-truth.ts` public sections; byte-identical output on two runs; a hand-edited generated file fails `check:truth`.
-- **AC-A3** Adversarial export fixtures all fail the build or are withheld: a tenant-scoped record, a negotiated-price field, a non-public `evidence_ref`, an expired approved claim, a record with an unknown or missing `effective_from`, an unknown `state`, `lifecycle` or reason, a float amount, script-like or oversize strings, an unknown key, a `roadmap` record not approved for publication, same version with a different payload; plus the conformance fixture of the registry, copied and pinned by sha256, on which the reader tests run.
-- **AC-A4** Reader tests with an injected clock: served at `effective_until - 1ms`, withheld at `effective_until`; stale past 14 days from `generated_at` or past `valid_until`, with the `stale` reason and prose rendering; a record whose 0007 gate is unmet is withheld on every path that reads it; revoking one market's gate leaves every other market's output byte-identical.
-- **AC-A7** Reader results: each of `served` and the eight `withheld` reasons is returned for a fixture; an unknown market or gate is withheld (fail closed); a partial response sets `partial` and lists the withheld ids; the envelope `released_on` never overwrites a fact's `verified_on`.
-- **AC-A8** Refresh and keys: the refresh job opens a pull request in a dry run; a missed-refresh alert fires in a test; the negative key tests of §2c2 item 9 pass.
+- **AC-A2** Generation: a sha mismatch fails the build; an unknown `schema_version` major fails; a pin whose `surface` is not `mcp` fails; a pin carrying `pricing`, `tax` or `promotions` fails; a hand-edited generated file fails `check:truth`; output is byte-identical on two runs.
+- **AC-A3** Contract conformance and adversarial pins (omitted optional `effective_from` / `effective_until` are accepted; mismatched-report fixtures of section 0a fail): the copied `fixtures/contract-v1` matches its `SHA256SUMS`; the reader accepts the valid public projections and rejects the invalid set (a state, lifecycle or withheld reason outside the closed lists; a float amount; a private-only field in a public record; a report key named `verified_on`); an expired or future-dated record, a record with an unknown or missing window instant, a string containing `pending_change`, oversize or script-like strings and an unknown key each fail or are withheld.
+- **AC-A4** Reader with an injected clock, one captured instant per request across structured output, narrative, prompts and resources, and a test that starts the server and then advances the clock past `valid_until` and repeats the same calls on the running process: served at `effective_until - 1ms`, withheld at `effective_until`; every fact `stale` at `valid_until` and at `next_transition` with no newer pin; each of the six PT-A reasons and `unknown` returned for a fixture; `Cache-Control: no-store` on the deployed HTTP path; `/health` degrades truth freshness without failing liveness.
 - **AC-A5** The ratchet passes with the allowlist it ships and fails on a fixture that adds a limit literal; the harness runs the consistency and forbidden-value checks over an empty tool set.
-- **AC-A6** Inventory: the grep of §5 is run, every hit is in the §2a manifest, and the sync-script target list excludes the PR-B fields.
+- **AC-A6** Inventory: the grep of section 5 is run, every hit is assigned, and the sync-script target list excludes the PR-B fields.
+- **AC-A7** Pin lifecycle: `check:truth` fails when the pinned `truth_version` is not the last entry of the pinned `index.json` without a stated rollback reason, and a forward re-pin below `FLOOR` fails (an application rollback is a documented, bounded exposure, not a tested guarantee); a refresh dry run opens a PR listing changed fact ids; a missed-refresh alert fires in a test (the refresh is a locally scheduled job because `.github/workflows` is billing-blocked; owner: the registry owner and Rushabh).
 
-**PR-B (each migrated tool is labelled only in this PR)**
-- **AC-B1** For every migrated tool: `truth_version`, `released_on`, `valid_until`, `snapshot` present and equal to the pinned envelope, and each fact's own `verified_on` present and never replaced by an envelope date; no un-migrated tool carries them.
-- **AC-B2** **Cross-surface consistency**: for every fact the export lists under `consumers: ["mcp"]`, the value each migrated tool states equals the registry value. Pinned: Free leads = 150 in `pricing_get_plans`, `alternatives_get`, `faqs_get_site`, `buyer_answers`; Growth list price outside India = USD 12 monthly and USD 120 annual upfront for each registry country.
-- **AC-B3** **Forbidden-values scan** over every migrated tool with every fixture argument combination, and over prompts, resources and `llms.txt` text: no registry `forbidden_values` pattern, no `200 leads`, `$13`, `1,099`, the targeted data-residency assertions the decisions forbid, `/SOC 2 certified/i`, `/WhatsApp-first/i`, `/sales[- ]only/i`, `/sales[- ]first/i`. The scan also covers narrative text, so a gate cannot be bypassed by prose.
-- **AC-B4** `grep -rnE "200 leads|\$13|1,099" src --include=*.ts` returns nothing outside tests; the allowlist has shrunk.
-- **AC-B5** Egypt, Nigeria, South Africa, UK, UAE, Netherlands, USA return USD 12 and USD 120 upfront with `tax_line: null`; India returns the INR list price with the registry tax note or the checkout sentence and `payable_amount: null`; none returns a GBP or EUR amount.
-- **AC-B6** A market whose 0007 gate is unmet serves `price_status: pending_verification` in `country_get`, `pricing_*`, FAQ, comparison and buyer text alike although the registry holds a value.
-- **AC-B7** Compatibility matrix (§7f) holds against the captured baseline, including error shapes and structured output; every nullable or newly pending field is listed.
+**PR-B (limits in served text)**
+- **AC-B1** `pricing_get_plans` returns `limits_detail` for exactly the backed key set of section 2c1, `limits_source` equal to the pin, and each limit's own `verified_on`; no legacy key outside the backed set carries provenance; no other tool carries them.
+- **AC-B2** Cross-surface consistency: for every id the export lists under `consumers: ["mcp"]`, the value each tool states equals the pin. Pinned: Free leads 150 in `pricing_get_plans`, `alternatives_get`, `faqs_get_site`, `buyer_answers`; tasks 100; accounts 20; email templates 2.
+- **AC-B3** Forbidden-values scan over every changed tool with every fixture argument combination and over prompts, resources and `llms.txt` text: no `forbidden_values` pattern of the pin, no `200 leads`, no targeted data-residency assertion. The MCP-local positioning patterns (`/WhatsApp-first/i`, `/sales[- ]only/i`, `/sales[- ]first/i`) and the HIPAA check run from PR-B0 onward. The scan covers narrative text.
+- **AC-B4** `grep -rnE "200 leads" src --include=*.ts` returns nothing outside tests; the allowlist has shrunk.
+- **AC-B5** Compatibility (sections 2c1 and 7f): against the captured baseline every existing `limits` field keeps its type when served; the five old-parser fixtures (served, partial, wholly withheld, stale, unknown) pass; error shapes and structured output are unchanged; every new key is listed.
+- **AC-B6** NEGATIVE, two separate tests. (a) Runtime: with an injected test pin (fixture, never deployable) in which a backed fact is listed under `withheld`, the tool returns the withheld object and prose, not a default; with an id absent from both its section and `withheld`, it returns `unknown`; the two outcomes differ. (b) Build time: a template naming an id the real pin lacks fails `verify`.
+- **AC-B7** Regression: against the captured baseline every response is byte-identical **except** the allowed text changes, which are exactly: the backed-limit values and sentences the PR-A inventory assigned to PR-B (200 becomes 150), and the new additive keys of section 2c1. Every price string, `COUNTRY_PRICING` row, India wording, feature availability value, claim, and the unchanged country tools are byte-identical. The PR-B0 text changes are covered by PR-B0's own baseline comparison, which lists its exact rows.
 
-**PR-C**
-- **AC-C1** `features_get` with `plan=free` for a Growth-only feature says `not_available`; with `country` set, availability follows the registry's country record, or says it follows the plan default; the legacy `availability.{free,t1,t2,t3}` keys agree with `availability_by_plan` for every feature (test), and any value that differs from `main` is listed in the PR body as a named correction.
-- **AC-C2** A registry feature with `lifecycle: roadmap` appears only in `roadmap[]` with `is_capability: false` and the "Planned, not available:" prefix; it is `not_available` in every availability field.
-- **AC-C3** `claims_get` returns an approved, unexpired claim and `fail` for a draft, expired or unknown one with the same message; the SOC 2 claim states entity, period and NDA availability and no current-assurance wording.
-- **AC-C4** Tools migrated in this PR obey AC-B1 to AC-B3.
-
-## 7b. Smoke test   (expected only; the BUILD PR records observed results)
+## 7b. Smoke test (expected only; the BUILD PR records observed results)
 
 | # | Call | Expected |
 |---|---|---|
-| 1 | `pricing_get_plans({"plan":"free"})` | `limits.leads` 150; envelope present |
-| 2 | `pricing_get_country_plans({"country":"eg"})` | USD 12 monthly, USD 120 annual upfront, `tax_line` null, envelope present |
-| 3 | `faqs_get_site` Free-plan answer and `alternatives_get` Free row | 150, same `truth_version` as call 1 |
-| 4 | `features_get({"slug":"<growth-only feature>","plan":"free"})` | not available on Free; legacy keys unchanged |
-| 5 | `claims_get` SOC 2 (after PR-C) | historical attestation with entity and period |
-| 6 | pattern scan of every response above | no AC-B3 match |
+| 1 | `pricing_get_plans({"plan":"free"})` | `limits.leads` 150, `limits_source.truth_version` present |
+| 2 | `faqs_get_site` Free-plan answer and `alternatives_get` Free row | 150 |
+| 3 | `buyer_answers` Free-plan answer | 150, 100 tasks |
+| 4 | pattern scan of every response above | no AC-B3 match |
+| 5 NEGATIVE | test pin with the Free leads fact in `withheld`, repeat call 1 | `limits.leads` null, `limits_detail.leads` withheld with its reason, withheld prose, no number |
+| 6 REGRESSION | `pricing_get_country_plans({"country":"eg"})` | identical to the baseline fixture |
 
 ## 7e. Competitors
 
-Competitor MCP servers were not read this session. Competitor prices are not served (research rule R9).
+Competitor MCP servers were not read this session. Competitor prices and limits are not served (research rule R9).
 
 ## 7f. Compatibility test: per-tool contract matrix
 
-Fixtures are captured from the deployed server before PR-A, or from `main` if the server is unreachable (BLOCKED, then stated), and at the commit that contains each PR's dependencies.
+Fixtures are captured from the deployed server before PR-A, or from `main` if the server is unreachable (BLOCKED, then stated).
 
-| Tool | PR-A | PR-B | PR-C |
-|---|---|---|---|
-| `pricing_*`, `country_get`, `countries_list` | none | + envelope; price and payment fields read the registry; hand strings removed; some price fields may be null or pending (visible change) | none |
-| `features_list`, `features_get` | none | none | + envelope, `availability_by_plan`, `country_availability`, `roadmap`; optional `plan`, `country` inputs; legacy keys derived from the registry |
-| `alternatives_get`, `faqs_get_site`, `buyer_answers` | none | + envelope; limit and price text from the registry | none |
-| `claims_*` | none | none | source switched to approved registry claims |
+| Tool | PR-A | PR-B |
+|---|---|---|
+| `pricing_get_plans` | none | + `limits_source`, `limits_detail`, optional `plan` input; existing numeric `limits` unchanged when served, `null` for a backed key when withheld, stale or unknown (named exception, section 2c1) |
+| `alternatives_get`, `faqs_get_site`, `buyer_answers` | none | limit text from the pin; 200 becomes 150 (named correction) |
+| every other tool | none | none |
 
-**Compatibility exception (named).** PR-B replaces hand-written values that were already wrong or are superseded by recorded decisions (200 leads, GBP and local-currency prices, `+ GST` wording, "certified"). This is an exception to D-EXP-16 (additive only), authorised by D-EXP-51 and the decisions D-EXP-25/33/40/44/45. PR-C adds the corrections of legacy availability values to the same exception. Nothing else is removed.
+**Compatibility exception (named).** PR-B replaces a hand-written value that was already wrong (200 leads) and allows a backed number to be `null` when truth is unavailable (section 2c1). PR-B0 removes an unsupported `HIPAA and IRS filings` statement and rewrites the positioning rows. These are exceptions to D-EXP-16 (additive only), authorised by D-EXP-51. Nothing else is removed.
 
 ## 8. Risks and edge cases
 
 | Risk | Mitigation |
 |---|---|
-| Snapshot older than the website after a price change | Per-record `verified_on` served; section freshness limits withhold stale records; `check:truth` proves reproducibility only, so freshness is the reader's job (§2c) |
-| A registry shape change breaks rendering silently | Schema validation at build and at API load; unknown `schema_version` fails closed |
-| Draft or roadmap leaks as live | Public filter at generation, AC-A2, AC-C2 |
-| Registry value served for a market whose Stripe or website evidence is missing | The 0007 gates sit in the common reader (§2a); AC-A4, AC-B6 |
-| 0007–0010 merge hand values first | §2a step 3: PR-B replaces them in its own data step; no plan blocks the other |
-| Two truth snapshots (0005/0006 and this one) disagree | One generator reads one export; the research claim snapshot of 0006 is replaced by the registry claims in PR-C |
+| Missed refresh withholds every backed fact; replicas may disagree during a deployment | Refresh deadline: at least weekly and within two business days of a limit change; the refresh approver and the deployment owner are the registry owner and Rushabh; a missed-refresh runbook (re-pin, or accept withheld answers) is part of the PR-A deploy note; a skew between replicas is accepted for one deployment and noted |
+| Repository defaults precede or lag deployed enforcement | The refresh PR carries the registry owner's attestation of current enforcement tied to the deployed product state, not only a migration file |
+| Private synthetic fixture shipped | A package/release exclusion test asserts `test-data/**` is absent from the published package and the Docker image's served assets |
+| Pin older than the product after a limit change | Per-limit `verified_on` served; request-time `valid_until`/`next_transition` withholding; `check:truth` proves reproducibility only, so freshness is the reader's job |
+| A pin that is wrong but green | Said plainly (section 2b item 7): git-reviewed, unsigned; a limit change needs the registry owner's attestation of current enforcement in the refresh PR |
+| A withdrawn fact stays live until redeploy | Stated in the README and section 2c; a drill is recorded in the BUILD PR with measured propagation time; the hosting platform is named there (the repository ships a `Dockerfile`) |
+| Two truth snapshots (0005/0006 and this one) disagree | Phase 1 touches no capability or claim surface; overlap with 0005 is an owner action recorded for the later phase |
+| Private data in a pinned export | Public-only schema, closed objects, fixture excluded from served assets, `pending_change` string check |
 | Tool-selection degradation | No new tool; the brief's names are documentation only (F1) |
-| Private data in a pinned export | Public-only schema with field allowlists, build fails on tenant-scoped records (§2b) |
-| Wrong answer labelled as verified | PR-A labels nothing; a tool is labelled only in the PR that migrates all of its facts (§0) |
+| Cross-repository skew with the website | Agreement on `truth_version` is an eventual-consistency target with a skew alert, not a release gate |
 
 ## 9. What this deliberately does NOT do
 
-No FX conversion and no GBP or EUR price book. No data-residency sentence. No tax line outside India. No draft programme served. No MCP-side resolution logic or pricing arithmetic. No edit to hellocrm, hellocrmwebsite or the registry. No change to the bot-governance tools. No `pricing_get`, `plans_get` or `claims_get` created as duplicates of existing tools, and no alias tool.
-
-Deferred, with the reason (reviewer cut, 2026-11-04): **`promotions_list`** (the brief names it; no approved offer exists in the registry, and the temporal and eligibility semantics are unresolved, so a tool would return an empty array) and the **Product Truth API client** (the API's security, versioning and revocation contracts do not exist). Both are recorded in §2e and each gets its own plan. The founder may override either cut.
+No price, tax line, currency, trial term, offer or promotion work: PT-B. No feature-availability, claim or compliance-statement migration. No signed envelope, key lifecycle, withdrawal list or serving-time withdrawal. No live API client and no MCP-side resolution logic or arithmetic. No data-residency sentence. No FAQPage schema. No draft programme served. No edit to hellocrm, hellocrmwebsite or the registry. No change to the bot-governance tools. No `pricing_get`, `plans_get` or `claims_get` duplicate and no alias tool.
 
 ## 10. Decisions owed
 
-- **F1** Brief tool names versus tool count: map `pricing_get` and `plans_get` to the existing tools in the README only (default; 0003 caps tool growth), or add them as new tools.
-- **F2** Closed by reference: the registry plan is PLAN-HGC-0749 (#10297); its contract v1 and fixture are the schema (§2a step 1).
-- **F3** India wording while the registry has no India tax note: INR list price plus "tax treatment is confirmed at checkout" and a null payable amount (default), versus keeping `+ GST` as PR #91 set it; the product rule is GSTIN-conditional.
-- **F4** Startup, NGO and partner programme values: not in recorded decisions; withheld until approved in the registry.
+- **F1** Brief tool names versus tool count: map `pricing_get` and `plans_get` to the existing tools in the README only; no tool is added (0003 caps tool growth).
+- **F2** Closed by reference: the content contract is PT-A (#10307) section 2 and 2d.
+- **F3** India wording while the registry has no tax note: unchanged in phase 1; decided with PT-B.
+- **F4** Startup, NGO and partner programme values: not in recorded decisions; nothing served.
 - **F5** Refresh path for the pinned export: a scheduled PR with a human merge (default).
 - **F6** Whether the cuts of `promotions_list` and the API client stand (default: cut).
 
-## 11. Findings outside this plan   (recorded, not fixed here)
+## 11. Findings outside this plan (recorded, not fixed here)
 
-- `src/data/website-mirror.ts` USA `compliance: "SOC 2, HIPAA and IRS filings"` asserts HIPAA; the mirror comment says SOC 2 is "certified" (`grep -n "HIPAA\|certified" src/data/website-mirror.ts`).
-- `src/tools/alternatives.ts` describes HelloGrowthCRM as WhatsApp-first or sales-first in several rows (`grep -n "WhatsApp-first\|Sales-first" src/tools/alternatives.ts`). PR-B owns the rewrite of this text (a prerequisite of migrating `alternatives_get`, §0a).
-- `COUNTRY_PRICING` USA row `growthPriceShort: "$10/user/mo"` states the annual price as a monthly equivalent; the decision is USD 120 per user per year upfront.
+- `src/data/website-mirror.ts` USA `compliance: "SOC 2, HIPAA and IRS filings"` asserts HIPAA; the mirror comment says SOC 2 is "certified" (`grep -n "HIPAA\|certified" src/data/website-mirror.ts`). PR-B removes the HIPAA and IRS statement; the "certified" comment and SOC 2 wording wait for a claim seed.
+- `src/tools/alternatives.ts` describes HelloGrowthCRM as WhatsApp-first or sales-first in several rows (`grep -n "WhatsApp-first\|Sales-first" src/tools/alternatives.ts`); PR-B owns the rewrite.
+- `COUNTRY_PRICING` USA row `growthPriceShort: "$10/user/mo"` states the annual price as a monthly equivalent; the decision is USD 120 per user per year upfront; the later price phase owns the fix.
 
 ## 12. Estimated token cost
 
-Estimate, not a quote; input tokens at $3/M.
+Estimate, not a quote.
 
 | PR | Low | Expected | High |
 |---|---|---|---|
-| A (infrastructure, reader, harness) | 0.8M | 1.1M | 1.6M |
-| B (pricing, plans, served text, positioning rewrite) | 1.2M | 1.8M | 2.6M |
-| C (features, claims) | 0.6M | 0.9M | 1.3M |
-| **Total** | **2.6M** | **3.8M** (about $11) | **5.5M** |
+| A (pin, generator, reader, ratchet, harness) | 0.8M | 1.1M | 1.6M |
+| B0 (copy corrections) | 0.1M | 0.2M | 0.3M |
+| B (limits in served text) | 0.5M | 0.8M | 1.2M |
+| **Phase 1 total** | **1.4M** | **2.1M** | **3.1M** |
 
-This plan PR: about 0.4M.
+The later price, feature and claim PRs are estimated by their own plan. This plan PR: about 0.4M.
 
 ## 13. Validation (this plan PR)
 
 - **PASS**: plan id 0011 free: REST PR list and remote `plan/` branches show PLAN-HELLOG-0001 to 0010 only.
 - **PASS**: `main` @ `5190a02`: `200 leads` in 10 non-test lines of `alternatives.ts` and `faqs.ts`; `COUNTRY_PRICING` holds per-country price strings; `features.ts` uses `t1/t2/t3`; no `truth_version` in `src`; 91 `defineTool(` calls.
-- **PASS**: the brief and its §2 reconciliation read from the research repo at the head of `claude/usa-competitors-list-5373vp`.
 - **UNVERIFIABLE**: the live server; competitor MCP inventories.
-- **BLOCKED**: the registry artifact and fixture (owner plan PLAN-HGC-0749, hellocrm #10297, PR-2); BUILD stays blocked until they exist.
-- **PASS**: one Astra blind review run on rev 1 (reject), folded into rev 2; the re-review result is in the review record.
+- **BLOCKED**: the PT-A generated artifact and fixture (hellocrm #10307, a plan PR); BUILD stays blocked until they exist.
+- **PASS**: PT-A section 2 and 2d read in full for this revision.
 
 ## Review record
 
-Astra, blind, role plan, 2026-11-04.
-
-**Review 1, on revision 1: REJECT** (seven blockers). Checked against the plan and the repo before anything changed.
-
-| # | Finding | Verdict | Change in revision 2 |
+| Reviewer | Plan version | Verdict | Disposition |
 |---|---|---|---|
-| 1 | PR-A cannot meet its criteria; the envelope would label hand-written answers as verified | Accepted. True | PR-A is infrastructure only; a tool is labelled in the PR that migrates all its facts; the positioning rewrite is owned by PR-B |
-| 2 | Contract mixes record status, feature status and availability; `consumers` and `forbidden_values` undefined | Accepted | Three axes (`publication`, `lifecycle`, `availability`), fields defined, representative fixture required (§2a, §2b) |
-| 3 | Byte-identical legacy tier keys preserve misinformation | Accepted | Legacy keys derived from the registry, agreement test, named correction (§0a PR-C, AC-C1) |
-| 4 | API fallback can resurrect withdrawn facts | Accepted | API client cut from this plan; requirements recorded (§2e) |
-| 5 | Time-dependent facts cannot be answered from a generation-time view | Accepted | Current-time only; request-clock temporal check in the reader; no `as_of` |
-| 6 | Kill switch late; gates must be in the common reader | Accepted | Gates and withholding in PR-A's reader; redeploy-based withdrawal with a drill (§2a, §2e) |
-| 7 | "Approved" is not a public-data boundary | Accepted | Public-only export, `additionalProperties: false`, tenant records rejected, public-safe evidence refs, CODEOWNERS (§2b) |
-| Cut | `promotions_list`, API client, alias descriptions | Accepted | Deferred (§9, F6); aliases are README-only (F1) |
-| Risks | India tax, base vs effective price, freshness, mirror ownership, wire migration | Accepted | §2c, §0b (mirror does not sync these fields), §7f |
+| Astra (blind) | rev 1 | REJECT | Seven blockers accepted: infrastructure-only PR-A, three-axis contract, derived legacy keys, API client cut, request-time temporal check, gates in the reader, public-only export |
+| Astra (blind) | rev 2 | REJECT | Folded in rev 3: market context, compliance strings, stale and partial responses, one date vocabulary, safe pins |
+| Astra (blind) | rev 3 | ACCEPT-WITH-CHANGES | List-price view, wire schemas, market classification, expiry coverage, compatibility |
+| Astra (blind) | rev 3 after contract update | REJECT | Reader targeted a signed-envelope contract PT-A does not provide; replaced by rev 4 |
+| Astra (blind) | rev 4, against PT-A | REJECT | Four blockers folded once into rev 4 (fold note in the Revision 4 section) |
+| Astra (blind) | rev 4 after the fold | ACCEPT-WITH-CHANGES | Carried as binding BUILD requirements (the note after the Revision 4 section) |
 
-**Review 2, on revision 2: REJECT** (six blockers). Revision 3 folds the open items below (see the dispositions). One fold only, per the run's procedure; the plan is therefore **not final** and the REJECT is unresolved until a later non-REJECT review of a folded version.
+- **Human approval before ship:** founder decides at merge; this is a plan PR, no build.
+- **What left the machine:** the plan text only, through `ask-sol.mjs` (egress gate CLEAN); no keys, no customer data.
 
-| # | Finding | Verdict | Disposition |
-|---|---|---|---|
-| 1 | Gate dependency not closed for PR-C; reader has no market context; global vs market-scoped facts undefined | Accepted. True | Folded in rev 3 (§2c1): fail-closed injected gate interface; facts typed global or market |
-| 2 | Unsupported compliance string (`SOC 2, HIPAA and IRS filings`) left inside a labelled surface | Accepted. True | Folded in rev 3 (§2c1): every compliance statement assigned; `country_get` unlabelled until PR-B |
-| 3 | No response contract for stale, future-effective, partial withholding | Accepted | Folded in rev 3 (§2c1, AC-A7) |
-| 4 | Contract inconsistent (`status` vs `publication`; money scale) | Accepted | `publication` made the single field in the generator text (this revision); folded in rev 3: integer minor units plus currency (§2b, §2d) |
-| 5 | Envelope `verified_on` can overwrite a fact's own `verified_on` | Accepted | Folded in rev 3: envelope `released_on`; a fact's own `verified_on` always wins (§2b) |
-| 6 | Schema validation does not make a pinned payload safe for Git | Accepted | Folded in rev 3 (§2b, AC-A3) |
-| Risks and missing | Withdrawal beyond the hosted fleet, synchronized expiry, checkout contract, cross-estate drift, compatibility versioning, extra tests, historical `truth_version` reuse, 0005 mapping owner | Accepted | Folded where contract-owned: withdrawal drill and signed control data (the contract), single freshness rule (§2c), compatibility replay (§7f); the checkout contract and cross-estate drift stay with 0007 and the registry owner |
-| Mechanical | `getPromotions` in PR-A; stale AC references; affected-files table; blanket `/residen/i` and `/certified/i` bans | Accepted | **Fixed in this revision** (unreviewed) |
-| Cut | `getPromotions` | Accepted | Removed |
+## Revision 4 (2026-11-04): rewrite against PT-A
 
-The reviewer's one thing (a market-aware, request-time withholding contract: typed outcomes, provenance, gate dependencies, rendering) is the main work of revision 3. No BUILD starts from this plan until it is folded and re-reviewed.
+Astra blind, run once against PT-A, returned REJECT on revision 3 for: (1) a reader aimed at a different contract (signed envelope, `released_on`, key id, revocation file); (2) withdrawal and rollback with no mechanism in a compiled snapshot; (3) PR-B and PR-C needing prices and claims PT-A does not seed (PT-B is held); (4) lookup assuming a resolver and scope variants PT-A forbids; (5) an undefined `country_required` reason in the wire contract. Disposition: (1) all signature, envelope, `released_on`, key and revocation text removed; the envelope fields are PT-A's `truth_version`, `valid_until` and the pin sha256; (2) withdrawal and rollback are stated as registry revert, new pin and redeploy, with a pin-lifecycle check (AC-A7) and BLOCKED for anything faster; (3) prices, tax, features, claims and promotions moved to a later phase with a dependency matrix (section 2c); phase 1 is the plan limits PT-A exports; (4) lookup is by id in one location, no resolver, no scope variants, no market context in phase 1; (5) `country_required` removed together with the price tools it belonged to.
 
+**Fold of the rev 4 review (one fold):** Astra returned REJECT on revision 4 for (1) a wire contract that deferred the stale and withheld schemas to BUILD and changed `limits.leads` from number to object; (2) provenance attributed to a `limits` object that mixes backed and hand-written keys; (3) acceptance criteria that could not all pass (byte-identical versus the HIPAA and positioning edits; a runtime missing-fact test versus a build-time rejection); (4) `evaluation.json` accepted without validating its binding to the snapshot. Folded: section 2c1 freezes the served, partial, wholly withheld, stale and unknown shapes with a named compatibility exception (numbers keep their type when served; `null` only for backed keys when truth is unavailable); provenance is scoped to `limits_detail` and the enumerated backed key set; the positioning and HIPAA edits are a separate PR-B0 and AC-B7 lists its allowed text changes; AC-B6 is split into a runtime test and a build-time test, and unknown differs from withheld; `evaluation.json` is validated (schema, instant ordering, `content_digests` bound to the pinned snapshots, optional windows) with mismatched-report fixtures. Also added: a `FLOOR` file against rollback, a shrink-only ratchet allowlist, per-request single clock, an inventory built from every exported limit id including the unchanged country tools, a refresh runbook and a fixture-exclusion test.
 
-## Review record: Astra blind, round 3 (revision 3)
-
-ACCEPT-WITH-CHANGES. Five blockers (list-price view, wire schemas, market classification, expiry coverage, compatibility) and the listed risks folded as §2c2; the registry contract gained the promotion-free `pricing` view. Left open for BUILD: the exact frozen schemas (§2c2 item 5), the token-estimate section (kept as planning information only, not an acceptance criterion), and cross-surface coordination of a price change across this server, the website and checkout (owner: the registry owner's release policy).
-
-## Review record: Astra blind, round 4 (after the contract update)
-
-REJECT. Folded: availability type (`unknown` plus per-fact `verified_on`) and a decision table for country context and gates (section 2c2 and 2d). Open, not folded in this revision: a phase-1 mechanism that learns of a withdrawal faster than a replacement deployment (the signed list is read at build; the one-hour window therefore applies to the hosted server only if the owner schedules a redeploy on withdrawal), a durable authority for the active version, an owner action or pass condition for the overlapping capability facts of 0005, and the remaining wire-schema detail of section 2c2 item 5. No further review run, per the one-rerun instruction.
+**Review record, re-run after the fold: ACCEPT-WITH-CHANGES.** No further fold. Binding for PR-A and PR-B: (1) the rollback guarantee is withdrawn as above and documented as a bounded exposure, with a test of a forward re-pin only; (2) an id listed under `withheld` stays a valid template reference, and the literal ratchet keeps a consumer-owned list of protected ids (ids only, no values) so a removed fact cannot reopen a hand-written fallback; tested served, withheld, absent across successive pins; (3) the old-parser fixtures preserve authentic pre-change parser behaviour, record which clients break, and the release is declared breaking or migrated by decision, with AC-B5's "structured output unchanged" amended to permit the named nullability; (4) inventory completion is a scope gate: every rendering of a backed id migrates (including in the country tools), and "intentionally uncovered" applies only to users, seats and pipelines; an expired-pin test exercises the unchanged surfaces too; (5) the provenance placement is one decision (inside `plan`, beside `limits_detail`), `tool-types.ts` is not extended and `output-schemas.ts` freezes the exact shapes for the default multi-plan, filtered and withheld responses, validated on structured output and serialised content; refresh is scheduled against `min(valid_until, next_transition)`; a future-dated report, clock skew and each optional bound absent versus malformed have fixtures; a startup test proves the production package runs without `test-data/**`; the hosting platform and an executable refresh and withdrawal runbook, including who may authorise an emergency deploy under G1-G5, are named before BUILD acceptance; the alias-tool option in F1 is removed (no tool growth); PR-B0 owns the copy corrections; the stale commercial copy beside correct limits is tracked as a separate release risk.
