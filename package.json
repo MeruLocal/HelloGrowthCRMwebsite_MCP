@@ -1,6 +1,6 @@
 {
   "name": "mcp-bot-crawler",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "MCP server that crawls, discovers, and analyzes bots (search engines, AI crawlers, scrapers) interacting with your website.",
   "license": "MIT",
   "author": "Meru Technosoft Private Limited",
@@ -36,7 +36,10 @@
     "sync:mirror": "node scripts/sync-website-mirror.mjs",
     "check:mirror": "node scripts/sync-website-mirror.mjs --check",
     "check:versions": "node scripts/check-versions.mjs",
-    "verify": "npm run typecheck && npm run check:versions && npm run check:mirror && npm test",
+    "build:market-facts": "node scripts/build-market-facts.mjs",
+    "check:market-facts": "node scripts/build-market-facts.mjs --check && node scripts/check-release-evidence.mjs --warn-days 14 && node scripts/check-market-facts-redaction.mjs",
+    "check:contract": "node scripts/check-contract-conformance.mjs",
+    "verify": "npm run typecheck && npm run check:versions && npm run check:mirror && npm run check:market-facts && npm test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -67,6 +70,7 @@
   "devDependencies": {
     "@types/node": "^20.14.10",
     "@vitest/coverage-v8": "^2.1.8",
+    "ajv": "^8.17.1",
     "rimraf": "^5.0.10",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4",

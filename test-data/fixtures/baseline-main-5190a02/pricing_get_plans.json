@@ -1,0 +1,244 @@
+{
+  "global_usd": {
+    "currency": "USD",
+    "plan_count": 3,
+    "plans": [
+      {
+        "name": "Free Forever",
+        "slug": "free",
+        "price_annual": "$0",
+        "price_monthly": "$0",
+        "billing": "Free forever · No credit card · 1 user · 150 leads · Never expires",
+        "best_for": "Our default starter — not a trial",
+        "ai_credits": "50 total",
+        "limits": {
+          "users": 1,
+          "leads": 150,
+          "accounts": 20,
+          "pipelines": 1,
+          "tasks": 100
+        },
+        "features": [
+          "Lead & Contact Management (150 leads/contacts cap)",
+          "Accounts (20 cap) + 1 deal pipeline",
+          "Pipeline Management (Kanban)",
+          "Task Board (100 tasks, Kanban only)",
+          "Basic activity logging",
+          "2 Basic Email Templates",
+          "3 Custom Fields",
+          "WhatsApp click-to-chat only (no API-backed inbox)",
+          "AI Writing Assistant (capped, 5 uses/month)",
+          "AI Chatbot — 1 conversation/month",
+          "Mobile dashboard (read-only)",
+          "30-day analytics",
+          "1 Growth Audit included",
+          "Community support",
+          "\"Powered by HelloGrowthCRM\" branding shown"
+        ],
+        "cta_url": "https://app.hellogrowthcrm.com/signup"
+      },
+      {
+        "name": "Growth",
+        "slug": "growth",
+        "price_annual": "$10/user/month (billed annually)",
+        "price_monthly": "$12/user/month",
+        "billing": "Per-user pricing · Annual or monthly billing · 14-day free trial",
+        "best_for": "Growing sales teams outside India (US, UK, Canada, Australia, UAE, Singapore, New Zealand)",
+        "ai_credits": "2,500 per user/month",
+        "limits": {
+          "leads": "Unlimited",
+          "accounts": "Unlimited",
+          "pipelines": "Unlimited",
+          "tasks": "Unlimited"
+        },
+        "popular": true,
+        "features": [
+          "Everything in Free, PLUS:",
+          "Unlimited leads, contacts & deals with unlimited pipelines",
+          "AI lead scoring & enrichment",
+          "Built-in dialer with call tracking & recording",
+          "Bulk WhatsApp broadcasts & SMS campaigns",
+          "Real-time dashboards, team analytics & custom reports",
+          "Prospecting + exhibition capture",
+          "Campaigns, web chat assistant & visitor tracking",
+          "Market Radar, Growth Audit, AI Insights & AI Agents (Beta)",
+          "Gamification, goals, leaderboard & pipeline forecast",
+          "Products, proposals, invoices, expenses & revenue tracking",
+          "Customer portal, referrals, references & landing pages",
+          "Tickets + knowledge base",
+          "API access & all 259 live integrations across 115 categories",
+          "Custom fields, modules, pipeline stages & workflows",
+          "Territory & team management with map view",
+          "AI-assisted sales forecasting",
+          "Role-based access control",
+          "Priority support + dedicated onboarding",
+          "Managed RevOps add-on available — our specialists run your pipeline (from $1,499/mo flat)",
+          "2,500 AI credits/user/month"
+        ],
+        "guarantees": [
+          "14-day free trial",
+          "14-day money-back guarantee on annual plans (7-day on monthly renewals)"
+        ],
+        "cta_url": "https://app.hellogrowthcrm.com/signup"
+      },
+      {
+        "name": "Enterprise",
+        "slug": "enterprise",
+        "price_annual": "Talk to us — custom pricing",
+        "price_monthly": "Annual contract · Custom pricing",
+        "billing": "Annual contract · Custom per-company pricing",
+        "best_for": "Large enterprises outside India with complex needs",
+        "ai_credits": "10,000 per user/month + 3-month rollover",
+        "limits": {
+          "leads": "Unlimited",
+          "accounts": "Unlimited",
+          "pipelines": "Unlimited",
+          "tasks": "Unlimited"
+        },
+        "features": [
+          "Everything in Growth, PLUS:",
+          "Dedicated named Account Manager",
+          "Custom workflow automation (multi-step, approval flows)",
+          "Advanced revenue intelligence, attribution & churn prediction",
+          "Multi-location / branch management",
+          "Audit trails, compliance reporting & full activity audit",
+          "White-label customer portal & custom agents",
+          "SLA policies, approval flows & multi-currency commerce",
+          "Unlimited exports + scheduled reports",
+          "All 259 live integrations + custom integration support",
+          "Managed RevOps included — dedicated RevOps Specialists run your pipeline (Growth Engine + RevOps Partner tiers)",
+          "Custom training (up to 4 sessions/year)",
+          "SLA-backed 99.9% uptime",
+          "Priority phone support",
+          "Custom API rate limits",
+          "Data migration & onboarding support",
+          "10,000 AI credits/user/month + 3-month rollover"
+        ],
+        "cta_url": "https://app.hellogrowthcrm.com/book/hellogrowthcrm-app-free-demo?token=77396889-c602-4e59-be14-d16f8663e5ba"
+      }
+    ]
+  },
+  "india_inr": {
+    "currency": "INR",
+    "plan_count": 3,
+    "plans": [
+      {
+        "name": "Free Forever",
+        "slug": "free",
+        "price_annual": "₹0",
+        "price_monthly": "₹0",
+        "billing": "Free forever · No credit card · 1 user · 150 leads · Never expires",
+        "best_for": "Default starter — not a trial",
+        "ai_credits": "50 total",
+        "limits": {
+          "leads": 150,
+          "accounts": 20,
+          "pipelines": 1,
+          "tasks": 100
+        },
+        "features": [
+          "Lead & Contact Management (150 leads/contacts cap)",
+          "Accounts (20 cap) + 1 deal pipeline",
+          "Pipeline Management (Kanban)",
+          "Task Board (100 tasks, Kanban only)",
+          "Basic activity logging",
+          "2 Basic Email Templates",
+          "3 Custom Fields",
+          "WhatsApp click-to-chat only (no API-backed inbox)",
+          "AI Writing Assistant (capped, 5 uses/month)",
+          "AI Chatbot — 1 conversation/month",
+          "Mobile dashboard (read-only)",
+          "30-day analytics",
+          "1 Growth Audit included",
+          "Community support",
+          "\"Powered by HelloGrowthCRM\" branding shown"
+        ],
+        "cta_url": "https://app.hellogrowthcrm.com/signup"
+      },
+      {
+        "name": "Growth",
+        "slug": "growth",
+        "price_annual": "₹899/user/month + 18% GST (annual — 10 months paid, 2 months free = ₹8,990/user/year + GST)",
+        "price_monthly": "₹899/user/month + 18% GST (same rate; annual adds 2 months free)",
+        "billing": "Per-user pricing · Annual or monthly billing · 14-day free trial · Hero tier",
+        "best_for": "Growing Indian sales teams",
+        "ai_credits": "2,500 per user/month · Overage ₹0.60/K",
+        "limits": {
+          "leads": "Unlimited",
+          "accounts": "Unlimited",
+          "pipelines": "Unlimited",
+          "tasks": "Unlimited"
+        },
+        "popular": true,
+        "features": [
+          "Everything in Free, PLUS:",
+          "AI lead scoring & enrichment",
+          "Built-in dialer with call tracking & recording",
+          "Bulk WhatsApp broadcasts & SMS campaigns",
+          "Real-time dashboards, team analytics & custom reports",
+          "Prospecting + exhibition capture",
+          "Campaigns, web chat assistant & visitor tracking",
+          "Market Radar, Growth Audit, AI Insights & AI Agents (Beta)",
+          "Gamification, goals, leaderboard & pipeline forecast",
+          "Products, proposals, invoices, expenses & revenue tracking",
+          "Customer portal, referrals, references & landing pages",
+          "Tickets + knowledge base",
+          "API access & all 259 live integrations across 115 categories",
+          "Custom fields, modules, pipeline stages & workflows",
+          "Territory & team management with map view",
+          "AI-assisted sales forecasting",
+          "Role-based access control",
+          "Priority support + dedicated onboarding",
+          "2,500 AI credits/user/month"
+        ],
+        "guarantees": [
+          "14-day free trial",
+          "14-day money-back window on annual plans (7-day on monthly renewals; pro-rated on India annual plans)"
+        ],
+        "cta_url": "https://app.hellogrowthcrm.com/signup"
+      },
+      {
+        "name": "Enterprise",
+        "slug": "enterprise",
+        "price_annual": "Custom pricing — talk to sales",
+        "price_monthly": "Annual contract · Custom per-company pricing",
+        "billing": "Annual contract · Custom pricing · Dedicated Account Manager",
+        "best_for": "Large Indian businesses with complex needs",
+        "ai_credits": "10,000 per user/month + 3-month rollover",
+        "limits": {
+          "leads": "Unlimited",
+          "accounts": "Unlimited",
+          "pipelines": "Unlimited",
+          "tasks": "Unlimited"
+        },
+        "features": [
+          "Everything in Growth, PLUS:",
+          "Dedicated named Account Manager",
+          "Custom workflow automation (multi-step, approval flows)",
+          "Advanced revenue intelligence, attribution & churn prediction",
+          "Multi-branch / location management",
+          "Audit trails, compliance reporting & full activity audit",
+          "White-label customer portal & custom agents",
+          "SLA policies, approval flows & multi-currency commerce",
+          "Unlimited exports + scheduled reports",
+          "Test cases for SaaS / QA teams",
+          "All 259 live integrations + custom integration support",
+          "Custom training (up to 4 sessions/year)",
+          "SLA-backed 99.9% uptime",
+          "Priority phone support",
+          "Custom API rate limits",
+          "Data migration & onboarding support",
+          "10,000 AI credits/user/month + 3-month rollover"
+        ],
+        "cta_url": "https://calendly.com/hellogrowthcrm-sales/demo"
+      }
+    ]
+  },
+  "market_scope": {
+    "summary": "HelloGrowthCRM is sold worldwide with country-aware pricing. India is billed in INR; every other market is billed in USD or its local currency.",
+    "india": "India: Growth is INR 899 per user per month plus 18% GST, billed in INR (UPI, Razorpay, net banking, card).",
+    "outside_india": "Outside India: Growth is USD 12 per user per month on monthly billing, with a lower per-month rate on yearly billing. Local-currency prices exist for the UK (GBP), Canada (CAD), Australia (AUD), UAE (AED), Singapore (SGD) and New Zealand (NZD).",
+    "yearly_discount": "Yearly billing is discounted in every market (India: two months free).",
+    "more": "Call pricing_get_country_plans for each market's currency, payment methods and compliance posture, countries_list for the 8 localized hubs, and country_get for one market's profile."
+  }
+}

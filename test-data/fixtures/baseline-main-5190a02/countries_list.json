@@ -1,0 +1,86 @@
+{
+  "synced_at": "2026-08-06",
+  "count": 8,
+  "countries": [
+    {
+      "code": "in",
+      "label": "India",
+      "route_prefix": "/in",
+      "url": "https://hellogrowthcrm.com/in",
+      "currency": "INR",
+      "currency_symbol": "₹",
+      "locale": "en-IN",
+      "tax_ref": "GST"
+    },
+    {
+      "code": "usa",
+      "label": "United States",
+      "route_prefix": "/usa",
+      "url": "https://hellogrowthcrm.com/usa",
+      "currency": "USD",
+      "currency_symbol": "$",
+      "locale": "en-US",
+      "tax_ref": "sales tax"
+    },
+    {
+      "code": "uk",
+      "label": "United Kingdom",
+      "route_prefix": "/uk",
+      "url": "https://hellogrowthcrm.com/uk",
+      "currency": "GBP",
+      "currency_symbol": "£",
+      "locale": "en-GB",
+      "tax_ref": "VAT"
+    },
+    {
+      "code": "canada",
+      "label": "Canada",
+      "route_prefix": "/canada",
+      "url": "https://hellogrowthcrm.com/canada",
+      "currency": "CAD",
+      "currency_symbol": "C$",
+      "locale": "en-CA",
+      "tax_ref": "HST/GST"
+    },
+    {
+      "code": "au",
+      "label": "Australia",
+      "route_prefix": "/au",
+      "url": "https://hellogrowthcrm.com/au",
+      "currency": "AUD",
+      "currency_symbol": "A$",
+      "locale": "en-AU",
+      "tax_ref": "GST"
+    },
+    {
+      "code": "uae",
+      "label": "United Arab Emirates",
+      "route_prefix": "/uae",
+      "url": "https://hellogrowthcrm.com/uae",
+      "currency": "AED",
+      "currency_symbol": "AED",
+      "locale": "en-AE",
+      "tax_ref": "VAT"
+    },
+    {
+      "code": "singapore",
+      "label": "Singapore",
+      "route_prefix": "/singapore",
+      "url": "https://hellogrowthcrm.com/singapore",
+      "currency": "SGD",
+      "currency_symbol": "S$",
+      "locale": "en-SG",
+      "tax_ref": "GST"
+    },
+    {
+      "code": "new-zealand",
+      "label": "New Zealand",
+      "route_prefix": "/new-zealand",
+      "url": "https://hellogrowthcrm.com/new-zealand",
+      "currency": "NZD",
+      "currency_symbol": "NZ$",
+      "locale": "en-NZ",
+      "tax_ref": "GST"
+    }
+  ]
+}

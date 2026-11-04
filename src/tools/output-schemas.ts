@@ -132,7 +132,7 @@ export const TOOL_OUTPUT_SCHEMAS: Readonly<Record<string, OutputSchema>> = {
       synced_at: syncedAt,
       count: num,
       country_pricing: listOf(
-        "countryName, countrySlug, currencyCode, currencySymbol, homeHref, growthPriceShort, growthPriceMonthly, pricingSummaryLine",
+        "countryName, countrySlug, currencyCode, currencySymbol, homeHref, growthPriceShort, growthPriceMonthly, pricingSummaryLine; plus price_status, billing_currency and price_note/price_qualifier for markets with gated market facts. Price fields, currencyCode/currencySymbol and compliance are null while a market's price or compliance statement is not verified (compliance_status 'withheld_unverified').",
         "One entry per published market.",
       ),
     },
@@ -284,9 +284,28 @@ export const TOOL_OUTPUT_SCHEMAS: Readonly<Record<string, OutputSchema>> = {
     properties: {
       synced_at: syncedAt,
       count: num,
-      countries: listOf("code, label, route_prefix, url, currency, currency_symbol", "Published markets."),
+      countries: listOf("code, label, route_prefix, url, currency, currency_symbol, market_facts_available", "Published markets."),
     },
     required: ["synced_at", "count", "countries"],
+  },
+  country_get: {
+    type: "object",
+    properties: {
+      synced_at: syncedAt,
+      country: { type: "object", description: "code, market, label, route_prefix, url, currency, currency_symbol, locale, channels, cities, compliance (null when no verified statement), compliance_status ('withheld_unverified' when compliance is null), tax_ref." },
+      pricing_summary: {
+        type: ["object", "null"],
+        description: "The market's pricing row. For markets with gated market facts the price fields (growthPriceShort, growthPriceMonthly, currencyCode, currencySymbol) are null with price_status 'pending_verification' until the publication gates are met; compliance is null with compliance_status.",
+      },
+      market_facts: {
+        type: ["object", "null"],
+        description: "Versioned market facts: market, as_of, fact_set_version, market_facts_contract, release_evidence_version, source, price {price_status, billing_currency, monthly, annual, ...}, facts[], withheld[]. Null (with market_facts_reason) when the market has none.",
+      },
+      market_facts_reason: { type: "string", description: "Present only when market_facts is null." },
+      contact: { type: "object", description: "Regional contact details." },
+      seo: { type: "object", description: "canonical and hreflang." },
+    },
+    required: ["synced_at", "country", "pricing_summary", "market_facts", "contact", "seo"],
   },
   company_get_profile: {
     type: "object",

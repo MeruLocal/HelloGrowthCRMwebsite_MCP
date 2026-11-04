@@ -3,7 +3,7 @@
   "name": "io.github.merulocal/hellogrowthcrm-bot-crawler",
   "description": "HelloGrowthCRM pricing, features and comparisons for AI assistants, plus bot governance. Read-only.",
   "status": "active",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "repository": {
     "url": "https://github.com/MeruLocal/HelloGrowthCRMwebsite_MCP",
     "source": "github"
@@ -14,7 +14,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "mcp-bot-crawler",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "transport": {
         "type": "stdio"
       },

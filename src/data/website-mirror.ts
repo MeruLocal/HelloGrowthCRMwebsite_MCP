@@ -239,14 +239,15 @@ export interface CountryMarket {
   inLanguage: string;
   channels: string[];
   cities: string[];
-  compliance: string;
+  /** null = no verified statement (rendered as `compliance_status: "withheld_unverified"`). */
+  compliance: string | null;
   taxRef: string;
 }
 
 export const COUNTRIES: CountryMarket[] = [
   { code: "in", market: "india", label: "India", routePrefix: "/in", currency: "INR", currencySymbol: "₹", inLanguage: "en-IN", channels: ["WhatsApp", "IndiaMART", "Phone"], cities: ["Mumbai", "Bengaluru", "Delhi", "Pune", "Chennai", "Hyderabad", "Ahmedabad"], compliance: "GST, MSME and ICAI deadlines", taxRef: "GST" },
   { code: "usa", market: "usa", label: "United States", routePrefix: "/usa", currency: "USD", currencySymbol: "$", inLanguage: "en-US", channels: ["Email", "SMS", "LinkedIn"], cities: ["New York", "Los Angeles", "Chicago", "Houston", "Atlanta", "Dallas", "Boston"], compliance: "SOC 2, HIPAA and IRS filings", taxRef: "sales tax" },
-  { code: "uk", market: "uk", label: "United Kingdom", routePrefix: "/uk", currency: "GBP", currencySymbol: "£", inLanguage: "en-GB", channels: ["Email", "Phone", "SMS"], cities: ["London", "Manchester", "Birmingham", "Edinburgh", "Leeds", "Bristol"], compliance: "GDPR, HMRC and FCA rules", taxRef: "VAT" },
+  { code: "uk", market: "uk", label: "United Kingdom", routePrefix: "/uk", currency: "GBP", currencySymbol: "£", inLanguage: "en-GB", channels: ["Email", "Phone", "SMS"], cities: ["London", "Manchester", "Birmingham", "Edinburgh", "Leeds", "Bristol"], compliance: null, taxRef: "VAT" },
   { code: "canada", market: "canada", label: "Canada", routePrefix: "/canada", currency: "CAD", currencySymbol: "C$", inLanguage: "en-CA", channels: ["Email", "Phone", "SMS"], cities: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton"], compliance: "PIPEDA, CRA filings and provincial HST/GST", taxRef: "HST/GST" },
   { code: "au", market: "australia", label: "Australia", routePrefix: "/au", currency: "AUD", currencySymbol: "A$", inLanguage: "en-AU", channels: ["Email", "SMS", "Phone"], cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"], compliance: "Privacy Act, ATO BAS and ASIC filings", taxRef: "GST" },
   { code: "uae", market: "uae", label: "United Arab Emirates", routePrefix: "/uae", currency: "AED", currencySymbol: "AED", inLanguage: "en-AE", channels: ["WhatsApp", "Email", "Phone"], cities: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah", "Ajman"], compliance: "VAT, ESR and free-zone rules", taxRef: "VAT" },
@@ -291,17 +292,19 @@ export const COUNTRIES: CountryMarket[] = [
 export interface CountryPricingSummary {
   countryName: string;
   countrySlug: string;
-  currencyCode: string;
-  currencySymbol: string;
+  /** null while a market's price is gated (see src/lib/market-publication.ts). */
+  currencyCode: string | null;
+  currencySymbol: string | null;
   homeHref: string;
-  /** Growth plan, annual billing — the headline per-user price. */
-  growthPriceShort: string;
-  /** Growth plan billed monthly (higher than the annual rate). */
-  growthPriceMonthly: string;
+  /** Growth plan, annual billing — the headline per-user price. null while the market's price is gated. */
+  growthPriceShort: string | null;
+  /** Growth plan billed monthly (higher than the annual rate). null while the market's price is gated. */
+  growthPriceMonthly: string | null;
   /** Full plan-ladder line shown on the pricing page. */
   pricingSummaryLine: string;
   paymentMethods: string;
-  compliance: string;
+  /** null = no verified statement (served with `compliance_status`). */
+  compliance: string | null;
   pricingHref: string;
 }
 
@@ -323,11 +326,14 @@ export const COUNTRY_PRICING: CountryPricingSummary[] = [
     pricingHref: "/usa/pricing",
   },
   {
-    countryName: "United Kingdom", countrySlug: "uk", currencyCode: "GBP", currencySymbol: "£", homeHref: "/uk",
-    growthPriceShort: "£8/user/mo", growthPriceMonthly: "£10/user/mo monthly",
-    pricingSummaryLine: "Free Forever · Growth £8/user/mo · Enterprise (custom) · 14-day trial on paid plans",
-    paymentMethods: "Credit/debit card, Stripe, GoCardless, bank transfer",
-    compliance: "UK GDPR compliant, ICO-registered data processor",
+    // UK price fields are NOT literals: they are read through getMarketPrice("uk", now)
+    // (src/lib/market-publication.ts) and stay null until the website-deploy and
+    // stripe-flow1 gates are met. PLAN-HELLOG-0007.
+    countryName: "United Kingdom", countrySlug: "uk", currencyCode: null, currencySymbol: null, homeHref: "/uk",
+    growthPriceShort: null, growthPriceMonthly: null,
+    pricingSummaryLine: "Free Forever · Growth (price pending verification) · Enterprise (custom) · 14-day trial on paid plans",
+    paymentMethods: "Paid via Stripe",
+    compliance: null,
     pricingHref: "/uk/pricing",
   },
   {

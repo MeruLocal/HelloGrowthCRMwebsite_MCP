@@ -1,0 +1,30 @@
+{
+  "market_facts_contract": 1,
+  "global_gates": ["soc2-scope"],
+  "mandatory_gates_by_kind": {
+    "price": ["website-deploy", "stripe-flow1"],
+    "attestation": ["soc2-scope"]
+  },
+  "banned_prose_patterns": [
+    "residen",
+    "ISO ?27001",
+    "HIPAA",
+    "WhatsApp-first",
+    "sales[- ]only",
+    "sales[- ]first",
+    "certified"
+  ],
+  "withheld_topics": [
+    "purchase-availability",
+    "vat-rate",
+    "making-tax-digital",
+    "pecr-consent",
+    "uk-gdpr",
+    "companies-house",
+    "uk-accounting-integrations",
+    "soc2-report-period",
+    "price-pending"
+  ],
+  "withheld_message": "HelloGrowthCRM has not published a verified statement on this topic.",
+  "max_price_gate_days": 90
+}

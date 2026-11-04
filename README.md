@@ -214,6 +214,19 @@ for what changed between versions.
 
 Full payload examples live in [`examples/usage.md`](examples/usage.md).
 
+## Market facts (per-country answers)
+
+`country_get` returns a `market_facts` block for markets that have verified facts (today: `uk`), and `null` with `market_facts_reason` for the rest. Clients should treat these states as normal:
+
+- **Pending price.** `market_facts.price.price_status` is `pending_verification` and `monthly`/`annual` are `null`. In `pricing_get_country_plans` and `country_get.pricing_summary` the price fields and `currencyCode`/`currencySymbol` are `null` too. The global USD ladder in `pricing_get_plans` is not confirmation of availability, checkout terms or tax treatment for the market.
+- **Published price.** Once the market's gates are met: `price_status: "published"`, `billing_currency: "USD"`, the amounts, `applies_to`, the approved `qualifier` and `valid_until`. Facts and prices expire at request time; a response never outlives `valid_until`.
+- **`withheld[]`.** Topics for which HelloGrowthCRM has not published a verified statement (for example VAT, UK GDPR, PECR). Absence of a topic from `facts` is not a statement either way.
+- **Roadmap facts** start with "Planned, not available:" and have `is_capability: false`.
+- `compliance` can be `null` with `compliance_status: "withheld_unverified"`.
+- `countries_list` rows carry `market_facts_available`. Responses are sent with `Cache-Control: no-store`.
+
+Operators: facts live in `test-data/market-facts/<as_of>/` and compile to `src/data/market-facts.ts` (`npm run build:market-facts`; `npm run check:market-facts` fails on drift, stale release evidence or leaked identifiers). Setting `MARKET_FACTS_KILL_SWITCH` (comma-separated gate keys such as `stripe-flow1:uk`, or `all`) withholds the gated values; it is read from the environment on every request, so a running process picks up a change only after it is restarted or replaced.
+
 ## Tool annotations
 
 Every one of the 88 tools carries explicit MCP annotations (`readOnlyHint`,

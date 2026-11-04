@@ -1,0 +1,36 @@
+{
+  "market_facts_contract": 1,
+  "release_evidence_version": "2026-11-02.1",
+  "gates": [
+    {
+      "gate_id": "soc2-scope",
+      "market": "global",
+      "status": "unmet",
+      "evidence_ref": null,
+      "evidence_sha256": null,
+      "observed_on": null,
+      "approver": null,
+      "expires_on": null
+    },
+    {
+      "gate_id": "stripe-flow1:uk",
+      "market": "uk",
+      "status": "unmet",
+      "evidence_ref": null,
+      "evidence_sha256": null,
+      "observed_on": null,
+      "approver": null,
+      "expires_on": null
+    },
+    {
+      "gate_id": "website-deploy:uk",
+      "market": "uk",
+      "status": "unmet",
+      "evidence_ref": null,
+      "evidence_sha256": null,
+      "observed_on": null,
+      "approver": null,
+      "expires_on": null
+    }
+  ]
+}

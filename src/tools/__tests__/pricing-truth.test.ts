@@ -75,14 +75,15 @@ describe("pricing truth — no response carries a price that matches nothing bil
   it("country hub prices match billing and the website; other markets unchanged", async () => {
     const json = JSON.parse(await text(pricingGetCountryPlans, {}));
     const bySlug = Object.fromEntries(
-      (json.country_pricing as { countrySlug: string; growthPriceShort: string; growthPriceMonthly: string }[]).map(
+      (json.country_pricing as { countrySlug: string; growthPriceShort: string | null; growthPriceMonthly: string | null }[]).map(
         (r) => [r.countrySlug, [r.growthPriceShort, r.growthPriceMonthly]],
       ),
     );
     expect(bySlug.in).toEqual(["₹899/user/mo + GST", "₹899/user/mo + 18% GST billed monthly"]);
     // USD per website src/lib/pricing-constants.ts; every other market is a pre-edit snapshot.
     expect(bySlug.usa).toEqual(["$10/user/mo", "$12/user/mo monthly"]);
-    expect(bySlug.uk).toEqual(["£8/user/mo", "£10/user/mo monthly"]);
+    // UK: GBP withdrawn; price is null while the publication gates are unmet (PLAN-HELLOG-0007).
+    expect(bySlug.uk).toEqual([null, null]);
     expect(bySlug.au).toEqual(["A$16/user/mo", "A$20/user/mo monthly"]);
     expect(bySlug.canada).toEqual(["C$14/user/mo", "C$18/user/mo monthly"]);
     expect(bySlug.uae).toEqual(["AED 37/user/mo", "AED 48/user/mo monthly"]);

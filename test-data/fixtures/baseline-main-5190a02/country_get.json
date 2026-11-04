@@ -1,0 +1,1200 @@
+{
+  "in": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "in",
+      "market": "india",
+      "label": "India",
+      "route_prefix": "/in",
+      "url": "https://hellogrowthcrm.com/in",
+      "currency": "INR",
+      "currency_symbol": "₹",
+      "locale": "en-IN",
+      "channels": [
+        "WhatsApp",
+        "IndiaMART",
+        "Phone"
+      ],
+      "cities": [
+        "Mumbai",
+        "Bengaluru",
+        "Delhi",
+        "Pune",
+        "Chennai",
+        "Hyderabad",
+        "Ahmedabad"
+      ],
+      "compliance": "GST, MSME and ICAI deadlines",
+      "tax_ref": "GST"
+    },
+    "pricing_summary": {
+      "countryName": "India",
+      "countrySlug": "in",
+      "currencyCode": "INR",
+      "currencySymbol": "₹",
+      "homeHref": "/in",
+      "growthPriceShort": "₹899/user/mo + GST",
+      "growthPriceMonthly": "₹899/user/mo + 18% GST billed monthly",
+      "pricingSummaryLine": "Free Forever · Growth ₹899/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "UPI, Razorpay, Net Banking, Credit/Debit card",
+      "compliance": "DPDPA compliant, SOC 2 certified",
+      "pricingHref": "/in/pricing"
+    },
+    "contact": {
+      "region": "IN",
+      "label": "India support",
+      "phoneE164": "+917069083968",
+      "phoneDisplay": "+91 70690 83968",
+      "addressLabel": "Ahmedabad, India",
+      "addressLines": [
+        "902, 903, Shivalik Complex, Panchvati Cir, opp. Bank of Baroda nr",
+        "Panchavati Society, Ambawadi, Ahmedabad, Gujarat 380006, India"
+      ],
+      "hours": "Mon–Sat, 10 AM–7 PM IST"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/in",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "usa": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "usa",
+      "market": "usa",
+      "label": "United States",
+      "route_prefix": "/usa",
+      "url": "https://hellogrowthcrm.com/usa",
+      "currency": "USD",
+      "currency_symbol": "$",
+      "locale": "en-US",
+      "channels": [
+        "Email",
+        "SMS",
+        "LinkedIn"
+      ],
+      "cities": [
+        "New York",
+        "Los Angeles",
+        "Chicago",
+        "Houston",
+        "Atlanta",
+        "Dallas",
+        "Boston"
+      ],
+      "compliance": "SOC 2, HIPAA and IRS filings",
+      "tax_ref": "sales tax"
+    },
+    "pricing_summary": {
+      "countryName": "United States",
+      "countrySlug": "usa",
+      "currencyCode": "USD",
+      "currencySymbol": "$",
+      "homeHref": "/usa",
+      "growthPriceShort": "$10/user/mo",
+      "growthPriceMonthly": "$12/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth $10/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit card, ACH, PayPal, Stripe",
+      "compliance": "SOC 2 Type II, CCPA compliant",
+      "pricingHref": "/usa/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/usa",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "uk": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "uk",
+      "market": "uk",
+      "label": "United Kingdom",
+      "route_prefix": "/uk",
+      "url": "https://hellogrowthcrm.com/uk",
+      "currency": "GBP",
+      "currency_symbol": "£",
+      "locale": "en-GB",
+      "channels": [
+        "Email",
+        "Phone",
+        "SMS"
+      ],
+      "cities": [
+        "London",
+        "Manchester",
+        "Birmingham",
+        "Edinburgh",
+        "Leeds",
+        "Bristol"
+      ],
+      "compliance": "GDPR, HMRC and FCA rules",
+      "tax_ref": "VAT"
+    },
+    "pricing_summary": {
+      "countryName": "United Kingdom",
+      "countrySlug": "uk",
+      "currencyCode": "GBP",
+      "currencySymbol": "£",
+      "homeHref": "/uk",
+      "growthPriceShort": "£8/user/mo",
+      "growthPriceMonthly": "£10/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth £8/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit/debit card, Stripe, GoCardless, bank transfer",
+      "compliance": "UK GDPR compliant, ICO-registered data processor",
+      "pricingHref": "/uk/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/uk",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "canada": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "canada",
+      "market": "canada",
+      "label": "Canada",
+      "route_prefix": "/canada",
+      "url": "https://hellogrowthcrm.com/canada",
+      "currency": "CAD",
+      "currency_symbol": "C$",
+      "locale": "en-CA",
+      "channels": [
+        "Email",
+        "Phone",
+        "SMS"
+      ],
+      "cities": [
+        "Toronto",
+        "Vancouver",
+        "Montreal",
+        "Calgary",
+        "Ottawa",
+        "Edmonton"
+      ],
+      "compliance": "PIPEDA, CRA filings and provincial HST/GST",
+      "tax_ref": "HST/GST"
+    },
+    "pricing_summary": {
+      "countryName": "Canada",
+      "countrySlug": "canada",
+      "currencyCode": "CAD",
+      "currencySymbol": "C$",
+      "homeHref": "/canada",
+      "growthPriceShort": "C$14/user/mo",
+      "growthPriceMonthly": "C$18/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth C$14/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit card, Stripe, PayPal, Interac e-Transfer",
+      "compliance": "PIPEDA compliant",
+      "pricingHref": "/canada/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/canada",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "au": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "au",
+      "market": "australia",
+      "label": "Australia",
+      "route_prefix": "/au",
+      "url": "https://hellogrowthcrm.com/au",
+      "currency": "AUD",
+      "currency_symbol": "A$",
+      "locale": "en-AU",
+      "channels": [
+        "Email",
+        "SMS",
+        "Phone"
+      ],
+      "cities": [
+        "Sydney",
+        "Melbourne",
+        "Brisbane",
+        "Perth",
+        "Adelaide",
+        "Gold Coast"
+      ],
+      "compliance": "Privacy Act, ATO BAS and ASIC filings",
+      "tax_ref": "GST"
+    },
+    "pricing_summary": {
+      "countryName": "Australia",
+      "countrySlug": "au",
+      "currencyCode": "AUD",
+      "currencySymbol": "A$",
+      "homeHref": "/au",
+      "growthPriceShort": "A$16/user/mo",
+      "growthPriceMonthly": "A$20/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth A$16/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit card, Stripe, PayPal, BPAY",
+      "compliance": "Australian Privacy Act compliant",
+      "pricingHref": "/au/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/au",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "uae": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "uae",
+      "market": "uae",
+      "label": "United Arab Emirates",
+      "route_prefix": "/uae",
+      "url": "https://hellogrowthcrm.com/uae",
+      "currency": "AED",
+      "currency_symbol": "AED",
+      "locale": "en-AE",
+      "channels": [
+        "WhatsApp",
+        "Email",
+        "Phone"
+      ],
+      "cities": [
+        "Dubai",
+        "Abu Dhabi",
+        "Sharjah",
+        "Ras Al Khaimah",
+        "Ajman"
+      ],
+      "compliance": "VAT, ESR and free-zone rules",
+      "tax_ref": "VAT"
+    },
+    "pricing_summary": {
+      "countryName": "UAE",
+      "countrySlug": "uae",
+      "currencyCode": "AED",
+      "currencySymbol": "د.إ",
+      "homeHref": "/uae",
+      "growthPriceShort": "AED 37/user/mo",
+      "growthPriceMonthly": "AED 48/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth AED 37/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit card, bank transfer, Stripe",
+      "compliance": "UAE PDPL compliant",
+      "pricingHref": "/uae/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/uae",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "singapore": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "singapore",
+      "market": "singapore",
+      "label": "Singapore",
+      "route_prefix": "/singapore",
+      "url": "https://hellogrowthcrm.com/singapore",
+      "currency": "SGD",
+      "currency_symbol": "S$",
+      "locale": "en-SG",
+      "channels": [
+        "WhatsApp",
+        "Email",
+        "Phone"
+      ],
+      "cities": [
+        "Singapore CBD",
+        "Jurong",
+        "Tampines",
+        "Woodlands"
+      ],
+      "compliance": "PDPA, ACRA and IRAS GST",
+      "tax_ref": "GST"
+    },
+    "pricing_summary": {
+      "countryName": "Singapore",
+      "countrySlug": "singapore",
+      "currencyCode": "SGD",
+      "currencySymbol": "S$",
+      "homeHref": "/singapore",
+      "growthPriceShort": "S$14/user/mo",
+      "growthPriceMonthly": "S$18/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth S$14/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit card, PayNow, Stripe, bank transfer",
+      "compliance": "PDPA (Singapore) compliant",
+      "pricingHref": "/singapore/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/singapore",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  },
+  "new-zealand": {
+    "synced_at": "2026-08-06",
+    "country": {
+      "code": "new-zealand",
+      "market": "new-zealand",
+      "label": "New Zealand",
+      "route_prefix": "/new-zealand",
+      "url": "https://hellogrowthcrm.com/new-zealand",
+      "currency": "NZD",
+      "currency_symbol": "NZ$",
+      "locale": "en-NZ",
+      "channels": [
+        "Email",
+        "SMS",
+        "Phone"
+      ],
+      "cities": [
+        "Auckland",
+        "Wellington",
+        "Christchurch",
+        "Hamilton",
+        "Tauranga"
+      ],
+      "compliance": "Privacy Act 2020, IRD and FMA rules",
+      "tax_ref": "GST"
+    },
+    "pricing_summary": {
+      "countryName": "New Zealand",
+      "countrySlug": "new-zealand",
+      "currencyCode": "NZD",
+      "currencySymbol": "NZ$",
+      "homeHref": "/new-zealand",
+      "growthPriceShort": "NZ$17/user/mo",
+      "growthPriceMonthly": "NZ$22/user/mo monthly",
+      "pricingSummaryLine": "Free Forever · Growth NZ$17/user/mo · Enterprise (custom) · 14-day trial on paid plans",
+      "paymentMethods": "Credit card, Stripe, PayPal, POLi, bank transfer",
+      "compliance": "New Zealand Privacy Act 2020 compliant",
+      "pricingHref": "/new-zealand/pricing"
+    },
+    "contact": {
+      "region": "US",
+      "label": "US support",
+      "phoneE164": "+16073182126",
+      "phoneDisplay": "+1 607 318-2126",
+      "addressLabel": "Lewes, Delaware, USA",
+      "addressLines": [
+        "16192 Coastal Hwy",
+        "Lewes, DE 19958, USA"
+      ],
+      "hours": "Mon–Fri, 9 AM–6 PM ET (6 AM–3 PM PT)"
+    },
+    "seo": {
+      "canonical": "https://hellogrowthcrm.com/new-zealand",
+      "hreflang": [
+        {
+          "hreflang": "en",
+          "href": "https://hellogrowthcrm.com"
+        },
+        {
+          "hreflang": "en-IN",
+          "href": "https://hellogrowthcrm.com/in"
+        },
+        {
+          "hreflang": "en-US",
+          "href": "https://hellogrowthcrm.com/usa"
+        },
+        {
+          "hreflang": "en-GB",
+          "href": "https://hellogrowthcrm.com/uk"
+        },
+        {
+          "hreflang": "en-AU",
+          "href": "https://hellogrowthcrm.com/au"
+        },
+        {
+          "hreflang": "en-CA",
+          "href": "https://hellogrowthcrm.com/canada"
+        },
+        {
+          "hreflang": "en-AE",
+          "href": "https://hellogrowthcrm.com/uae"
+        },
+        {
+          "hreflang": "en-SG",
+          "href": "https://hellogrowthcrm.com/singapore"
+        },
+        {
+          "hreflang": "en-NZ",
+          "href": "https://hellogrowthcrm.com/new-zealand"
+        },
+        {
+          "hreflang": "hi",
+          "href": "https://hellogrowthcrm.com/in/crm-hindi"
+        },
+        {
+          "hreflang": "ta",
+          "href": "https://hellogrowthcrm.com/in/crm-tamil"
+        },
+        {
+          "hreflang": "te",
+          "href": "https://hellogrowthcrm.com/in/crm-telugu"
+        },
+        {
+          "hreflang": "kn",
+          "href": "https://hellogrowthcrm.com/in/crm-kannada"
+        },
+        {
+          "hreflang": "mr",
+          "href": "https://hellogrowthcrm.com/in/crm-marathi"
+        },
+        {
+          "hreflang": "gu",
+          "href": "https://hellogrowthcrm.com/in/crm-gujarati"
+        },
+        {
+          "hreflang": "bn",
+          "href": "https://hellogrowthcrm.com/in/crm-bengali"
+        },
+        {
+          "hreflang": "ml",
+          "href": "https://hellogrowthcrm.com/in/crm-malayalam"
+        },
+        {
+          "hreflang": "pa",
+          "href": "https://hellogrowthcrm.com/in/crm-punjabi"
+        },
+        {
+          "hreflang": "or",
+          "href": "https://hellogrowthcrm.com/in/crm-odia"
+        },
+        {
+          "hreflang": "ur",
+          "href": "https://hellogrowthcrm.com/in/crm-urdu"
+        },
+        {
+          "hreflang": "as",
+          "href": "https://hellogrowthcrm.com/in/crm-assamese"
+        },
+        {
+          "hreflang": "ar-AE",
+          "href": "https://hellogrowthcrm.com/uae/crm-arabic"
+        },
+        {
+          "hreflang": "x-default",
+          "href": "https://hellogrowthcrm.com"
+        }
+      ]
+    }
+  }
+}

@@ -8,6 +8,7 @@ import {
   getCanonicalUrl,
   SYNCED_AT,
 } from "../data/website-mirror.js";
+import { applyMarketPricing, getMarketFacts, hasMarketFacts } from "../lib/market-publication.js";
 
 // ── countries_list ─────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ export const countriesList = defineTool({
         currency_symbol: c.currencySymbol,
         locale: c.inLanguage,
         tax_ref: c.taxRef,
+        market_facts_available: hasMarketFacts(c.code),
       })),
     });
   },
@@ -66,7 +68,10 @@ export const countryGet = defineTool({
         `Country "${args.code}" not found. Available: ${COUNTRIES.map((c) => c.code).join(", ")}.`,
       );
     }
-    const pricing = COUNTRY_PRICING.find((p) => p.countrySlug === code) ?? null;
+    const now = Date.now();
+    const pricingRow = COUNTRY_PRICING.find((p) => p.countrySlug === code) ?? null;
+    const pricing = pricingRow ? applyMarketPricing(pricingRow, now) : null;
+    const marketFacts = getMarketFacts(code, now);
     const contactCode = code === "in" ? "IN" : "US";
     return ok({
       synced_at: SYNCED_AT,
@@ -82,9 +87,12 @@ export const countryGet = defineTool({
         channels: country.channels,
         cities: country.cities,
         compliance: country.compliance,
+        ...(country.compliance === null ? { compliance_status: "withheld_unverified" } : {}),
         tax_ref: country.taxRef,
       },
       pricing_summary: pricing,
+      market_facts: marketFacts,
+      ...(marketFacts ? {} : { market_facts_reason: "no_market_facts_for_this_market" }),
       contact: getRegionalContact(contactCode),
       seo: {
         canonical: getCanonicalUrl(country.routePrefix),
