@@ -409,5 +409,11 @@ Plan limits that the hellocrm Product Truth registry exports are pinned in
 override or grandfather window can differ, and nothing may derive a quota from them. The pin
 is withheld as `stale` once its `valid_until` passes; a withdrawal is a registry revert, a
 new pin and a redeploy, and reaches a running process only by restart or replacement.
-Prices, tax, feature availability and claims are not covered yet (they wait for PT-B). In
-this first step no tool serves the pin; `/health` reports it.
+Prices, tax, feature availability and claims are not covered yet (they wait for PT-B).
+`pricing_get_plans`, `pricing_get_faq`, `pricing_compare_plans`, `faqs_get_site`,
+`switch_get_guide` and `features_list` / `features_get` render plan limits from the pin per
+request; `pricing_get_plans` adds `limits_detail` and `limits_source` for the backed keys. When
+a backed fact is withheld, stale or unknown the legacy numeric field is `null` and prose says
+"Not available from this server right now; check the pricing page." Users, pipelines and
+Growth lead/task counts are hand-written and carry no provenance. The brief's `pricing_get` /
+`plans_get` names map to `pricing_get_plans`; no alias tool exists.

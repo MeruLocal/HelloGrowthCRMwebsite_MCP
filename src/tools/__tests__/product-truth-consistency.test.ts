@@ -5,20 +5,29 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PRODUCT_TRUTH_PIN } from "../../data/product-truth.js";
 import { productTruth } from "../../lib/product-truth.js";
 import { pricingGetPlans } from "../pricing.js";
+import { switchGetGuide } from "../alternatives.js";
+import { faqsGetSite } from "../faqs.js";
+import { featuresGet } from "../features.js";
 
 /**
  * Cross-surface consistency harness (PLAN-HELLOG-0011). Each migration PR adds its tool to
- * MIGRATED. PR-A migrates none: it proves the harness runs, that the one surface that already
- * states the Free lead cap agrees with the registry (150), and that /health reports the pin.
+ * MIGRATED. PR-A migrated none; PR-B migrates every tool that stated a Free-plan limit, so each
+ * must state exactly the registry value. Also proves /health reports the pin.
  */
 type Handler = { handle: (a: never) => Promise<{ content: { text: string }[]; structuredContent?: any; isError?: boolean }> };
 interface Surface { name: string; tool: Handler; args: unknown; /** every (plan, key, number) the tool's text must state */ states: [string, string, number][] }
 
-const MIGRATED: Surface[] = []; // PR-B adds alternatives_get, faqs_get_site, buyer_answers (and migrates pricing_get_plans)
+const MIGRATED: Surface[] = [
+  { name: "pricing_get_plans", tool: pricingGetPlans, args: { region: "global", plan: "free" }, states: [["free", "leads", 150], ["free", "tasks", 100], ["free", "accounts", 20], ["free", "email_templates", 2], ["free", "custom_fields", 3]] },
+  { name: "faqs_get_site", tool: faqsGetSite, args: { search: "really free" }, states: [["free", "leads", 150]] },
+  { name: "switch_get_guide", tool: switchGetGuide, args: { slug: "leadsquared" }, states: [["free", "leads", 150]] },
+  { name: "features_get", tool: featuresGet, args: { slug: "task-boards" }, states: [["free", "tasks", 100]] },
+];
+// buyer_find_answer_pages and alternatives_get carry no plan limit in their responses (verified by the guard sweep), so they need no entry.
 const NOW = Date.parse(PRODUCT_TRUTH_PIN.generated_at) + 3600_000;
 
 describe("harness over the migrated tool set", () => {
-  it("is empty in PR-A and every entry would equal the registry", async () => {
+  it("every migrated surface states exactly the registry value", async () => {
     for (const s of MIGRATED) {
       const text = (await s.tool.handle(s.args as never)).content.map((c) => c.text).join("\n");
       for (const [plan, key, n] of s.states) {
@@ -27,9 +36,8 @@ describe("harness over the migrated tool set", () => {
         expect(text).toContain(String(n));
       }
     }
-    expect(MIGRATED).toHaveLength(0);
+    expect(MIGRATED.length).toBeGreaterThanOrEqual(4);
   });
-  it.todo("PR-B: alternatives_get, faqs_get_site and buyer_answers state Free leads 150 (they say 200 today; see the allowlist)");
 });
 
 describe("cross-surface: Free leads", () => {

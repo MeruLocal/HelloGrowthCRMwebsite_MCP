@@ -263,12 +263,14 @@ describe("compatibility against the captured main fixtures (AC-A1, AC-A10)", () 
     expect(strip(now)).toEqual(strip(base));
   });
 
-  it("pricing_get_faq differs only in the UK clause; pricing_get_plans is unchanged", async () => {
+  it("pricing_get_faq differs only in the UK clause; pricing_get_plans is unchanged except additive provenance", async () => {
     const baseFaq = readJson(join(BASE, "pricing_get_faq.json"));
     const faq = body(await tools.pricing_get_faq!.handle({}));
     const norm = (o: any) => JSON.stringify(o).replace("UK: card, Stripe, GoCardless, bank transfer.", "UK: paid via Stripe.");
     expect(JSON.stringify(faq)).toBe(norm(baseFaq));
     expect(JSON.stringify(faq)).toContain("UK: paid via Stripe.");
-    expect(body(await tools.pricing_get_plans!.handle({ region: "both" }))).toEqual(readJson(join(BASE, "pricing_get_plans.json")));
+    // PLAN-HELLOG-0011 PR-B (AC-B7): the only allowed difference is the additive provenance keys.
+    const stripProvenance = (o: any) => JSON.parse(JSON.stringify(o, (k, v) => (k === "limits_detail" || k === "limits_source" || k === "withheld" ? undefined : v)));
+    expect(stripProvenance(body(await tools.pricing_get_plans!.handle({ region: "both" })))).toEqual(readJson(join(BASE, "pricing_get_plans.json")));
   });
 });
