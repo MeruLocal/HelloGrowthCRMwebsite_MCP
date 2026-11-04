@@ -1,0 +1,13 @@
+{
+  "content_digests": {
+    "app": "df436279d27b6aca553386262a41eea10c470d66568c5b39f8bac6bf60ace490",
+    "mcp": "6b8ea8a171e52a26bdbf98c66342ac5bae956ed0b5e329830558e6afb544e437",
+    "website": "d474e6c8e461b391d7d466cf8cfbe62182e7320f55785cd38fdbcbc5f25f0d57"
+  },
+  "generated_at": "2026-11-04T04:30:02Z",
+  "next_transition": null,
+  "schema_version": "1.0.0",
+  "truth_version": "2026-11-04.e0abe141d720",
+  "valid_until": "2026-11-18T04:30:02Z",
+  "withheld_private": []
+}

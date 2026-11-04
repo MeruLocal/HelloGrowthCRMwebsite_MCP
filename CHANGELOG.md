@@ -9,6 +9,20 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+Implements PLAN-HELLOG-0011 (PR-A): infrastructure for serving plan limits from the
+Product Truth export. **No tool response changes.**
+
+### Added
+- Pinned, git-reviewed, sha256-checked, unsigned copy of the hellocrm Product Truth
+  `mcp` export (`test-data/product-truth/`), compiled by `npm run build:product-truth`
+  into `src/data/product-truth.ts`; `src/lib/product-truth.ts` is the only reader.
+- `npm run check:truth` (in `verify`): drift, pin integrity, `FLOOR`, protected ids and
+  a shrink-only ratchet against hand-typed limit literals.
+- `/health` reports `product_truth` (version, validity, days remaining) and degrades
+  once fewer than 3 days remain. Liveness is unchanged.
+
 ## [2.2.0] — 2026-11-04
 
 Implements PLAN-HELLOG-0007 (PR-A): the shared per-market "market facts"

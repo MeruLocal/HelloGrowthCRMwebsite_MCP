@@ -400,3 +400,14 @@ MIT — see [`LICENSE`](LICENSE).
 ## Disclaimer
 
 This project helps you observe and govern bots interacting with **your own** website. Do not use it to crawl, scrape, or analyze third-party sites without permission. Always respect `robots.txt`, terms of service, and applicable law.
+
+## Product Truth pin (plan limits)
+
+Plan limits that the hellocrm Product Truth registry exports are pinned in
+`test-data/product-truth/` (git-reviewed, sha256-pinned, **unsigned**) and read only through
+`src/lib/product-truth.ts`. These are published plan defaults, not entitlements: a tenant
+override or grandfather window can differ, and nothing may derive a quota from them. The pin
+is withheld as `stale` once its `valid_until` passes; a withdrawal is a registry revert, a
+new pin and a redeploy, and reaches a running process only by restart or replacement.
+Prices, tax, feature availability and claims are not covered yet (they wait for PT-B). In
+this first step no tool serves the pin; `/health` reports it.

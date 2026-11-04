@@ -1,0 +1,53 @@
+# SYNTHETIC contract fixture. Not product truth. Every id here is invented.
+facts:
+  - id: claims.synthetic.draft
+    value: "Synthetic draft claim"
+    unit: text
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: draft
+    lifecycle: pilot
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:claims.synthetic.draft"
+  - id: claims.synthetic.hidden
+    value: "Synthetic unannounced claim"
+    unit: text
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: draft
+    lifecycle: roadmap
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:claims.synthetic.hidden"
+  - id: claims.synthetic.approved
+    value: "Synthetic approved claim"
+    unit: text
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    publication_approved_until: "2026-12-31T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:claims.synthetic.approved"
+    approved_by: fixture-approver
+    approval_ref: "fixture:approval-1"

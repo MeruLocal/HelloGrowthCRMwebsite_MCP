@@ -1,0 +1,8 @@
+Product Truth pin consumed by PLAN-HELLOG-0011 (PR-A).
+Registry: MeruLocal/hellocrm PR #10347 (PLAN-HGC-0752, PT-A), commit 053ef9e714, unmerged when pinned.
+Generated with: npm run gen:product-truth (no dist/ is committed upstream), then copied verbatim:
+  product-truth/dist/2026-11-04.e0abe141d720/truth.mcp.json, product-truth/dist/evaluation.json, product-truth/dist/index.json
+  product-truth/schema/{truth.public,evaluation,index}.schema.json -> schema/
+  product-truth/fixtures/contract-v1/ -> contract-v1/
+Trust model: git-reviewed, sha256-pinned, unsigned (PT-A section 9). Not verified against a live database.
+Refresh: a human PR that replaces the version directory; see deploy/2026-11-04-product-truth-pr-a.md.

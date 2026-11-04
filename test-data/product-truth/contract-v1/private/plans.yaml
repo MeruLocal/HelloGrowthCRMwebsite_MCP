@@ -1,0 +1,173 @@
+# SYNTHETIC contract fixture. Not product truth. Every id here is invented.
+plans:
+  - id: free
+    name: Free
+  - id: growth
+    name: Growth
+facts:
+  - id: plans.free.limits.leads
+    value: 150
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.leads"
+  - id: plans.free.limits.accounts
+    value: 20
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    effective_until: "2026-11-01T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.accounts"
+  - id: plans.free.limits.accounts
+    value: 25
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-11-01T00:00:00Z"
+    effective_until: "2027-01-01T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.accounts"
+  - id: plans.free.limits.accounts
+    value: 30
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2027-01-01T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.accounts"
+  - id: plans.free.limits.tasks
+    value: 100
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: draft
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.tasks"
+  - id: plans.free.limits.email_templates
+    value: 2
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.email_templates"
+    pending_change:
+      value: 5
+      note: "synthetic target"
+  - id: plans.free.limits.landing_pages
+    value: 0
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [mcp]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.landing_pages"
+  - id: plans.free.limits.custom_fields
+    value: 3
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: withdrawn
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.custom_fields"
+  - id: plans.free.limits.csv_rows
+    value: 200
+    unit: count
+    applies_to:
+      plans: [free]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    state: undecided
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.free.limits.csv_rows"
+  - id: plans.growth.limits.custom_fields
+    value: unlimited
+    unit: count
+    applies_to:
+      plans: [growth]
+      countries: []
+      country_scope: global
+    effective_from: "2026-08-04T00:00:00Z"
+    publication_approved_until: "2026-11-04T09:00:00Z"
+    state: approved
+    lifecycle: live
+    approved_surfaces: [website, mcp, app]
+    provenance: decision
+    confidence: decided
+    owner: fixture-owner
+    verified_on: "2026-11-04"
+    evidence_ref: "fixture:plans.growth.limits.custom_fields"

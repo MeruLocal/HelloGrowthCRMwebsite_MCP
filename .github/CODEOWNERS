@@ -6,3 +6,9 @@
 # Branch protection must also require code-owner review (repository setting).
 /test-data/market-facts/**/gates.json   @keyur-meru
 /scripts/market-facts.policy.json       @keyur-meru
+
+# Product Truth pin (PLAN-HELLOG-0011). Refreshing the pin, the FLOOR, the ratchet allowlist and the
+# protected-id list is a reviewed change; the allowlist is shrink-only.
+/test-data/product-truth/**                      @keyur-meru
+/scripts/product-truth-literals.allow            @keyur-meru
+/scripts/product-truth-protected-ids.txt         @keyur-meru
