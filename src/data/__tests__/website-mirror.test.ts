@@ -82,7 +82,7 @@ describe("COUNTRY_PRICING", () => {
     expect(usa.growthPriceMonthly).toBe("$12/user/mo monthly");
     // Regression guard: the retainer figures must never reappear here.
     for (const row of COUNTRY_PRICING) {
-      expect(row.growthPriceShort, `${row.countrySlug} looks like a retainer`).not.toMatch(
+      expect(row.growthPriceShort ?? "", `${row.countrySlug} looks like a retainer`).not.toMatch(
         /[\d,]{4,}/,
       );
     }
@@ -100,7 +100,9 @@ describe("COUNTRY_PRICING", () => {
   it("gives every market payment methods and a compliance note", () => {
     for (const row of COUNTRY_PRICING) {
       expect(row.paymentMethods.length).toBeGreaterThan(0);
-      expect(row.compliance.length).toBeGreaterThan(0);
+      // UK compliance is null (withheld_unverified) by PLAN-HELLOG-0007; null is the only allowed gap.
+      if (row.compliance === null) expect(row.countrySlug).toBe("uk");
+      else expect(row.compliance.length).toBeGreaterThan(0);
     }
   });
 });

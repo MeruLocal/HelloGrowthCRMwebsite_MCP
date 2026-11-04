@@ -701,6 +701,18 @@ export async function runServer(): Promise<void> {
       logger.debug("mcp analytics setup failed", { err: (err as Error).message });
     }
 
+    // Tool results can carry time-gated market facts (PLAN-HELLOG-0007): no cache
+    // may replay one past its expiry. Set before the SDK writes its own headers.
+    // The SDK's SSE branch writes its own "no-cache", so force it at writeHead.
+    const origWriteHead = res.writeHead.bind(res) as (...a: unknown[]) => http.ServerResponse;
+    res.writeHead = ((...a: unknown[]) => {
+      res.setHeader("Cache-Control", "no-store");
+      const last = a[a.length - 1];
+      if (last && typeof last === "object" && !Array.isArray(last)) {
+        for (const k of Object.keys(last)) if (k.toLowerCase() === "cache-control") delete (last as Record<string, unknown>)[k];
+      }
+      return origWriteHead(...a);
+    }) as typeof res.writeHead;
     await transport.handleRequest(req, res, body);
   };
 

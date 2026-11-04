@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineTool, ok } from "./tool-types.js";
 import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirror.js";
+import { applyMarketPricing } from "../lib/market-publication.js";
 // The integration figure is DERIVED from the mirrored catalog rows (see
 // src/tools/integrations.ts). Typing a digit here is how "630+ integrations"
 // survived three months inside a plan feature bullet after the website
@@ -262,7 +263,7 @@ const PRICING_FAQ = [
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
   { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($12 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
-  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices are exclusive of GST — 18% GST is added on top (₹899 bills as ₹1,060.82). Call pricing_get_country_plans for a specific market." },
+  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: paid via Stripe. India prices are exclusive of GST — 18% GST is added on top (₹899 bills as ₹1,060.82). Call pricing_get_country_plans for a specific market." },
   { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
@@ -477,10 +478,11 @@ export const pricingGetCountryPlans = defineTool({
         error: `Country "${args.country}" not found. Available: ${COUNTRY_PRICING.map((p) => p.countrySlug).join(", ")}.`,
       });
     }
+    const now = Date.now();
     return ok({
       synced_at: SYNCED_AT,
       count: rows.length,
-      country_pricing: rows.map((p) => ({
+      country_pricing: rows.map((row) => applyMarketPricing(row, now)).map((p) => ({
         ...p,
         home_url: `https://hellogrowthcrm.com${p.homeHref}`,
         pricing_url: `https://hellogrowthcrm.com${p.pricingHref}`,

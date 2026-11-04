@@ -1,0 +1,228 @@
+{
+  "market": "uk",
+  "as_of": "2026-11-02",
+  "fact_set_version": 1,
+  "market_facts_contract": 1,
+  "release_evidence_version": "2026-11-02.1",
+  "price": {
+    "billing_currency": "USD",
+    "monthly": {
+      "amount": 12,
+      "unit": "per user per month"
+    },
+    "annual": {
+      "amount": 120,
+      "unit": "per user per year, charged once upfront"
+    },
+    "applies_to": "list price for new subscriptions",
+    "source": "Interim value from approved plan PLAN-HELLOG-0007 (founder decision D-EXP-14); replaced by the Product Truth export (hellocrm PT-A #10307)",
+    "verified_on": "2026-11-04",
+    "truth_version": "interim-pre-product-truth",
+    "publish_gates": [
+      "website-deploy",
+      "stripe-flow1"
+    ],
+    "pending_note": "Pricing for this market is being confirmed. The global USD ladder in pricing_get_plans is not confirmation of availability, checkout terms or tax treatment for this market."
+  },
+  "facts": [
+    {
+      "fact_id": "uk.price.monthly",
+      "claim_id": "uk.price.monthly",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "price",
+      "statement": "Growth is USD 12 per user per month",
+      "applies_to": "list price for new subscriptions",
+      "market": "uk",
+      "status": "capability",
+      "is_capability": true,
+      "evidence": {
+        "type": "decision",
+        "ref": "D-EXP-14 founder pricing, 2026-11-02",
+        "public_url": null
+      },
+      "source": "Interim value from approved plan PLAN-HELLOG-0007 (founder decision D-EXP-14); replaced by the Product Truth export (hellocrm PT-A #10307)",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": [
+        "website-deploy",
+        "stripe-flow1"
+      ]
+    },
+    {
+      "fact_id": "uk.price.annual",
+      "claim_id": "uk.price.annual",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "price",
+      "statement": "Growth is USD 120 per user per year, charged once upfront",
+      "applies_to": "list price for new subscriptions",
+      "market": "uk",
+      "status": "capability",
+      "is_capability": true,
+      "evidence": {
+        "type": "decision",
+        "ref": "D-EXP-14 founder pricing, 2026-11-02",
+        "public_url": null
+      },
+      "source": "Interim value from approved plan PLAN-HELLOG-0007 (founder decision D-EXP-14); replaced by the Product Truth export (hellocrm PT-A #10307)",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": [
+        "website-deploy",
+        "stripe-flow1"
+      ]
+    },
+    {
+      "fact_id": "uk.pay.hgc-subscription",
+      "claim_id": "uk.pay.hgc-subscription",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "payment",
+      "statement": "HelloGrowthCRM subscriptions are paid via Stripe, the global subscription processor. Whether buyers in this market can purchase, and with which methods, is not confirmed here",
+      "applies_to": null,
+      "market": "uk",
+      "status": "capability",
+      "is_capability": true,
+      "evidence": {
+        "type": "decision",
+        "ref": "D-EXP-41 flow 1 only",
+        "public_url": null
+      },
+      "source": "Interim value from approved plan PLAN-HELLOG-0007 (D-EXP-41)",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": []
+    },
+    {
+      "fact_id": "uk.pay.gocardless",
+      "claim_id": "uk.pay.gocardless",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "payment",
+      "statement": "Planned, not available: GoCardless direct-debit collection. It is not a way to pay HelloGrowthCRM and is not live",
+      "applies_to": null,
+      "market": "uk",
+      "status": "roadmap",
+      "is_capability": false,
+      "evidence": {
+        "type": "plan",
+        "ref": "PLAN-HGC-0723",
+        "public_url": null
+      },
+      "source": "Interim value from approved plan PLAN-HELLOG-0007 (roadmap item, PLAN-HGC-0723)",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": []
+    },
+    {
+      "fact_id": "uk.market.hub",
+      "claim_id": "uk.market.hub",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "market",
+      "statement": "The UK hub is /uk, language en-GB. Hreflang values are those computed by the MCP's port of the website function (self en-GB)",
+      "applies_to": null,
+      "market": "uk",
+      "status": "capability",
+      "is_capability": true,
+      "evidence": {
+        "type": "code",
+        "ref": "COUNTRIES uk row and getHreflangTags in src/data/website-mirror.ts, observed 2026-11-02",
+        "public_url": "https://hellogrowthcrm.com/uk"
+      },
+      "source": "MCP website mirror, observed 2026-11-02",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": []
+    },
+    {
+      "fact_id": "uk.security.soc2",
+      "claim_id": "uk.security.soc2",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "attestation",
+      "statement": "A SOC 2 Type II examination of Soor LLC for 2025-02-01 to 2025-06-30 was completed by Precision Assurance CPA LLC (criteria: Security, Availability, Privacy, Confidentiality, Processing Integrity). The report is available under NDA on request",
+      "applies_to": null,
+      "market": "uk",
+      "status": "capability",
+      "is_capability": true,
+      "evidence": {
+        "type": "attestation",
+        "ref": "SOC 2 Type II, attested scope only (report held in the restricted evidence store)",
+        "public_url": null
+      },
+      "source": "Interim value from approved plan PLAN-HELLOG-0007 (attested scope: Soor LLC, 2025-02-01 to 2025-06-30)",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": [
+        "soc2-scope"
+      ]
+    },
+    {
+      "fact_id": "uk.positioning.suite",
+      "claim_id": "uk.positioning.suite",
+      "claim_id_status": "provisional",
+      "claim_id_aliases": [],
+      "scope_ref": "market:uk",
+      "kind": "positioning",
+      "statement": "HelloGrowthCRM is a full-stack business suite (pipeline, communication, commerce, operations, customers, marketing, intelligence); WhatsApp is one channel next to email, SMS, voice and live chat.",
+      "applies_to": null,
+      "market": "uk",
+      "status": "capability",
+      "is_capability": true,
+      "evidence": {
+        "type": "product-definition",
+        "ref": "hellocrm CLAUDE.md section 1.1 (founder, 2026-08-13) and FEATURE_INVENTORY.md",
+        "public_url": null
+      },
+      "source": "hellocrm product definition (founder, 2026-08-13)",
+      "verified_on": "2026-11-04",
+      "truth_version": "interim-pre-product-truth",
+      "fact_version": 1,
+      "supersedes": null,
+      "release_evidence_version": "2026-11-02.1",
+      "commit_id": "5190a02",
+      "publish_gates": []
+    }
+  ],
+  "withheld": [
+    "purchase-availability",
+    "vat-rate",
+    "making-tax-digital",
+    "pecr-consent",
+    "uk-gdpr",
+    "companies-house",
+    "uk-accounting-integrations"
+  ]
+}

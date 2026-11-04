@@ -9,6 +9,41 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.0] — 2026-11-04
+
+Implements PLAN-HELLOG-0007 (PR-A): the shared per-market "market facts"
+machinery and the United Kingdom facts. Minor bump: no tool, resource or
+argument changes; two **served UK values are withdrawn on purpose** (below).
+
+### Added
+- `country_get` returns `market_facts` (versioned, source-pinned facts, a
+  `price` block and a `withheld[]` list of topics with no verified statement),
+  or `null` with `market_facts_reason` for markets that have none. It now
+  declares an `outputSchema`.
+- `countries_list` rows carry `market_facts_available`.
+- `pricing_get_country_plans` and `country_get.pricing_summary` carry
+  `price_status` and `billing_currency` for markets with gated facts.
+- Every price, fact and the SOC 2 attestation is published only while its
+  gates are `met` and unexpired (`src/lib/market-publication.ts`); expiry is
+  evaluated on each request. `MARKET_FACTS_KILL_SWITCH` withdraws gates
+  without a rebuild (takes effect on process restart).
+- HTTP POST responses are sent with `Cache-Control: no-store`.
+- Build/CI: `npm run build:market-facts`, `check:market-facts` (in `verify`),
+  `check:contract`.
+
+### Changed (visible, UK only)
+- **UK price withdrawn.** `growthPriceShort`, `growthPriceMonthly`,
+  `currencyCode` and `currencySymbol` for `uk` are `null` with
+  `price_status: "pending_verification"` until the website-deploy and
+  stripe-flow1 gates are met. The previous GBP figures were not supported.
+- UK `paymentMethods` is `Paid via Stripe`; the `pricing_get_faq` payment
+  answer says `UK: paid via Stripe`. GoCardless and bank transfer are no longer
+  listed (GoCardless appears only as a roadmap fact, "Planned, not available").
+- UK `compliance` is `null` with `compliance_status: "withheld_unverified"` in
+  `country_get` and `pricing_get_country_plans`. The previous strings were
+  unverified. Consumers that read `compliance` as a string must tolerate null.
+- UK `pricingSummaryLine` reads `Growth (price pending verification)`.
+
 ## [2.1.0] — 2026-10-27
 
 ### Added

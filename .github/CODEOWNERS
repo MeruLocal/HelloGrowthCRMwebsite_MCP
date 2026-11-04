@@ -1,0 +1,8 @@
+# Market-facts publication gates and mandatory-gate policy (PLAN-HELLOG-0007).
+# A gate flips to "met" only through a reviewed diff of these files. The plan's
+# named approver is Rushabh (website release owner); his GitHub login was not
+# available to the PR that added this file, so the repository maintainer is
+# listed. ADD the approver's login to both lines before relying on this gate.
+# Branch protection must also require code-owner review (repository setting).
+/test-data/market-facts/**/gates.json   @keyur-meru
+/scripts/market-facts.policy.json       @keyur-meru

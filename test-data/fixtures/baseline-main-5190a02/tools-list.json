@@ -1,0 +1,3218 @@
+[
+  {
+    "name": "scan_website_bots",
+    "description": "Politely scan a website's robots.txt and sitemap, sample a few pages, and (optionally) correlate with access-log activity. Always honours robots.txt for our own User-Agent.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "targetUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sampleSize": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 10
+        },
+        "logPath": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Scan a Website for Bots"
+    },
+    "title": "Scan a Website for Bots"
+  },
+  {
+    "name": "analyze_access_logs",
+    "description": "Parse a Combined/Common-format access log file (or raw text) and return per-bot summaries with risk scores, allow status, and recommended actions.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "logPath": {
+          "type": "string",
+          "description": "Path to an access log file."
+        },
+        "logText": {
+          "type": "string",
+          "description": "Raw log content."
+        },
+        "topN": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Analyze Access Logs"
+    },
+    "title": "Analyze Access Logs"
+  },
+  {
+    "name": "verify_bot_identity",
+    "description": "Reverse-DNS verify a bot's claimed identity. Returns `verified`, `spoofed`, or `unknown` along with an audit trail of the steps taken.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ip": {
+          "type": "string"
+        },
+        "userAgent": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ip",
+        "userAgent"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Verify Bot Identity"
+    },
+    "title": "Verify Bot Identity"
+  },
+  {
+    "name": "list_allowed_bots",
+    "description": "List bots that should be allowed. If a robots.txt is given, the answer reflects what that file actually permits.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "robotsTxtPath": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "search",
+            "ai",
+            "seo",
+            "social",
+            "monitoring",
+            "archive",
+            "scraper",
+            "security",
+            "unknown"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Allowed Bots"
+    },
+    "title": "List Allowed Bots"
+  },
+  {
+    "name": "list_blocked_bots",
+    "description": "List bots that should be blocked. If a robots.txt is given, the answer is the set actually Disallowed there; otherwise we return high-risk bots by baseline.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "robotsTxtPath": {
+          "type": "string"
+        },
+        "minRisk": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Blocked Bots"
+    },
+    "title": "List Blocked Bots"
+  },
+  {
+    "name": "generate_robots_txt",
+    "description": "Generate a production-ready robots.txt that explicitly allows trusted bots, blocks chosen categories (AI, SEO, scrapers), and declares sitemaps.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "siteUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "blockAi": {
+          "type": "boolean",
+          "default": false
+        },
+        "blockSeo": {
+          "type": "boolean",
+          "default": false
+        },
+        "blockScrapers": {
+          "type": "boolean",
+          "default": true
+        },
+        "blockSecurityScanners": {
+          "type": "boolean",
+          "default": true
+        },
+        "extraDisallowUserAgents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "extraDisallowPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "crawlDelaySeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 86400
+        },
+        "sitemapUrls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Generate robots.txt"
+    },
+    "title": "Generate robots.txt"
+  },
+  {
+    "name": "suggest_bot_policy",
+    "description": "Recommend a per-bot policy based on observed access-log behaviour. Returns rationale and ready-to-paste robots.txt + firewall snippets.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "logPath": {
+          "type": "string"
+        },
+        "logText": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Suggest Bot Policy"
+    },
+    "title": "Suggest Bot Policy"
+  },
+  {
+    "name": "export_bot_report",
+    "description": "Generate a bot-activity report (markdown / json / csv) and optionally save it under REPORT_OUTPUT_DIR.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "logPath": {
+          "type": "string"
+        },
+        "logText": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "json",
+            "markdown",
+            "csv"
+          ],
+          "default": "markdown"
+        },
+        "saveToDisk": {
+          "type": "boolean",
+          "default": false,
+          "description": "Writes to the server disk. Honoured only when the operator sets MCP_ALLOW_REPORT_WRITES=1; otherwise the report is returned inline."
+        },
+        "filename": {
+          "type": "string"
+        },
+        "targetUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Export Bot Report"
+    },
+    "title": "Export Bot Report"
+  },
+  {
+    "name": "fetch_page_content",
+    "description": "Fetch a single web page and return its title, meta description, canonical, robots directive, headings, in-page links, word count, and readable text. Respects robots.txt for the crawler's own User-Agent. Output is bounded so it is safe to feed to a model.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "maxChars": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 20000,
+          "default": 8000
+        },
+        "maxLinks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300,
+          "default": 100
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Fetch Page Content"
+    },
+    "title": "Fetch Page Content"
+  },
+  {
+    "name": "crawl_pages",
+    "description": "Discover pages from the sitemap and return a compact content summary (title, meta description, top headings, and a short text excerpt) for each. Respects robots.txt. Returns one small object per page so many pages fit in a model's context.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "targetUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 25,
+          "default": 10
+        },
+        "pathPrefix": {
+          "type": "string"
+        },
+        "summaryChars": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 4000,
+          "default": 800
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Crawl Pages"
+    },
+    "title": "Crawl Pages"
+  },
+  {
+    "name": "generate_llms_txt",
+    "description": "Generate llms.txt or llms-full.txt from this server's website mirror (integrations, features, tools, glossary, alternatives, templates, guides, agents, pricing, industries, comparisons, FAQs). Replaces hand-maintained corpus files that drift out of date — the live llms-full.txt is currently smaller than llms.txt. Returns the rendered text plus section and entry counts.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "variant": {
+          "type": "string",
+          "enum": [
+            "full",
+            "index"
+          ],
+          "default": "full"
+        },
+        "includeContent": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Generate llms.txt"
+    },
+    "title": "Generate llms.txt"
+  },
+  {
+    "name": "check_llms_txt",
+    "description": "Fetch the live /llms.txt and /llms-full.txt and report regressions: missing files, and the case where the 'full' corpus is no larger than its own index. Also compares both against what generate_llms_txt would produce from the current mirror, so corpus drift is visible.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "default": "https://hellogrowthcrm.com"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Check llms.txt"
+    },
+    "title": "Check llms.txt"
+  },
+  {
+    "name": "check_ai_extractability",
+    "description": "For each URL, report how much readable text lives in <main> versus <body> versus the whole document, and flag pages where <main> is an empty shell while the real content sits elsewhere (the streaming/PPR pattern). Catches the failure mode where a page returns HTTP 200 with perfect metadata but reads as blank to any AI extractor that prefers <main>. Respects robots.txt; does not spoof a User-Agent.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "urls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "minItems": 1,
+          "maxItems": 25
+        }
+      },
+      "required": [
+        "urls"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Check AI Extractability"
+    },
+    "title": "Check AI Extractability"
+  },
+  {
+    "name": "validate_sitemaps",
+    "description": "Expand a sitemap index and fetch every child sitemap, reporting status, elapsed time, byte size and <loc> count for each. Flags children that time out or reset — the failure mode where the index itself returns 200 (so monitoring looks green) while individual sitemaps are entirely unreachable to crawlers. Use a timeoutMs above the platform timeout you suspect.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sitemapIndexUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000,
+          "default": 25000
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Validate Sitemaps"
+    },
+    "title": "Validate Sitemaps"
+  },
+  {
+    "name": "blog_list",
+    "description": "List blog posts with pagination and optional category filter. Returns slug, title, author, category, published_at, excerpt.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "category": {
+          "type": "string",
+          "description": "Filter by category."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Blog Posts"
+    },
+    "title": "List Blog Posts"
+  },
+  {
+    "name": "blog_get",
+    "description": "Fetch a single blog post by its slug, including full content.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Blog Post"
+    },
+    "title": "Get Blog Post"
+  },
+  {
+    "name": "blog_search",
+    "description": "Full-text search across blog post titles, content, and excerpts.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 2
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Search Blog Posts"
+    },
+    "title": "Search Blog Posts"
+  },
+  {
+    "name": "blog_create",
+    "description": "Insert a new blog post into the database.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 3
+        },
+        "title": {
+          "type": "string",
+          "minLength": 5
+        },
+        "content": {
+          "type": "string",
+          "minLength": 100
+        },
+        "author": {
+          "type": "string",
+          "default": "Rushabh Shah"
+        },
+        "category": {
+          "type": "string"
+        },
+        "excerpt": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "cover_image": {
+          "type": "string",
+          "format": "uri"
+        },
+        "published_at": {
+          "type": "string",
+          "description": "ISO 8601 datetime."
+        }
+      },
+      "required": [
+        "slug",
+        "title",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "title": "Create Blog Post"
+    },
+    "title": "Create Blog Post"
+  },
+  {
+    "name": "blog_update",
+    "description": "Update fields on an existing blog post by slug.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "excerpt": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "cover_image": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Update Blog Post"
+    },
+    "title": "Update Blog Post"
+  },
+  {
+    "name": "blog_revalidate",
+    "description": "Trigger ISR cache revalidation for a blog post or the blog index on hellogrowthcrm.com.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Specific post slug. Omit to revalidate index."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "title": "Revalidate Blog Cache"
+    },
+    "title": "Revalidate Blog Cache"
+  },
+  {
+    "name": "blog_get_categories",
+    "description": "List all distinct blog categories present in the database.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Blog Categories"
+    },
+    "title": "List Blog Categories"
+  },
+  {
+    "name": "help_list_categories",
+    "description": "List all help center categories from the database.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Help Categories"
+    },
+    "title": "List Help Categories"
+  },
+  {
+    "name": "help_list_articles",
+    "description": "List help articles, optionally filtered by category slug.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "category_slug": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Help Articles"
+    },
+    "title": "List Help Articles"
+  },
+  {
+    "name": "help_get_article",
+    "description": "Fetch a single help article by slug including steps and FAQs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Help Article"
+    },
+    "title": "Get Help Article"
+  },
+  {
+    "name": "help_search",
+    "description": "Full-text search across help article titles and intro text.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 2
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Search the Help Center"
+    },
+    "title": "Search the Help Center"
+  },
+  {
+    "name": "help_create_article",
+    "description": "Create a new help center article.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 3
+        },
+        "title": {
+          "type": "string",
+          "minLength": 5
+        },
+        "category_slug": {
+          "type": "string"
+        },
+        "intro": {
+          "type": "string"
+        },
+        "estimated_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "faqs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "q": {
+                "type": "string"
+              },
+              "a": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "cover_image": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "slug",
+        "title",
+        "category_slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "title": "Create Help Article"
+    },
+    "title": "Create Help Article"
+  },
+  {
+    "name": "help_update_article",
+    "description": "Update fields on an existing help article by slug.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "intro": {
+          "type": "string"
+        },
+        "estimated_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "faqs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "cover_image": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Update Help Article"
+    },
+    "title": "Update Help Article"
+  },
+  {
+    "name": "newsletter_subscribe",
+    "description": "Add a new newsletter subscriber (sets status to 'pending' until email confirmed).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "email"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Subscribe to the Newsletter"
+    },
+    "title": "Subscribe to the Newsletter"
+  },
+  {
+    "name": "newsletter_unsubscribe",
+    "description": "Remove a newsletter subscriber by email address or unsubscribe token.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "token": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Unsubscribe from the Newsletter"
+    },
+    "title": "Unsubscribe from the Newsletter"
+  },
+  {
+    "name": "newsletter_get_subscribers",
+    "description": "List newsletter subscribers with status filter and pagination.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "all",
+            "confirmed",
+            "pending",
+            "unsubscribed"
+          ],
+          "default": "confirmed"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Newsletter Subscribers"
+    },
+    "title": "List Newsletter Subscribers"
+  },
+  {
+    "name": "newsletter_get_stats",
+    "description": "Get total newsletter subscriber counts broken down by status (confirmed, pending, unsubscribed).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Newsletter Stats"
+    },
+    "title": "Get Newsletter Stats"
+  },
+  {
+    "name": "forms_list_submissions",
+    "description": "List contact form submissions with optional date range filter and pagination.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "date_from": {
+          "type": "string",
+          "description": "ISO 8601 date (inclusive)."
+        },
+        "date_to": {
+          "type": "string",
+          "description": "ISO 8601 date (inclusive)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Form Submissions"
+    },
+    "title": "List Form Submissions"
+  },
+  {
+    "name": "forms_get_submission",
+    "description": "Fetch a single contact form submission by ID.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Form Submission"
+    },
+    "title": "Get Form Submission"
+  },
+  {
+    "name": "forms_submit",
+    "description": "Submit a contact form entry directly into the database (bypasses CAPTCHA — use for internal/automation submissions only).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "company": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 10
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "email",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "title": "Submit a Contact Form"
+    },
+    "title": "Submit a Contact Form"
+  },
+  {
+    "name": "forms_export_csv",
+    "description": "Export contact form submissions as CSV text for the given date range.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "date_from": {
+          "type": "string"
+        },
+        "date_to": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Export Form Submissions as CSV"
+    },
+    "title": "Export Form Submissions as CSV"
+  },
+  {
+    "name": "content_list_case_studies",
+    "description": "List case studies by industry. Returns all industries if no filter given.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "industry": {
+          "type": "string",
+          "description": "Industry name filter (case-insensitive)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Case Studies"
+    },
+    "title": "List Case Studies",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "total_industries": {
+          "type": "number"
+        },
+        "case_studies": {
+          "type": "array",
+          "description": "Case-study scenarios grouped by industry. Each item carries: industry, count, scenarios.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "total_industries",
+        "case_studies"
+      ]
+    }
+  },
+  {
+    "name": "content_get_comparison",
+    "description": "Get metadata for a competitor comparison page by slug.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Competitor Comparison"
+    },
+    "title": "Get Competitor Comparison"
+  },
+  {
+    "name": "content_list_comparisons",
+    "description": "List all competitor comparison pages available on hellogrowthcrm.com.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Competitor Comparisons"
+    },
+    "title": "List Competitor Comparisons",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "comparisons": {
+          "type": "array",
+          "description": "Competitor comparison pages. Each item carries: slug, name, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "count",
+        "comparisons"
+      ]
+    }
+  },
+  {
+    "name": "content_list_industries",
+    "description": "List all industry vertical pages available on hellogrowthcrm.com.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Industries"
+    },
+    "title": "List Industries",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "industries": {
+          "type": "array",
+          "description": "Industry landing pages. Each item carries: name, slug, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "count",
+        "industries"
+      ]
+    }
+  },
+  {
+    "name": "content_list_tools",
+    "description": "List all 119 free tools and calculators on hellogrowthcrm.com. Filterable by keyword and category (ai, communication, ops, free).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on title, slug, or description."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "all",
+            "ai",
+            "communication",
+            "ops",
+            "free"
+          ],
+          "default": "all"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Free Sales Tools"
+    },
+    "title": "List Free Sales Tools",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "total_tools": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "tools": {
+          "type": "array",
+          "description": "Free sales tools and calculators. Each item carries: slug, title, desc, category, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "total_tools",
+        "filtered_count",
+        "tools"
+      ]
+    }
+  },
+  {
+    "name": "content_get_seo_rules",
+    "description": "Return the SEO rules and guardrails for hellogrowthcrm.com content.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get SEO Rules"
+    },
+    "title": "Get SEO Rules"
+  },
+  {
+    "name": "pricing_get_plans",
+    "description": "Get HelloGrowthCRM CRM plans. Pricing is country-aware, not India-only: India is INR, other markets USD or local currency (see market_scope in the result). The ladder is Free Forever → Growth → Enterprise in every market. Use region='global' for USD or region='india' for INR. Managed RevOps retainers are a separate service — call pricing_get_managed_revops for those.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "region": {
+          "type": "string",
+          "enum": [
+            "global",
+            "india",
+            "both"
+          ],
+          "default": "both"
+        },
+        "plan": {
+          "type": "string",
+          "description": "Filter by plan slug."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Pricing Plans"
+    },
+    "title": "Get Pricing Plans",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "global_usd": {
+          "type": "object",
+          "description": "Present when region is global or both. Carries currency, plan_count and plans."
+        },
+        "india_inr": {
+          "type": "object",
+          "description": "Present when region is india or both. Carries currency, plan_count and plans."
+        }
+      }
+    }
+  },
+  {
+    "name": "pricing_get_addons",
+    "description": "Get HelloGrowthCRM add-on pricing: dialer tiers (USD/INR) and India AI credit top-up bundles.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "region": {
+          "type": "string",
+          "enum": [
+            "global",
+            "india",
+            "both"
+          ],
+          "default": "both"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "dialer",
+            "ai_credits",
+            "all"
+          ],
+          "default": "all"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Pricing Add-ons"
+    },
+    "title": "Get Pricing Add-ons"
+  },
+  {
+    "name": "pricing_get_faq",
+    "description": "Get pricing FAQs for HelloGrowthCRM — trials, refunds, billing, discounts, payment methods.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Pricing FAQ"
+    },
+    "title": "Get Pricing FAQ",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "faqs": {
+          "type": "array",
+          "description": "Pricing FAQ entries. Each item carries: q, a.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "count",
+        "faqs"
+      ]
+    }
+  },
+  {
+    "name": "pricing_compare_plans",
+    "description": "Compare two HelloGrowthCRM plans side by side — shows price difference and feature delta.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "plan_a": {
+          "type": "string"
+        },
+        "plan_b": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string",
+          "enum": [
+            "global",
+            "india"
+          ],
+          "default": "india"
+        }
+      },
+      "required": [
+        "plan_a",
+        "plan_b"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Compare Pricing Plans"
+    },
+    "title": "Compare Pricing Plans"
+  },
+  {
+    "name": "pricing_get_country_plans",
+    "description": "Get HelloGrowthCRM country-localized pricing for the 8 market hubs (India, United States, United Kingdom, Canada, Australia, UAE, Singapore, New Zealand) — pricing is country-aware, not India-only: currency, the Growth plan's annual and monthly per-user price, the full plan-ladder summary line, accepted payment methods, compliance posture, and the country pricing page URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "type": "string",
+          "description": "in | usa | uk | canada | au | uae | singapore | new-zealand"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Country Pricing"
+    },
+    "title": "Get Country Pricing",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "count": {
+          "type": "number"
+        },
+        "country_pricing": {
+          "type": "array",
+          "description": "One entry per published market. Each item carries: countryName, countrySlug, currencyCode, currencySymbol, homeHref, growthPriceShort, growthPriceMonthly, pricingSummaryLine.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "count",
+        "country_pricing"
+      ]
+    }
+  },
+  {
+    "name": "pricing_get_managed_revops",
+    "description": "Get HelloGrowthCRM Managed RevOps service pricing — the Growth Engine and RevOps Partner tiers, as a flat monthly retainer in local currency. This is a done-for-you service where HelloGrowthCRM specialists run the customer's pipeline; it is NOT a per-seat CRM plan. Available as an add-on on Growth and included with Enterprise.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "type": "string",
+          "description": "global | in | usa | uk | canada | au | uae | singapore | new-zealand"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Managed RevOps Pricing"
+    },
+    "title": "Get Managed RevOps Pricing",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "billing_model": {
+          "type": "string",
+          "description": "Managed RevOps is a flat monthly retainer, not a per-seat price. Never quote it as a seat rate."
+        },
+        "market_count": {
+          "type": "number"
+        },
+        "markets": {
+          "type": "object",
+          "description": "Keyed by market slug (global, in, usa, uk, au, canada, uae, singapore)."
+        }
+      },
+      "required": [
+        "synced_at",
+        "billing_model",
+        "market_count",
+        "markets"
+      ]
+    }
+  },
+  {
+    "name": "features_list",
+    "description": "List the HelloGrowthCRM features that appear in the plan-comparison matrix (what is included in Free / Starter / Growth Engine / RevOps Partner). This is a curated comparison set, NOT the complete feature surface — hellogrowthcrm.com/features publishes considerably more — so do not report this total as the number of features the product has. Supports filtering by category, plan tier, and keyword search.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "Core CRM",
+            "Commerce & Communication",
+            "Project, AI & Customer",
+            "Intelligence Module",
+            "Customer Module",
+            "Support Module",
+            "Admin, Integrations & Service",
+            "all"
+          ],
+          "default": "all",
+          "description": "Feature category to filter by"
+        },
+        "plan": {
+          "type": "string",
+          "enum": [
+            "free",
+            "t1",
+            "t2",
+            "t3",
+            "all"
+          ],
+          "default": "all",
+          "description": "Plan tier filter: free, t1 (Software Only/Starter), t2 (Growth Engine), t3 (RevOps Partner)"
+        },
+        "search": {
+          "type": "string",
+          "description": "Keyword search across title, summary, and aliases"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Plan-Matrix Features"
+    },
+    "title": "List Plan-Matrix Features",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "number",
+          "description": "How many features matched this call's filters."
+        },
+        "coverage": {
+          "type": "object",
+          "description": "What this list is and is not. Read before reporting `total` as a feature count — it is the plan-comparison matrix, not the product's whole feature surface."
+        },
+        "categories": {
+          "type": "array",
+          "description": "Category names features are grouped into.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "features": {
+          "type": "array",
+          "description": "Matching features. Each item carries: slug, title, category, summary, availability{free,t1,t2,t3}, learnMoreHref.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "total",
+        "coverage",
+        "categories",
+        "features"
+      ]
+    }
+  },
+  {
+    "name": "features_get",
+    "description": "Get full details for a specific HelloGrowthCRM feature by slug — summary, plan availability, key benefits, and learn-more URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Feature slug (use features_list to enumerate slugs)"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Feature"
+    },
+    "title": "Get Feature"
+  },
+  {
+    "name": "features_list_products",
+    "description": "List all HelloGrowthCRM product pages with their status (active or coming soon), descriptions, and URLs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "coming-soon",
+            "all"
+          ],
+          "default": "all",
+          "description": "Filter by product status"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Product Pages"
+    },
+    "title": "List Product Pages",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "number"
+        },
+        "products": {
+          "type": "array",
+          "description": "Product pages, active and coming-soon. Each item carries: slug, title, url, status, description.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "total",
+        "products"
+      ]
+    }
+  },
+  {
+    "name": "analytics_social_proof",
+    "description": "Fetch recent signup and testimonial data used for social proof widgets on hellogrowthcrm.com.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Social-Proof Stats"
+    },
+    "title": "Get Social-Proof Stats"
+  },
+  {
+    "name": "countries_list",
+    "description": "List the 8 country-specific markets HelloGrowthCRM ships localized hubs for (India, USA, UK, Canada, Australia, UAE, Singapore, New Zealand) with currency, BCP-47 locale, route prefix, and tax/compliance references.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Supported Countries"
+    },
+    "title": "List Supported Countries",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "count": {
+          "type": "number"
+        },
+        "countries": {
+          "type": "array",
+          "description": "Published markets. Each item carries: code, label, route_prefix, url, currency, currency_symbol.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "count",
+        "countries"
+      ]
+    }
+  },
+  {
+    "name": "country_get",
+    "description": "Full country market profile for a HelloGrowthCRM localized hub: currency, locale, target cities, channels, compliance, regional contact, pricing summary, hreflang cluster, and canonical URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "in | usa | uk | canada | au | uae | singapore | new-zealand"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Country Details"
+    },
+    "title": "Get Country Details"
+  },
+  {
+    "name": "company_get_profile",
+    "description": "HelloGrowthCRM company / brand profile: legal entities (Soor LLC US, Meru Technosoft Pvt. Ltd. India), founding date, registered address, social/review profiles (Organization.sameAs), brand colors and logos.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Company Profile"
+    },
+    "title": "Get Company Profile",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "name": {
+          "type": "string"
+        },
+        "legal_name": {
+          "type": "string"
+        },
+        "india_legal_entity": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "twitter": {
+          "type": "string"
+        },
+        "founding_date": {
+          "type": "string"
+        },
+        "default_description": {
+          "type": "string"
+        },
+        "alternate_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "registered_address": {
+          "type": "object",
+          "description": "streetAddress, addressLocality, addressRegion, postalCode, addressCountry."
+        },
+        "same_as": {
+          "type": "array",
+          "description": "Canonical profile URLs.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "brand": {
+          "type": "object",
+          "description": "purpleHex, blueHex and logo asset paths."
+        }
+      },
+      "required": [
+        "synced_at",
+        "name",
+        "legal_name",
+        "url"
+      ]
+    }
+  },
+  {
+    "name": "company_get_contacts",
+    "description": "HelloGrowthCRM regional contact / location data: support phone (E.164 + display), office address, and business hours per region. Pass a country code to resolve the right office.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "region": {
+          "type": "string",
+          "description": "ISO country code, e.g. IN or US."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Company Contacts"
+    },
+    "title": "Get Company Contacts"
+  },
+  {
+    "name": "seo_get_site_config",
+    "description": "Site-wide SEO constants for hellogrowthcrm.com: canonical host, default title/description, Twitter handle, alternate brand names, and Organization entity basics (mirror of lib/seo/site.ts).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get SEO Site Config"
+    },
+    "title": "Get SEO Site Config",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "canonical_host": {
+          "type": "string"
+        },
+        "www_policy": {
+          "type": "string"
+        },
+        "default_description": {
+          "type": "string"
+        },
+        "twitter": {
+          "type": "string"
+        },
+        "brand_name": {
+          "type": "string"
+        },
+        "legal_name": {
+          "type": "string"
+        },
+        "alternate_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "canonical_host",
+        "brand_name"
+      ]
+    }
+  },
+  {
+    "name": "seo_get_hreflang",
+    "description": "Return the exact hreflang alternate tag set hellogrowthcrm.com emits for a given path (faithful port of lib/hreflang.ts). Use to verify country/language targeting and bidirectional mesh.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Site-relative path."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get hreflang Map"
+    },
+    "title": "Get hreflang Map"
+  },
+  {
+    "name": "seo_get_canonical",
+    "description": "Resolve a site-relative path to its canonical absolute URL on the apex host (no www, no trailing slash).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Site-relative path."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Canonical URL"
+    },
+    "title": "Get Canonical URL"
+  },
+  {
+    "name": "seo_get_sitemaps",
+    "description": "Return the sitemap index and all child sitemaps for hellogrowthcrm.com (core, blog, help, tools, industries, alternatives, agentic-ai, image, video).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Sitemaps"
+    },
+    "title": "List Sitemaps",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "index": {
+          "type": "string",
+          "description": "URL of the sitemap index."
+        },
+        "child_count": {
+          "type": "number"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child sitemaps referenced by the index. Each item carries: name, url, note.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "index",
+        "child_count",
+        "children"
+      ]
+    }
+  },
+  {
+    "name": "seo_get_schema",
+    "description": "List the structured-data (JSON-LD) types hellogrowthcrm.com emits and their scope, plus the live Organization schema object. Note: FAQPage JSON-LD is permanently retired site-wide.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "include_org_jsonld": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Structured Data Schema"
+    },
+    "title": "Get Structured Data Schema"
+  },
+  {
+    "name": "products_list",
+    "description": "List HelloGrowthCRM product / feature pages served at /product/[slug] (AI Pipeline, Built-in Dialer, HelloMail, Predictive Analytics, etc.).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on slug or title."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Products"
+    },
+    "title": "List Products",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "total": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "products": {
+          "type": "array",
+          "description": "Product pages. Each item carries: slug, title, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "total",
+        "filtered_count",
+        "products"
+      ]
+    }
+  },
+  {
+    "name": "product_get",
+    "description": "Get a single HelloGrowthCRM product/feature page by slug with its canonical URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Product slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Product"
+    },
+    "title": "Get Product"
+  },
+  {
+    "name": "integrations_list",
+    "description": "List the HelloGrowthCRM integrations catalog mirrored from hellogrowthcrm.com/integrations. 259 integrations work today across 115 categories; the catalog also carries 333 scaffolded directory entries that are NOT built, for 592 rows in total — quote the live figure, never the total. More apps are reachable indirectly through Zapier and n8n. Filterable by category and keyword.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "Category slug, title, or short label filter (case-insensitive)."
+        },
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on name or description (case-insensitive)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Integrations"
+    },
+    "title": "List Integrations",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "public_integration_count": {
+          "type": "number",
+          "description": "Integrations that work today. The figure to quote."
+        },
+        "live_integration_count": {
+          "type": "number",
+          "description": "Same as public_integration_count, named so the contrast with total_documented is unmissable."
+        },
+        "scaffolded_count": {
+          "type": "number",
+          "description": "Catalogued but not built. Never quote as an integration count."
+        },
+        "total_documented": {
+          "type": "number",
+          "description": "All catalog rows, scaffolded included. Directory sizing only."
+        },
+        "category_count": {
+          "type": "number"
+        },
+        "counts_note": {
+          "type": "string"
+        },
+        "filtered_count": {
+          "type": "number",
+          "description": "How many rows matched this call's filters."
+        },
+        "category": {
+          "type": "object",
+          "description": "Echoed only when a category filter matched."
+        },
+        "items": {
+          "type": "array",
+          "description": "Matching integrations. Each item carries: slug, name, category, description, status, route, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "public_integration_count",
+        "total_documented",
+        "filtered_count",
+        "items"
+      ]
+    }
+  },
+  {
+    "name": "integrations_get",
+    "description": "Get one HelloGrowthCRM integration by slug with its name, category, description, status, and page URL on hellogrowthcrm.com.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Integration slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Integration"
+    },
+    "title": "Get Integration"
+  },
+  {
+    "name": "integrations_list_categories",
+    "description": "List all integration categories on hellogrowthcrm.com/integrations with the number of documented integrations in each. Category counts include scaffolded entries; see public_integration_count for the number that work today.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Integration Categories"
+    },
+    "title": "List Integration Categories",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "public_integration_count": {
+          "type": "number",
+          "description": "Integrations that work today. The figure to quote."
+        },
+        "live_integration_count": {
+          "type": "number",
+          "description": "Same as public_integration_count, named so the contrast with total_documented is unmissable."
+        },
+        "scaffolded_count": {
+          "type": "number",
+          "description": "Catalogued but not built. Never quote as an integration count."
+        },
+        "total_documented": {
+          "type": "number",
+          "description": "All catalog rows, scaffolded included. Directory sizing only."
+        },
+        "category_count": {
+          "type": "number"
+        },
+        "counts_note": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "description": "Every category. Counts include scaffolded rows. Each item carries: slug, title, shortLabel, count.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "public_integration_count",
+        "total_documented",
+        "category_count",
+        "categories"
+      ]
+    }
+  },
+  {
+    "name": "agents_list",
+    "description": "List all 12 HelloGrowthCRM Agentic AI agents from hellogrowthcrm.com/agentic-ai (Voice Agent, Journey Agent, Post-Call Agent, MCP Connector, etc.) with slug, route, tagline, summary, and autonomy level.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "autonomy_level": {
+          "type": "string",
+          "enum": [
+            "autonomous",
+            "supervised",
+            "assistive"
+          ],
+          "description": "Optional filter by autonomy level."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List AI Agents"
+    },
+    "title": "List AI Agents",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "hub": {
+          "type": "object",
+          "description": "The agents hub page: route, badge, h1, hero, url."
+        },
+        "total_agents": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "agents": {
+          "type": "array",
+          "description": "Agentic AI agents. Each item carries: slug, name, autonomy_level, tagline, summary, url.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "related_product_pages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "synced_at",
+        "total_agents",
+        "filtered_count",
+        "agents"
+      ]
+    }
+  },
+  {
+    "name": "agents_get",
+    "description": "Get full mirrored detail for one HelloGrowthCRM AI agent by slug: tagline, summary, autonomy level, capabilities, how-it-works steps, risk signals, and FAQs where the page provides them.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Agent slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get AI Agent"
+    },
+    "title": "Get AI Agent"
+  },
+  {
+    "name": "agents_get_autonomy_levels",
+    "description": "Return HelloGrowthCRM's publicly documented AI agent autonomy framework from hellogrowthcrm.com/agentic-ai/autonomy-levels: the three levels (Fully Autonomous, Supervised, Assistive), the capability matrix, and the safety rails built into every agent.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Agent Autonomy Levels"
+    },
+    "title": "Get Agent Autonomy Levels"
+  },
+  {
+    "name": "agents_list_comparisons",
+    "description": "List HelloGrowthCRM's four Agentic AI competitor comparison pages (vs Salesforce Agentforce, HubSpot Breeze, Zoho Zia, Microsoft Copilot for Sales) with the positioning summary mirrored from each page.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Compare AI Agents"
+    },
+    "title": "Compare AI Agents"
+  },
+  {
+    "name": "glossary_list_terms",
+    "description": "List all CRM/sales glossary terms published at hellogrowthcrm.com/glossary. Each entry has a slug, term name, and one-line definition. Optionally filter by a search keyword. (The website glossary has no categories.)",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on term name, slug, or definition (case-insensitive)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Glossary Terms"
+    },
+    "title": "List Glossary Terms",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "total": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "terms": {
+          "type": "array",
+          "description": "Glossary entries. Each item carries: slug, term, definition, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "total",
+        "filtered_count",
+        "terms"
+      ]
+    }
+  },
+  {
+    "name": "glossary_get_term",
+    "description": "Get a single glossary entry by slug (or exact term name, case-insensitive) with its definition, related links, and canonical URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Glossary slug or exact term name (case-insensitive)."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Glossary Term"
+    },
+    "title": "Get Glossary Term"
+  },
+  {
+    "name": "templates_list",
+    "description": "List the free CRM templates published at hellogrowthcrm.com/templates (pipelines, email sequences, lead scoring models, sales workflows, onboarding checklists, RevOps audits, GTM playbooks). Filterable by category and keyword.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "all",
+            "pipeline",
+            "email-sequences",
+            "lead-scoring",
+            "sales",
+            "onboarding",
+            "audit",
+            "gtm"
+          ],
+          "default": "all",
+          "description": "Template category slug filter."
+        },
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on title, slug, description, or audience (case-insensitive)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Templates"
+    },
+    "title": "List Templates",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "total": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "categories": {
+          "type": "array",
+          "description": "Template categories. Each item carries: slug, label.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "templates": {
+          "type": "array",
+          "description": "Downloadable templates. Each item carries: slug, title, category, description, formats, popular, url.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "total",
+        "filtered_count",
+        "categories",
+        "templates"
+      ]
+    }
+  },
+  {
+    "name": "templates_get",
+    "description": "Get a single CRM template summary by slug — title, category, description, audience, download formats, last-updated date, and canonical URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Template slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Template"
+    },
+    "title": "Get Template"
+  },
+  {
+    "name": "guides_list",
+    "description": "List the HelloGrowthCRM feature guides published at hellogrowthcrm.com/feature-guide — task-oriented guides grouped into 7 job categories (Capture & Organise, Communicate & Engage, Automate & Scale, Coach & Manage, Analyse & Forecast, Close Deals, AI-Powered Selling). Optionally filter by keyword.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on name, slug, tagline, category, or description (case-insensitive)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Feature Guides"
+    },
+    "title": "List Feature Guides",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "total": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "categories": {
+          "type": "array",
+          "description": "Guide categories. Each item carries: slug, label.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "guides": {
+          "type": "array",
+          "description": "Feature guides. Each item carries: slug, name, tagline, category, category_label, plan.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "total",
+        "filtered_count",
+        "categories",
+        "guides"
+      ]
+    }
+  },
+  {
+    "name": "guides_get",
+    "description": "Get a single feature guide summary by slug — name, tagline, job category, audience, plan availability, problem description, capability section headings, deep-dive page path, and canonical URL.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Feature guide slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Feature Guide"
+    },
+    "title": "Get Feature Guide"
+  },
+  {
+    "name": "alternatives_list",
+    "description": "List all competitor alternative pages and curated alternatives shortlists on hellogrowthcrm.com — competitor name, slug, website route, and a one-line HelloGrowthCRM positioning where available.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter on competitor name, slug, route, or positioning."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Competitor Alternatives"
+    },
+    "title": "List Competitor Alternatives",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "total": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "alternatives": {
+          "type": "array",
+          "description": "Competitor alternative pages. Each item carries: slug, competitor, route, url, positioning.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "total",
+        "filtered_count",
+        "alternatives"
+      ]
+    }
+  },
+  {
+    "name": "alternatives_get",
+    "description": "Get the full mirrored alternatives entry for a competitor: curated alternatives shortlist (HelloGrowthCRM + other picks with positioning blurbs) and, for WhatsApp-CRM competitors, the detailed page content (reasons, feature comparison, verdict).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Competitor slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Competitor Alternative"
+    },
+    "title": "Get Competitor Alternative"
+  },
+  {
+    "name": "switch_list_competitors",
+    "description": "List all /switch-from-* CRM migration pages on hellogrowthcrm.com — competitor, slug, website route, and one-line summary. Use switch_get_guide for the full migration guide.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Migration Guides"
+    },
+    "title": "List Migration Guides"
+  },
+  {
+    "name": "switch_get_guide",
+    "description": "Get the mirrored migration guide for a /switch-from-* page: reasons to switch (pain points), feature comparison rows, key migration steps (data mapped), verdict, and FAQ topics.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Switch-from competitor slug."
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Migration Guide"
+    },
+    "title": "Get Migration Guide"
+  },
+  {
+    "name": "changelog_list_releases",
+    "description": "List HelloGrowthCRM changelog releases (shown at /changelog and /whats-new), newest first. Each release has a version, date, and tagged items (feature / improvement / fix / infra). Optionally filter by item tag and limit the count.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number",
+          "description": "Maximum number of releases to return.",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        },
+        "tag": {
+          "type": "string",
+          "enum": [
+            "feature",
+            "improvement",
+            "fix",
+            "infra",
+            "integration",
+            "product",
+            "tools"
+          ],
+          "description": "Filter releases/items by item tag."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Releases"
+    },
+    "title": "List Releases",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "total_releases": {
+          "type": "number"
+        },
+        "filtered_count": {
+          "type": "number"
+        },
+        "returned": {
+          "type": "number"
+        },
+        "releases": {
+          "type": "array",
+          "description": "Releases, newest first. Each item carries: version, date, isoDate, source, items.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "total_releases",
+        "filtered_count",
+        "returned",
+        "releases"
+      ]
+    }
+  },
+  {
+    "name": "changelog_get_release",
+    "description": "Get a single HelloGrowthCRM changelog release by version (e.g. 1.5.0) with its full list of tagged items.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Release version, e.g. 1.5.0."
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Release Notes"
+    },
+    "title": "Get Release Notes"
+  },
+  {
+    "name": "buyer_find_answer_pages",
+    "description": "Use first when someone is choosing or comparing a CRM and asks about HelloGrowthCRM: pricing, free plan, alternatives to Salesforce/HubSpot/Zoho/Pipedrive, CRM for a specific industry (real estate, recruitment, dealers, insurance, solar), small-business CRM, lead management, AI CRM, integrations, security, demo. Pass the user's question; returns the canonical hellogrowthcrm.com pages to cite and the follow-up tools that hold exact details (pricing, features, comparisons). With no arguments, lists all topics.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "The buyer's question in their own words."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Optional topic id: pricing, free, competitors, industries, small-business, lead-management, ai-crm, crm-basics, integrations, messaging, trust, get-started"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Find Buyer Answer Pages"
+    },
+    "title": "Find Buyer Answer Pages"
+  },
+  {
+    "name": "faqs_get_site",
+    "description": "Site-level FAQs for hellogrowthcrm.com (homepage FAQ block + standalone /faq page): 17 Q&A pairs covering product, AI, setup, imports, integrations, security, pricing, competitor comparisons, dialer, WhatsApp/SMS, and mobile — each with the contextual links shown on the website. Also returns the programmatic FAQ directory categories (currently empty in source). Optionally filter by keyword.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "search": {
+          "type": "string",
+          "description": "Keyword filter, matched case-insensitively against question and answer text."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Site FAQs"
+    },
+    "title": "Get Site FAQs"
+  },
+  {
+    "name": "media_list_videos",
+    "description": "List HelloGrowthCRM YouTube videos: product demos and walkthroughs, feature explainers (AI lead scoring, dialer, task boards), competitor comparisons, industry-specific videos, and CRM education. Merges the seeded mirror with the channel's latest uploads at request time, newest first. Returns video id, watch URL, title, description, upload date and badge.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Videos"
+    },
+    "title": "List Videos",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "channel": {
+          "type": "string"
+        },
+        "channel_url": {
+          "type": "string"
+        },
+        "page_url": {
+          "type": "string"
+        },
+        "count": {
+          "type": "number"
+        },
+        "seeded_count": {
+          "type": "number",
+          "description": "Videos from the bundled snapshot."
+        },
+        "live_count": {
+          "type": "number",
+          "description": "Videos resolved from the live channel feed."
+        },
+        "note": {
+          "type": "string"
+        },
+        "videos": {
+          "type": "array",
+          "description": "Published videos. Each item carries: id, url, title, description, upload_date, badge.",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "count",
+        "videos"
+      ]
+    }
+  },
+  {
+    "name": "media_list_testimonials",
+    "description": "Customer testimonials for HelloGrowthCRM. Text testimonials (6 customer quotes shared by the homepage and /reviews, with author, role/company, rating, and outcome metric) are mirrored statically. Video testimonials are database-backed; this tool returns their record shape and where to browse them (/testimonials).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "video",
+            "all"
+          ],
+          "default": "all",
+          "description": "Filter: text quotes, video testimonials, or all."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List Testimonials"
+    },
+    "title": "List Testimonials"
+  },
+  {
+    "name": "partners_get_program",
+    "description": "HelloGrowthCRM Partner Program details (route: /partners): commission structure (50% revenue share in Year 1, 15% recurring from Year 2 on paid referrals), approval and agreement process, partner tracking code, certification requirement, who can apply, and the 8 official program FAQs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Partner Program"
+    },
+    "title": "Get Partner Program"
+  },
+  {
+    "name": "partners_get_application_schema",
+    "description": "Partner program application form schema — every field (name, group, type, required flag, allowed options, validation) mirrored from the website's partner-apply-schema.ts. Documents HOW to apply: the form is submitted on the /partners page; this MCP server does not submit partner applications directly.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Partner Application Schema"
+    },
+    "title": "Get Partner Application Schema"
+  },
+  {
+    "name": "solutions_list_whatsapp_use_cases",
+    "description": "List the WhatsApp message use cases built into HelloGrowthCRM's WhatsApp composer: general message, follow-up, meeting reminder, document request/share, and notification with link — each with its message template pattern. Messages are sent via wa.me deep links with prefilled, personalized text.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "List WhatsApp Use Cases"
+    },
+    "title": "List WhatsApp Use Cases",
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "synced_at": {
+          "type": "string",
+          "description": "Date the bundled mirror was last synced from the website (YYYY-MM-DD). Compare with /health content_freshness before quoting anything below."
+        },
+        "feature_url": {
+          "type": "string"
+        },
+        "count": {
+          "type": "number"
+        },
+        "use_cases": {
+          "type": "array",
+          "description": "WhatsApp use cases. Each item carries: key, label, description, kind, template_preview.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "synced_at",
+        "count",
+        "use_cases"
+      ]
+    }
+  },
+  {
+    "name": "solutions_get_managed_revops",
+    "description": "HelloGrowthCRM Managed RevOps service (done-for-you revenue operations). Without arguments: full service overview — what's included, weekly SOPs, KPIs, who it's for, pricing tiers across all 9 market pages (global, India, USA, UK, Australia, Canada, UAE, Singapore, New Zealand), all 25 US city landing pages, and related offerings (managed-crm-service, fractional-revops, free-revops-audit). With a `city` slug: that city page's summary and offer.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string",
+          "description": "US city slug, e.g. \"atlanta\" or \"san-francisco\". Omit for the overview."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Get Managed RevOps Solution"
+    },
+    "title": "Get Managed RevOps Solution"
+  }
+]
