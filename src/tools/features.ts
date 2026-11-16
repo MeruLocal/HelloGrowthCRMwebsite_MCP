@@ -379,7 +379,7 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Paid tiers add broader views, hygiene support, and more operational depth",
       "Works especially well for sales ops, onboarding, and recurring follow-up workflows",
     ],
-    free: "500 tasks",
+    free: "100 tasks",
     t1: "Unlimited + views",
     t2: "Unlimited + managed hygiene",
     t3: "Unlimited + dependencies",
