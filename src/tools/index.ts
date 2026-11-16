@@ -88,6 +88,9 @@ import {
   featuresListProducts,
 } from "./features.js";
 
+// ── Industry modules ──────────────────────────────────────────────────────────
+import { industriesListModules, industriesGetModules } from "./industry-modules.js";
+
 // ── Analytics ─────────────────────────────────────────────────────────────────
 import {
   analyticsSocialProof,
@@ -242,6 +245,10 @@ export const tools: RegisteredTool[] = [
   featuresList,
   featuresGet,
   featuresListProducts,
+
+  // Industry modules
+  industriesListModules,
+  industriesGetModules,
 
   // Analytics
   analyticsSocialProof,
