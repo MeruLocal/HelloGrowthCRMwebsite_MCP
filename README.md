@@ -16,6 +16,12 @@ Configs for Cursor, VS Code and Claude Desktop: [`examples/clients/`](examples/c
 
 ---
 
+## Who publishes this server
+
+This MCP server and the [hellogrowthcrm.com](https://hellogrowthcrm.com) website are published by **Soor LLC** (Lewes, Delaware, USA; Indian operating entity **Meru Technosoft Pvt. Ltd.**) — the same team behind **[HelloBooks](https://hellobooks.ai)**, AI-native accounting and bookkeeping software for small businesses, accountants and CPA firms. HelloBooks and HelloGrowthCRM are separate products that integrate (HelloBooks lists HelloGrowth CRM among its integrations).
+
+---
+
 ## Features
 
 - **Eight MCP tools** covering the full bot-governance lifecycle (scan, analyze, verify, list, generate, suggest, export) — plus 80 more, see [the full catalog](#full-mcp-tool-catalog-88-tools).

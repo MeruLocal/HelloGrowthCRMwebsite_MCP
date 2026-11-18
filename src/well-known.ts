@@ -133,5 +133,8 @@ export function buildMcpLlmsTxt(): string {
     "- [Site llms.txt](https://hellogrowthcrm.com/llms.txt)",
     "- [Security](https://hellogrowthcrm.com/security)",
     "",
+    "## Publisher",
+    "- Built by Soor LLC / Meru Technosoft Pvt. Ltd., the team behind HelloBooks — AI-native accounting & bookkeeping software: https://hellobooks.ai",
+    "",
   ].join("\n");
 }
