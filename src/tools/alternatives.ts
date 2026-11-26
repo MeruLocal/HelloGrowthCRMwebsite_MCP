@@ -1439,14 +1439,39 @@ export const alternativesGet = defineTool({
     },
   },
   async handle(args) {
-    let slug = args.slug.toLowerCase().trim().replace(/^\//, "");
-    slug = slug.replace(/-alternative-india$/, "").replace(/-alternative$/, "");
+    const raw = args.slug.toLowerCase().trim().replace(/^\//, "");
+    let slug = raw.replace(/-alternative-india$/, "").replace(/-alternative$/, "");
     slug = ALTERNATIVE_SLUG_ALIASES[slug] ?? slug;
 
     const shortlist = ALTERNATIVES_SHORTLIST[slug];
     const waDetail = WA_ALTERNATIVES.find((w) => w.slug === slug);
 
     if (!shortlist && !waDetail) {
+      // Every slug alternatives_list returns must resolve here. Ten of them are
+      // standalone pages with no shortlist data (hubs, India variants, page-only
+      // competitors such as /vtiger-alternative) and used to fail with "not
+      // found" (live audit 2026-11-19: 32/42). Return what is known about the page
+      // instead, plus the migration guide when one exists for that competitor.
+      const page = ALTERNATIVE_PAGES.find((p) => p.route === `/${raw}`);
+      if (page) {
+        const guide = SWITCH_GUIDES.find((g) => g.slug === slug);
+        return ok({
+          synced_at: SYNCED_AT,
+          slug: raw,
+          competitor: page.competitor,
+          route: page.route,
+          url: `${SITE}${page.route}`,
+          page_only: true,
+          note:
+            (page.note ? `${page.note} ` : "") +
+            "This page's content lives in the page component on hellogrowthcrm.com and is not mirrored here; no curated shortlist is available.",
+          shortlist: null,
+          whatsapp_detail: null,
+          ...(guide
+            ? { related_switch_guide: { slug: guide.slug, tool: "switch_get_guide", url: `${SITE}/switch-from-${guide.slug}` } }
+            : {}),
+        });
+      }
       const valid = [
         ...new Set([...Object.keys(ALTERNATIVES_SHORTLIST), ...WA_ALTERNATIVES.map((w) => w.slug)]),
       ].sort((a, b) => a.localeCompare(b));
@@ -1538,9 +1563,28 @@ export const switchGetGuide = defineTool({
     if (!guide) {
       const pageOnly = SWITCH_PAGE_ONLY.find((p) => p.slug === slug);
       if (pageOnly) {
-        return fail(
-          `"${pageOnly.route}" exists as a standalone page but its content is not in switch-data.ts, so no mirrored guide is available. Slugs with guide data: ${SWITCH_GUIDES.map((g) => g.slug).join(", ")}`,
-        );
+        // Was a hard error for a slug switch_list_competitors itself returns
+        // (live audit 2026-11-19: 22/26). These pages keep their copy in the page
+        // component, not in switch-data.ts, so there is no structured guide to
+        // mirror — and copying the prose by hand would freeze claims (e.g. the
+        // Free-plan cap) that move. Answer with what is known and how to read
+        // the live page instead of failing.
+        return ok({
+          synced_at: SYNCED_AT,
+          slug: pageOnly.slug,
+          competitor: pageOnly.competitor,
+          route: pageOnly.route,
+          url: `${SITE}${pageOnly.route}`,
+          page_only: true,
+          note:
+            "This migration page's content lives in the page component on hellogrowthcrm.com and is not mirrored as a structured guide. Read the live page with fetch_page_content; for plan limits and prices use pricing_get_plans rather than the page copy.",
+          read_live_page_with: { tool: "fetch_page_content", url: `${SITE}${pageOnly.route}` },
+          reasons_to_switch: [],
+          feature_comparison: [],
+          migration_steps: [],
+          verdict: null,
+          faq_questions: [],
+        });
       }
       return fail(`Switch guide "${args.slug}" not found. Valid slugs: ${SWITCH_GUIDES.map((g) => g.slug).join(", ")}`);
     }

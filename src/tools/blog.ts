@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getSupabase } from "../lib/supabase.js";
 import { defineTool, fail, ok } from "./tool-types.js";
+import { logger } from "../utils/logger.js";
 
 // ── blog_list ────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,26 @@ export const blogGet = defineTool({
 
 // ── blog_search ───────────────────────────────────────────────────────────────
 
+// Was a single .or() over title, excerpt AND content. `content` is the full post
+// body and has no trigram index, so `content ILIKE '%q%'` seq-scans every post
+// body and on PROD hit "canceling statement due to statement timeout" (live
+// audit 2026-11-19, query=whatsapp) — the tool failed every time.
+//
+// Now: title + excerpt first (small columns, fast), and a content pass only to
+// top up a short result set. The content pass is best-effort: if it errors or
+// times out, the title/excerpt hits are still returned, with a note.
+//
+// The query is also reduced to plain search text before it reaches the
+// PostgREST filter grammar: `,` `(` `)` separate or()-conditions and `%` `*` `\`
+// are LIKE wildcards/escapes, so an unsanitised query could add filter clauses.
+
+/** Reduce a free-text query to characters that are safe inside an or() ilike filter. */
+export function sanitizeSearchQuery(q: string): string {
+  return q.replace(/[,()%*\\:"']/g, " ").replace(/\s+/g, " ").trim().slice(0, 100);
+}
+
+const BLOG_SEARCH_FIELDS = "slug, title, author, category, published_at, excerpt";
+
 export const blogSearch = defineTool({
   schema: z.object({
     query: z.string().min(2).describe("Search query."),
@@ -87,7 +108,8 @@ export const blogSearch = defineTool({
   }),
   definition: {
     name: "blog_search",
-    description: "Full-text search across blog post titles, content, and excerpts.",
+    description:
+      "Search blog posts by keyword. Matches titles and excerpts first, then tops up from post bodies when there are few title/excerpt matches.",
     inputSchema: {
       type: "object",
       properties: {
@@ -100,14 +122,43 @@ export const blogSearch = defineTool({
   },
   async handle(args) {
     try {
-      const { data, error } = await getSupabase()
+      const q = sanitizeSearchQuery(args.query);
+      if (q.length < 2) return fail("Search query must contain at least 2 letters or digits.");
+      const db = getSupabase();
+
+      const { data: head, error } = await db
         .from("blog_posts")
-        .select("slug, title, author, category, published_at, excerpt")
-        .or(`title.ilike.%${args.query}%,excerpt.ilike.%${args.query}%,content.ilike.%${args.query}%`)
+        .select(BLOG_SEARCH_FIELDS)
+        .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%`)
         .order("published_at", { ascending: false })
         .limit(args.limit);
-      if (error) return fail(`Search error: ${error.message}`);
-      return ok({ query: args.query, count: data?.length ?? 0, results: data });
+      if (error) {
+        logger.warn("blog_search: title/excerpt query failed", { message: error.message });
+        return fail("Search failed. Try blog_list, or a shorter query.");
+      }
+
+      const results = [...(head ?? [])];
+      let note: string | undefined;
+      if (results.length < args.limit) {
+        const seen = new Set(results.map((r) => r.slug));
+        const { data: body, error: bodyErr } = await db
+          .from("blog_posts")
+          .select(BLOG_SEARCH_FIELDS)
+          .ilike("content", `%${q}%`)
+          .order("published_at", { ascending: false })
+          .limit(args.limit);
+        if (bodyErr) {
+          logger.warn("blog_search: content top-up failed", { message: bodyErr.message });
+          note = "Matched titles and excerpts only; the full-text pass over post bodies did not complete.";
+        } else {
+          for (const r of body ?? []) {
+            if (results.length >= args.limit) break;
+            if (!seen.has(r.slug)) results.push(r);
+          }
+        }
+      }
+
+      return ok({ query: args.query, count: results.length, results, ...(note ? { note } : {}) });
     } catch (e) {
       return fail((e as Error).message);
     }

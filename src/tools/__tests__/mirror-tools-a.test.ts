@@ -109,10 +109,35 @@ describe("alternatives tools", () => {
     expect(json.slug).toBe("salesforce");
   });
 
-  it("switch_get_guide fails distinctly for page-only competitors", async () => {
-    const { res } = await run(switchGetGuide, { slug: "excel" });
-    expect(res.isError).toBe(true);
-    expect(res.content[0]!.text).toContain("standalone page");
+  it("switch_get_guide answers page-only competitors instead of failing (audit 2026-11-19)", async () => {
+    for (const slug of ["excel", "hubspot", "tally", "whatsapp"]) {
+      const { res, json } = await run(switchGetGuide, { slug });
+      expect(res.isError, slug).toBeFalsy();
+      expect(json.page_only).toBe(true);
+      expect(json.url).toBe(`https://hellogrowthcrm.com/switch-from-${slug}`);
+      expect((json.read_live_page_with as { tool: string }).tool).toBe("fetch_page_content");
+    }
+  });
+
+  it("every slug switch_list_competitors returns resolves in switch_get_guide", async () => {
+    const { json } = await run(switchListCompetitors, {});
+    for (const row of json.switch_pages as { slug: string }[]) {
+      const { res } = await run(switchGetGuide, { slug: row.slug });
+      expect(res.isError, row.slug).toBeFalsy();
+    }
+  });
+
+  it("every slug alternatives_list returns resolves in alternatives_get (audit 2026-11-19: 32/42)", async () => {
+    const { json } = await run(alternativesList, {});
+    const rows = json.alternatives as { slug: string }[];
+    expect(rows.length).toBeGreaterThan(30);
+    for (const row of rows) {
+      const { res } = await run(alternativesGet, { slug: row.slug });
+      expect(res.isError, row.slug).toBeFalsy();
+    }
+    const vt = await run(alternativesGet, { slug: "vtiger-alternative" });
+    expect(vt.json.page_only).toBe(true);
+    expect((vt.json.related_switch_guide as { slug: string }).slug).toBe("vtiger");
   });
 
   it("switch_get_guide fails for an unknown slug", async () => {
