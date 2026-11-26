@@ -116,10 +116,11 @@ describe("plan truth — one Free plan, one AI allowance, one ladder", () => {
     expect(a.total).toBe(b.total);
   });
 
-  it("India country profile carries no fixed GST wording", async () => {
+  it("India country profile states ₹899 + 18% GST and never GSTIN-conditional", async () => {
     const out = await text(countryGet, { code: "in" });
-    expect(out).not.toMatch(/18% GST|\+ ?GST|1,060/);
+    expect(out).toMatch(/18% GST/);
+    expect(out).not.toMatch(/GSTIN[- ]conditional|1,099/i);
     const cp = await text(pricingGetCountryPlans, { country: "in" });
-    expect(cp).not.toMatch(/18% GST|\+ ?GST|1,060/);
+    expect(cp).not.toMatch(/GSTIN[- ]conditional|1,099/i);
   });
 });

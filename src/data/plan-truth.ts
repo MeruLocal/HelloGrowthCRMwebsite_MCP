@@ -68,12 +68,11 @@ export const FREE_PLAN_SUMMARY =
 export const FREE_PLAN_CELL = `Yes — ${n(FREE_PLAN.leads)} leads, forever, no credit card`;
 
 /**
- * India price wording. The ₹899 list price is stated BEFORE tax. This server
- * does not quote a fixed GST rate or a GST-inclusive billed total: the hellocrm
- * owner rule is not to restate the price as "+GST" or "inclusive" on a shared
- * surface (see the PR that introduced this constant for the open question).
+ * India price wording, matching hellocrm billing (`_shared/billingHandlers/gstinPricing.ts` on the
+ * `app` branch): ₹899 + 18% = ₹1,060.82 per seat per month, GSTIN or not. A GSTIN changes the invoice,
+ * not the price. Never write "GSTIN-conditional" and never ₹1,099.
  */
 export const INDIA_TAX_NOTE =
-  "₹899 is the list price per user per month, before tax. Applicable GST is shown at checkout and on the invoice; registered businesses can add their GSTIN for a GST invoice.";
+  "₹899 per user per month + 18% GST, so ₹1,060.82 is billed per user per month in India, with or without a GSTIN. A GSTIN does not change the price; it puts your GST number on the invoice so you can claim input tax credit. USD prices carry no GST.";
 
-export const INDIA_GROWTH_PRICE = "₹899/user/month (list price, before tax)";
+export const INDIA_GROWTH_PRICE = "₹899/user/month + 18% GST (₹1,060.82 billed)";

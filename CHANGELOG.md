@@ -24,8 +24,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   switch guides and features.
 - AI allowance: Free 100 and Growth 1,000 credits per user per month (was "50 total" / 2,500 /
   10,000). Enterprise is "set per contract".
-- India pricing: ₹899 is quoted as the list price before tax; no fixed "+ 18% GST" and no
-  ₹1,060.82 billed total on any surface.
+- India pricing comes from one constant and matches hellocrm billing: ₹899/user/month + 18% GST
+  (₹1,060.82 billed), with or without a GSTIN.
 - `pricing_get_addons`: dialer tiers and AI-credit top-ups withdrawn (no billing SKU exists).
 - Growth/Enterprise cards: "AI-assisted forecasting" → probability-weighted forecast; churn
   prediction / attribution and scheduled reports removed from Enterprise extras.

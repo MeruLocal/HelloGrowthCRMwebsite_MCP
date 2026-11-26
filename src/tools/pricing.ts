@@ -161,11 +161,8 @@ const INDIA_PLANS = [
   {
     name: "Growth",
     slug: "growth",
-    // ₹899 is the list price on BOTH billing modes. Stated before tax: this
-    // server quotes no fixed GST rate and no GST-inclusive billed total (see
-    // INDIA_TAX_NOTE in src/data/plan-truth.ts). ₹1,099 matched no Razorpay
-    // plan — never reintroduce.
-    price_annual: `${INDIA_GROWTH_PRICE} — annual: 10 months paid, 2 months free (₹8,990/user/year before tax)`,
+    // ₹899 + 18% GST on BOTH billing modes (billed ₹1,060.82/mo), as hellocrm billing charges.
+    price_annual: `${INDIA_GROWTH_PRICE} — annual: 10 months paid, 2 months free (₹8,990/user/year + 18% GST)`,
     price_monthly: `${INDIA_GROWTH_PRICE} — same rate; annual adds 2 months free`,
     tax_note: INDIA_TAX_NOTE,
     billing: "Per-user pricing · Annual or monthly billing · 14-day free trial · Hero tier",
@@ -252,7 +249,7 @@ const PRICING_FAQ = [
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
   { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($12 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
-  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices are list prices before tax; applicable GST is shown at checkout and on the invoice. Call pricing_get_country_plans for a specific market." },
+  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices exclude GST — 18% GST is added on top (₹899 bills as ₹1,060.82), with or without a GSTIN. Call pricing_get_country_plans for a specific market." },
   { q: "Is there a minimum number of users?", a: `No minimum. The Free plan supports ${FREE_PLAN.users} user (${FREE_PLAN.leads} leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge.` },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
@@ -271,7 +268,7 @@ const PRICING_FAQ = [
 export const MARKET_SCOPE = {
   summary:
     "HelloGrowthCRM is sold worldwide with country-aware pricing. India is billed in INR; every other market is billed in USD or its local currency.",
-  india: "India: Growth lists at INR 899 per user per month before tax, billed in INR (UPI, Razorpay, net banking, card). Applicable GST is shown at checkout and on the invoice.",
+  india: "India: Growth is INR 899 per user per month plus 18% GST (INR 1,060.82 billed), billed in INR (UPI, Razorpay, net banking, card).",
   outside_india:
     "Outside India: Growth is USD 12 per user per month on monthly billing, with a lower per-month rate on yearly billing. Local-currency prices exist for the UK (GBP), Canada (CAD), Australia (AUD), UAE (AED), Singapore (SGD) and New Zealand (NZD).",
   yearly_discount: "Yearly billing is discounted in every market (India: two months free).",
