@@ -46,7 +46,9 @@ const CALLS: [string, Tool, unknown][] = [
 // follows it, so a legitimate thousands price like "$13,500" would not trip
 // it — there is no such figure today, but the negative lookahead keeps the
 // guard honest if one is ever added.
-const FORBIDDEN = [/1,099/, /\b1099\b/, /unlimited users/i, /\$13\b(?!,)/];
+// India is ₹899 + 18% GST (₹1,060.82 billed), GSTIN or not — matches hellocrm billing
+// (gstinPricing.ts). Forbid the stale ₹1,099 and the false "GSTIN-conditional".
+const FORBIDDEN = [/1,099/, /\b1099\b/, /unlimited users/i, /\$13\b(?!,)/, /GSTIN[- ]conditional/i];
 
 describe("pricing truth — no response carries a price that matches nothing billed", () => {
   for (const [label, tool, args] of CALLS) {
@@ -56,20 +58,22 @@ describe("pricing truth — no response carries a price that matches nothing bil
     });
   }
 
-  it("India Growth states ₹899 and GST, monthly and annual", async () => {
+  it("India Growth states ₹899 + 18% GST, monthly and annual", async () => {
     const json = JSON.parse(await text(pricingGetPlans, { region: "india", plan: "growth" }));
     const growth = json.india_inr.plans[0];
-    expect(growth.price_monthly).toBe("₹899/user/month + 18% GST (same rate; annual adds 2 months free)");
+    expect(growth.price_monthly).toBe("₹899/user/month + 18% GST (₹1,060.82 billed) — same rate; annual adds 2 months free");
     expect(growth.price_annual).toBe(
-      "₹899/user/month + 18% GST (annual — 10 months paid, 2 months free = ₹8,990/user/year + GST)",
+      "₹899/user/month + 18% GST (₹1,060.82 billed) — annual: 10 months paid, 2 months free (₹8,990/user/year + 18% GST)",
     );
+    expect(growth.tax_note).toMatch(/18% GST/);
+    expect(growth.tax_note).toMatch(/1,060\.82/);
   });
 
-  it("USD Growth matches website pricing-constants.ts ($10 annual, $12 monthly)", async () => {
+  it("USD Growth matches hellocrm billing ($10 monthly, $100 annual)", async () => {
     const json = JSON.parse(await text(pricingGetPlans, { region: "global", plan: "growth" }));
     const growth = json.global_usd.plans[0];
-    expect(growth.price_annual).toBe("$10/user/month (billed annually)");
-    expect(growth.price_monthly).toBe("$12/user/month");
+    expect(growth.price_monthly).toBe("$10/user/month");
+    expect(growth.price_annual).toBe("$100/user/year (billed annually; 2 months free)");
   });
 
   it("country hub prices match billing and the website; other markets unchanged", async () => {
@@ -81,7 +85,7 @@ describe("pricing truth — no response carries a price that matches nothing bil
     );
     expect(bySlug.in).toEqual(["₹899/user/mo + GST", "₹899/user/mo + 18% GST billed monthly"]);
     // USD per website src/lib/pricing-constants.ts; every other market is a pre-edit snapshot.
-    expect(bySlug.usa).toEqual(["$10/user/mo", "$12/user/mo monthly"]);
+    expect(bySlug.usa).toEqual(["$10/user/mo", "$10/user/mo monthly ($100/user/yr annual)"]);
     expect(bySlug.uk).toEqual(["£8/user/mo", "£10/user/mo monthly"]);
     expect(bySlug.au).toEqual(["A$16/user/mo", "A$20/user/mo monthly"]);
     expect(bySlug.canada).toEqual(["C$14/user/mo", "C$18/user/mo monthly"]);

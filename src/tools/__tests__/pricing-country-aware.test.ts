@@ -13,7 +13,7 @@ describe("pricing is country-aware, not India-only or US-only", () => {
   it("pricing_get_plans returns market_scope with the India and outside-India rates", async () => {
     const out = await json(pricingGetPlans, { region: "both" });
     expect(out.market_scope).toEqual(MARKET_SCOPE);
-    expect(out.market_scope.outside_india).toMatch(/USD 12 per user per month/);
+    expect(out.market_scope.outside_india).toMatch(/USD 10 per user per month/);
     expect(out.market_scope.india).toMatch(/INR 899/);
     expect(out.market_scope.yearly_discount).toMatch(/Yearly billing is discounted/);
   });
@@ -26,9 +26,9 @@ describe("pricing is country-aware, not India-only or US-only", () => {
     expect(text).toMatch(/outside India/);
   });
 
-  it("the global Growth monthly price is USD 12", async () => {
+  it("the global Growth monthly price is USD 10", async () => {
     const out = await json(pricingGetPlans, { region: "global", plan: "growth" });
-    expect(out.global_usd.plans[0].price_monthly).toBe("$12/user/month");
+    expect(out.global_usd.plans[0].price_monthly).toBe("$10/user/month");
   });
 
   it("pricing_get_country_plans covers the 8 market hubs", async () => {

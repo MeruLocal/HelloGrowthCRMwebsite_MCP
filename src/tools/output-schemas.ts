@@ -92,7 +92,7 @@ export const TOOL_OUTPUT_SCHEMAS: Readonly<Record<string, OutputSchema>> = {
         description: "What this list is and is not. Read before reporting `total` as a feature count — it is the plan-comparison matrix, not the product's whole feature surface.",
       },
       categories: { type: "array", description: "Category names features are grouped into.", items: { type: "string" } },
-      features: listOf("slug, title, category, summary, availability{free,t1,t2,t3}, learnMoreHref", "Matching features."),
+      features: listOf("slug, title, category, summary, availability{free,growth,enterprise}, learnMoreHref", "Matching features."),
     },
     required: ["total", "coverage", "categories", "features"],
   },

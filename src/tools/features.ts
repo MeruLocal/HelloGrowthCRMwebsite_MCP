@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool, fail, ok } from "./tool-types.js";
+import { FREE_PLAN } from "../data/plan-truth.js";
 
 // ── Static feature data ───────────────────────────────────────────────────────
 
@@ -12,9 +13,10 @@ interface Feature {
   summary: string;
   bullets: string[];
   free: PlanAvailability;
-  t1: PlanAvailability;
-  t2: PlanAvailability;
-  t3: PlanAvailability;
+  /** Growth — the self-serve paid plan (₹899 India / $10–12 elsewhere). */
+  growth: PlanAvailability;
+  /** Enterprise — custom-priced contract. */
+  enterprise: PlanAvailability;
   learnMoreHref?: string;
   aliases?: string[];
 }
@@ -38,9 +40,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful across sales, success, and ops functions that need shared visibility",
     ],
     free: true,
-    t1: true,
-    t2: "Advanced + custom panels",
-    t3: "Fully customizable",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -52,10 +53,9 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Higher tiers unlock deeper breakdowns, custom reports, and longer data retention windows",
       "Useful for managers who want structured answers, not just raw CRM data exports",
     ],
-    free: true,
-    t1: true,
-    t2: "Advanced + custom reports",
-    t3: "Full analytics suite",
+    free: `Last ${FREE_PLAN.analyticsWindowDays} days`,
+    growth: "Full history + custom reports",
+    enterprise: "Full history + custom reports",
     learnMoreHref: "/product/ai-crm",
   },
   {
@@ -67,10 +67,9 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Includes status tracking, assignment, and activity history tied to each record",
       "Useful for teams handling a high volume of new contacts and wanting consistent intake",
     ],
-    free: true,
-    t1: true,
-    t2: true,
-    t3: true,
+    free: `${FREE_PLAN.leads} leads`,
+    growth: "Unlimited",
+    enterprise: "Unlimited",
     learnMoreHref: "/product/ai-lead-scoring",
   },
   {
@@ -82,10 +81,9 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful for field sales, enterprise deals, and any motion involving multiple stakeholders at a company",
       "Keeps the full relationship timeline in one place without splitting context across tools",
     ],
-    free: true,
-    t1: true,
-    t2: true,
-    t3: true,
+    free: `${FREE_PLAN.accounts} accounts`,
+    growth: "Unlimited",
+    enterprise: "Unlimited",
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -98,9 +96,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful across deal-driven sales motions in B2B, services, and high-ticket consumer sales",
     ],
     free: true,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/ai-crm",
   },
   {
@@ -113,9 +110,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Higher tiers add activity analytics and hygiene tooling for managers",
     ],
     free: true,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -128,9 +124,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs well with sequencing, dialer, and scoring for a complete outbound motion",
     ],
     free: false,
-    t1: "Basic",
-    t2: "Advanced",
-    t3: "Advanced + enrichment",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/ai-lead-scoring",
   },
   {
@@ -143,9 +138,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Captured leads feed directly into routing, sequences, and scoring workflows",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
 
@@ -160,9 +154,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with Quotes and Invoices to create a complete commerce layer inside the CRM",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -175,9 +168,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Works well with products, quotes, and approval workflows for a clean end-to-end process",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -190,9 +182,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with e-signature, invoice generation, and approval workflows",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
     aliases: ["Quotes"],
   },
@@ -206,9 +197,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with payments, expense tracking, and revenue reporting",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -221,9 +211,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with invoices and revenue tracking for a complete financial picture per account",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -236,9 +225,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with invoices, revenue tracking, and deal close data for accurate reporting",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
   },
   {
@@ -251,9 +239,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with analytics, forecast, and commission tools for a full revenue operations view",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
     aliases: ["Revenue tracking"],
   },
@@ -267,9 +254,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Connects incoming messages directly to the relevant CRM record for full context",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/email-automation",
     aliases: ["HelloMail inbox", "Shared inbox"],
   },
@@ -283,9 +269,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with routing, scoring, and sequences for a fast inbound response workflow",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/whatsapp-sms-crm",
     aliases: ["Web Chat Assistant"],
   },
@@ -299,9 +284,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Most useful for outbound teams, BDRs, and inside sales reps with high call volumes",
     ],
     free: false,
-    t1: "Local dialer",
-    t2: "+ Power dialer",
-    t3: "+ AI summaries",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/crm-dialer",
     aliases: ["Built-in Dialer"],
   },
@@ -315,9 +299,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with templates, campaigns, and automation for scalable execution",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/whatsapp-sms-crm",
     aliases: ["Messaging apps", "SMS Templates", "WhatsApp Templates"],
   },
@@ -331,9 +314,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs naturally with segmentation, sequences, and follow-up automation",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/email-automation",
   },
   {
@@ -346,9 +328,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Best for outbound prospecting, trial nurture, and structured onboarding flows",
     ],
     free: false,
-    t1: "Basic",
-    t2: "Advanced + A/B testing",
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/email-automation",
     aliases: ["Email Sequences"],
   },
@@ -361,10 +342,9 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Supports branded booking experiences and cleaner pipeline handoff after booking",
       "Useful for both inbound conversion and outbound follow-up workflows",
     ],
-    free: true,
-    t1: true,
-    t2: true,
-    t3: true,
+    free: `${FREE_PLAN.bookingPages} booking page`,
+    growth: "Unlimited booking pages",
+    enterprise: "Unlimited booking pages",
     learnMoreHref: "/product/meeting-scheduler",
     aliases: ["Scheduler", "Scheduling & video"],
   },
@@ -379,10 +359,9 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Paid tiers add broader views, hygiene support, and more operational depth",
       "Works especially well for sales ops, onboarding, and recurring follow-up workflows",
     ],
-    free: "500 tasks",
-    t1: "Unlimited + views",
-    t2: "Unlimited + managed hygiene",
-    t3: "Unlimited + dependencies",
+    free: `${FREE_PLAN.taskBoards} board, ${FREE_PLAN.tasks} tasks`,
+    growth: "Unlimited boards + views",
+    enterprise: "Unlimited boards + views",
     learnMoreHref: "/product/sales-task-boards",
   },
 
@@ -397,9 +376,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Creates the most value when connected to clean activity and deal stage data",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/ai-crm",
   },
   {
@@ -408,13 +386,12 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     summary: "Autonomous AI agents that take actions inside the CRM — drafting follow-ups, updating records, and executing workflow steps without rep intervention.",
     bullets: [
       "Reduces manual busywork so reps can focus on conversations instead of CRM upkeep",
-      "Growth tier provides Beta access; RevOps Partner tier unlocks custom agent configuration",
+      "Available on Growth and Enterprise as a Beta",
       "Most effective when pipeline data is clean and processes are well-defined",
     ],
     free: false,
-    t1: false,
-    t2: "Beta",
-    t3: "+ custom agents",
+    growth: "Beta",
+    enterprise: "Beta",
     learnMoreHref: "/product/ai-crm",
     aliases: ["AI Agent (Beta)"],
   },
@@ -428,9 +405,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Improves over time as the CRM accumulates deal history and outcome data",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/ai-crm",
   },
   {
@@ -443,9 +419,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Supports both founders and RevOps teams making prioritization decisions",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/audit",
   },
   {
@@ -458,9 +433,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful after a strategy change, a slow quarter, or before scaling spend",
     ],
     free: "1 audit",
-    t1: "3/month",
-    t2: "Unlimited",
-    t3: "Unlimited",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/audit",
   },
   {
@@ -473,9 +447,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Works best when paired with routing, scoring, and follow-up automation",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/audit",
   },
   {
@@ -488,9 +461,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with activity tracking, goals, and leaderboard for a complete performance layer",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "https://app.hellogrowthcrm.com/gamification",
   },
   {
@@ -503,9 +475,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Works best when paired with dashboards, leaderboard, and activity tracking",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "https://app.hellogrowthcrm.com/gamification",
   },
   {
@@ -518,9 +489,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with goals and gamification to create a complete performance feedback loop",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "https://app.hellogrowthcrm.com/gamification",
   },
 
@@ -531,13 +501,12 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     summary: "A branded self-service portal where customers can view their orders, invoices, project status, and communications without contacting support.",
     bullets: [
       "Reduces inbound support volume by giving customers direct access to their account data",
-      "RevOps Partner tier adds white-label options for a fully branded experience",
+      "Branding options let the portal carry your company's look",
       "Useful for teams that want one platform to handle both acquisition and retention",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: "+ white-label",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
   {
@@ -550,9 +519,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful for relationship-driven businesses where trust transfers between buyers",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
   {
@@ -565,9 +533,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful for enterprise deals where social proof and peer validation matter",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
   {
@@ -577,12 +544,11 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     bullets: [
       "Keeps NAP data (name, address, phone) consistent across discovery channels",
       "Useful for local businesses and multi-location teams managing inbound from search",
-      "Available from Software Only tier as a foundational visibility feature",
+      "Available on Growth and Enterprise as a foundational visibility feature",
     ],
     free: false,
-    t1: true,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
   {
@@ -592,12 +558,11 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     bullets: [
       "Keeps form submissions and lead data flowing directly into CRM records",
       "Useful for product launches, webinars, and campaign-specific conversion pages",
-      "RevOps Partner tier removes limits for teams running multiple concurrent campaigns",
+      "Free includes one landing page; Growth and Enterprise remove the limit for teams running multiple concurrent campaigns",
     ],
-    free: false,
-    t1: false,
-    t2: true,
-    t3: "Unlimited",
+    free: `${FREE_PLAN.landingPages} landing page`,
+    growth: "Unlimited",
+    enterprise: "Unlimited",
     learnMoreHref: "/product/customer-health-score",
   },
 
@@ -612,9 +577,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with knowledge base and SLA policies for a complete support layer",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
   {
@@ -627,9 +591,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with tickets and chat to create a deflection-first support workflow",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
   {
@@ -639,12 +602,11 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     bullets: [
       "Creates accountability in support workflows with escalation rules and breach alerts",
       "Useful for teams with contractual support commitments or tiered customer plans",
-      "RevOps Partner tier unlocks full SLA policy management for enterprise-ready support",
+      "Available on Growth and Enterprise for teams that run support against response targets",
     ],
     free: false,
-    t1: false,
-    t2: false,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/customer-health-score",
   },
 
@@ -659,9 +621,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Higher tiers add broader integration coverage and more custom support",
     ],
     free: false,
-    t1: "90 integrations",
-    t2: "90 integrations",
-    t3: "90 + custom support",
+    growth: "Live integrations (see integrations_list)",
+    enterprise: "Live integrations + custom integration support",
     learnMoreHref: "/integrations",
     aliases: ["API access", "Total integrations", "Automation", "Lead source integrations", "Lead Sources", "Commerce & payments"],
   },
@@ -671,13 +632,12 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     summary: "Automated lead assignment rules that distribute new inquiries to the right rep based on territory, source, score, or round-robin logic.",
     bullets: [
       "Reduces response time by removing manual assignment from the lead intake process",
-      "Growth tier adds round-robin routing; RevOps Partner adds fully custom rule sets",
+      "Rules-based assignment (to a user or a team) plus round-robin to the rep with the fewest open leads",
       "Pairs well with scoring, territories, and speed-to-lead SLA tracking",
     ],
     free: false,
-    t1: false,
-    t2: "Round-robin",
-    t3: "+ custom rules",
+    growth: "Rules + round-robin",
+    enterprise: "Rules + round-robin",
     learnMoreHref: "/product/ai-crm",
     aliases: ["Lead Routing Rules", "Lead Stages"],
   },
@@ -691,9 +651,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with custom fields and workflows for a complete data governance layer",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/ai-crm",
   },
   {
@@ -702,13 +661,12 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     summary: "Automated workflow builder for triggering actions — task creation, field updates, notifications, stage moves — based on CRM events.",
     bullets: [
       "Reduces manual work by automating repetitive steps in the sales and ops process",
-      "Growth tier enables basic workflows; RevOps Partner unlocks multi-step and approval flows",
+      "Workflow automation is a Growth and Enterprise feature",
       "Most effective when layered with routing, scoring, and sequence automation",
     ],
     free: false,
-    t1: false,
-    t2: "Basic",
-    t3: "Multi-step + approval",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/ai-crm",
   },
   {
@@ -718,12 +676,11 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
     bullets: [
       "Helps teams distribute work fairly and reduce ownership conflicts across regions",
       "Useful for distributed teams, field sales, and organizations with assigned segments",
-      "RevOps Partner tier adds map-based territory visualization for field ops teams",
+      "Includes a map view for field and territory teams",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: "+ map view",
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/territory-management",
   },
   {
@@ -736,9 +693,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Useful for commission-driven teams that want transparency without a separate tool",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/territory-management",
   },
   {
@@ -751,9 +707,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs with territories, dialer, and activity tracking for full field visibility",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: true,
+    enterprise: true,
     learnMoreHref: "/product/territory-management",
   },
   {
@@ -766,9 +721,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Included in managed service tiers where execution support matters as much as software access",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -781,9 +735,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Designed to improve speed, consistency, and visibility without adding more tools",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -796,9 +749,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Often one of the fastest ways to improve pipeline responsiveness without new headcount",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -811,9 +763,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Helps leadership create a more predictable response standard across the funnel",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -826,9 +777,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Often overlooked until poor data starts hurting decision-making",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -841,9 +791,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs well with managed follow-up, forecast reviews, and specialist execution",
     ],
     free: false,
-    t1: false,
-    t2: true,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -856,9 +805,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Especially valuable for growing teams with multiple funnels, motions, or handoff points",
     ],
     free: false,
-    t1: false,
-    t2: false,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -871,9 +819,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Pairs well with KPI reporting, scoring refinement, and automation planning",
     ],
     free: false,
-    t1: false,
-    t2: false,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -886,9 +833,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Best handled as an ongoing optimization process, not a one-time setup task",
     ],
     free: false,
-    t1: false,
-    t2: false,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/product/ai-lead-scoring",
   },
   {
@@ -901,9 +847,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Most valuable when paired with a managed operating cadence and named specialist support",
     ],
     free: false,
-    t1: false,
-    t2: false,
-    t3: true,
+    growth: "Managed RevOps service add-on (not a CRM plan feature)",
+    enterprise: "Managed RevOps service add-on (not a CRM plan feature)",
     learnMoreHref: "/services/managed-revops",
   },
   {
@@ -916,9 +861,8 @@ const RAW_FEATURES: Omit<Feature, "slug">[] = [
       "Support quality matters more as the CRM becomes central to revenue execution",
     ],
     free: "Community",
-    t1: "Email + Chat",
-    t2: "Priority",
-    t3: "Dedicated",
+    growth: "Email + chat",
+    enterprise: "Priority",
     learnMoreHref: "/legal/sla",
     aliases: ["Community support", "Priority support", "Dedicated support"],
   },
@@ -931,7 +875,7 @@ const FEATURES: Feature[] = RAW_FEATURES.map((f) => ({ ...f, slug: slugify(f.tit
 //
 // WHY: an agent that calls features_list and gets a bare `total: 58` will tell
 // a customer HelloGrowthCRM has 58 features. It does not. 58 is the curated
-// plan-comparison matrix — the rows a buyer compares across Free / t1 / t2 / t3
+// plan-comparison matrix — the rows a buyer compares across Free / Growth / Enterprise
 // — and the website publishes several hundred feature pages beyond it. The
 // number is not wrong; the SILENCE around it is. Four different counts were in
 // circulation (58 here, and 232 / 135 / 99 on various website surfaces) purely
@@ -947,7 +891,7 @@ const FEATURES: Feature[] = RAW_FEATURES.map((f) => ({ ...f, slug: slugify(f.tit
 const FEATURES_COVERAGE = {
   scope: "plan-comparison matrix",
   scope_note:
-    "These are the features HelloGrowthCRM compares across plan tiers (Free / Starter / Growth Engine / RevOps Partner). It is NOT a count of everything the product does, and NOT a count of the feature pages published on hellogrowthcrm.com — the marketing site carries substantially more. Do not present this total as 'the number of features'.",
+    "These are the features HelloGrowthCRM compares across the plan ladder (Free / Growth / Enterprise). Starter, Growth Engine and RevOps Partner are not CRM plans: Starter was retired and Growth Engine / RevOps Partner are Managed RevOps service retainers (see pricing_get_managed_revops). It is NOT a count of everything the product does, and NOT a count of the feature pages published on hellogrowthcrm.com — the marketing site carries substantially more. Do not present this total as 'the number of features'.",
   counted: FEATURES.length,
   source: "hellocrmwebsite plan-comparison matrix",
   full_catalog_url: "https://hellogrowthcrm.com/features",
@@ -980,13 +924,13 @@ const CATEGORIES = [...new Set(FEATURES.map((f) => f.category))];
 export const featuresList = defineTool({
   schema: z.object({
     category: z.enum(["Core CRM", "Commerce & Communication", "Project, AI & Customer", "Intelligence Module", "Customer Module", "Support Module", "Admin, Integrations & Service", "all"]).default("all"),
-    plan: z.enum(["free", "t1", "t2", "t3", "all"]).default("all").describe("Filter to features available on a specific plan tier. free=Free, t1=Software Only/Starter, t2=Growth Engine, t3=RevOps Partner"),
+    plan: z.enum(["free", "growth", "enterprise", "all", "t1", "t2", "t3"]).default("all").describe("Filter to features available on a plan: free, growth or enterprise. Legacy t1/t2/t3 values are accepted and treated as growth."),
     search: z.string().optional().describe("Keyword to filter features by title, summary, or aliases"),
   }),
   definition: {
     name: "features_list",
     description:
-      "List the HelloGrowthCRM features that appear in the plan-comparison matrix (what is included in Free / Starter / Growth Engine / RevOps Partner). This is a curated comparison set, NOT the complete feature surface — hellogrowthcrm.com/features publishes considerably more — so do not report this total as the number of features the product has. Supports filtering by category, plan tier, and keyword search.",
+      "List the HelloGrowthCRM features that appear in the plan-comparison matrix (what is included in Free / Growth / Enterprise). This is a curated comparison set, NOT the complete feature surface — hellogrowthcrm.com/features publishes considerably more — so do not report this total as the number of features the product has. Supports filtering by category, plan tier, and keyword search.",
     inputSchema: {
       type: "object",
       properties: {
@@ -998,9 +942,9 @@ export const featuresList = defineTool({
         },
         plan: {
           type: "string",
-          enum: ["free", "t1", "t2", "t3", "all"],
+          enum: ["free", "growth", "enterprise", "all"],
           default: "all",
-          description: "Plan tier filter: free, t1 (Software Only/Starter), t2 (Growth Engine), t3 (RevOps Partner)",
+          description: "Plan filter: free, growth or enterprise",
         },
         search: { type: "string", description: "Keyword search across title, summary, and aliases" },
       },
@@ -1016,7 +960,8 @@ export const featuresList = defineTool({
       }
 
       if (args.plan !== "all") {
-        const tier = args.plan;
+        const tier: "free" | "growth" | "enterprise" =
+          args.plan === "t1" || args.plan === "t2" || args.plan === "t3" ? "growth" : args.plan;
         results = results.filter((f) => {
           const val = f[tier];
           return val !== false && val !== undefined;
@@ -1042,7 +987,7 @@ export const featuresList = defineTool({
           title: f.title,
           category: f.category,
           summary: f.summary,
-          availability: { free: f.free, t1: f.t1, t2: f.t2, t3: f.t3 },
+          availability: { free: f.free, growth: f.growth, enterprise: f.enterprise },
           learnMoreHref: f.learnMoreHref
             ? f.learnMoreHref.startsWith("http")
               ? f.learnMoreHref
@@ -1096,9 +1041,8 @@ export const featuresGet = defineTool({
         bullets: feature.bullets,
         availability: {
           free: feature.free,
-          t1_software_only: feature.t1,
-          t2_growth_engine: feature.t2,
-          t3_revops_partner: feature.t3,
+          growth: feature.growth,
+          enterprise: feature.enterprise,
         },
         aliases: feature.aliases ?? [],
         learnMoreUrl: feature.learnMoreHref

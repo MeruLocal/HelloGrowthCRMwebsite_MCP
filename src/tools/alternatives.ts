@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool, fail, ok } from "./tool-types.js";
+import { FREE_PLAN, FREE_PLAN_CELL } from "../data/plan-truth.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static mirror data — READ-MIRROR of the live website. Never invent entries.
@@ -680,7 +681,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
     ],
     featureRows: [
       ["Pricing", "From ₹899/user/month — all features included", "Basic ₹2,500/user/month; Enterprise ₹8,000+/user/month"],
-      ["Free plan", "Yes — up to 200 leads, forever", "No free plan"],
+      ["Free plan", FREE_PLAN_CELL, "No free plan"],
       ["Setup time", "15 minutes — no implementation partner", "Weeks with paid implementation team"],
       ["WhatsApp messaging", "Native — zero setup, full pipeline integration", "Third-party integration — separate configuration"],
       ["AI lead scoring", "Included in all plans", "Higher tiers only"],
@@ -721,7 +722,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Email sequences", "Multi-step sequences with AI drafting", "Basic — no native sequences"],
       ["Sales forecasting", "AI-powered revenue forecasting", "Manual — no forecasting engine"],
       ["Pricing", "From ₹899/user/month — all features", "From $9/user/month — automation run limits"],
-      ["Free plan", "Yes — 200 leads, forever", "14-day trial only"],
+      ["Free plan", FREE_PLAN_CELL, "14-day trial only"],
     ],
     migrationSteps: [
       "Export your Monday.com CRM boards as CSV: open each board → Menu → Export → Excel/CSV. Download contacts, leads, and deals separately.",
@@ -754,7 +755,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Built-in dialer", "Yes — click-to-call, recording, AI summaries", "Requires Phone System + Teams add-on"],
       ["WhatsApp messaging", "Native — no third-party setup", "Requires third-party integration"],
       ["AI lead scoring", "Included in all plans", "Dynamics 365 Copilot — additional cost"],
-      ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+      ["Free plan", FREE_PLAN_CELL, "No free plan"],
       ["India pricing (INR)", "₹899/user/month — GST-inclusive", "USD only — no INR pricing"],
       ["Managed RevOps", "Growth Engine included — from $1,499/month", "Requires certified Microsoft partner"],
     ],
@@ -790,7 +791,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["WhatsApp messaging", "Native inbox", "Not supported"],
       ["Email sequences", "Multi-step with AI drafting", "Basic email tracking only"],
       ["Pricing", "From ₹899/user/month — all features", "From $9/user/month — Google Workspace required"],
-      ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+      ["Free plan", FREE_PLAN_CELL, "No free plan"],
       ["India/INR pricing", "₹899/user/month", "USD only"],
     ],
     migrationSteps: [
@@ -825,7 +826,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["WhatsApp messaging", "Native inbox", "Not supported"],
       ["Email sequences", "Multi-step with AI drafting", "Basic email automation"],
       ["Sales forecasting", "AI-powered", "Manual / basic"],
-      ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+      ["Free plan", FREE_PLAN_CELL, "No free plan"],
       ["India/INR pricing", "₹899/user/month", "USD only"],
     ],
     migrationSteps: [
@@ -896,7 +897,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["CRM Complexity", "Sales-focused, simple", "Overwhelming (35+ modules)"],
       ["GSTIN/PAN Verification", "Built-in", "Not available"],
       ["India Support (IST)", "Yes", "No dedicated India support"],
-      ["Free Plan", "200 contacts, forever", "Free but feature-gated"],
+      ["Free Plan", FREE_PLAN_CELL, "Free but feature-gated"],
     ],
     migrationSteps: [
       "Export from Bitrix24: In Bitrix24, go to CRM → Settings → Data Export. Export contacts, companies, deals, and activities as CSV. The export wizard walks you through each module.",
@@ -930,7 +931,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Tally Integration", "Yes", "Not available"],
       ["INR / Local Pricing", "₹899/user/month", "USD only, $49+/user"],
       ["Multilingual (Hindi etc.)", "Yes", "English only"],
-      ["Free Plan", "200 contacts forever", "No free plan"],
+      ["Free Plan", FREE_PLAN_CELL, "No free plan"],
       ["India Data Hosting", "Available", "US-only"],
     ],
     migrationSteps: [
@@ -965,7 +966,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Sales Pipeline View", "Kanban + list + forecast", "Grid view only"],
       ["Built-in Sales Dialer", "Yes", "Not available"],
       ["CRM-Native Activity Timeline", "Yes", "Manual entry only"],
-      ["Free Plan for CRM Use", "200 contacts, forever", "Free but not CRM-native"],
+      ["Free Plan for CRM Use", FREE_PLAN_CELL, "Free but not CRM-native"],
       ["India Features (Tally, GSTIN)", "Yes", "Not available"],
     ],
     migrationSteps: [
@@ -1001,7 +1002,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Built-in Sales Dialer", "Yes", "Not available"],
       ["Team Activity Notifications", "Yes — real-time", "Manual @mentions only"],
       ["Revenue Forecasting", "AI-powered", "Not available"],
-      ["Free Plan", "200 contacts forever", "Free but not CRM-native"],
+      ["Free Plan", FREE_PLAN_CELL, "Free but not CRM-native"],
     ],
     migrationSteps: [
       "Export from Notion: In your Notion customer database, click the three dots then Export then CSV. Export each database (Contacts, Companies, Deals) separately. Notion exports clean CSVs with all your properties.",
@@ -1071,7 +1072,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Pricing model", "Per user — unlimited contacts", "Per contact tier — price jumps at thresholds"],
       ["Pipeline management depth", "Kanban + AI forecasting + deal health", "Basic deal CRM — limited pipeline views"],
       ["India / INR pricing", "₹899/user/month", "USD only — no INR pricing"],
-      ["Free plan", "Yes — 200 leads forever", "14-day trial only"],
+      ["Free plan", FREE_PLAN_CELL, "14-day trial only"],
     ],
     migrationSteps: [
       "Export from ActiveCampaign: go to Contacts → Export. Select all fields and download as CSV. Export deal/pipeline data separately under Deals → Export.",
@@ -1105,7 +1106,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["Built-in dialer", "Yes — click-to-call, AI summaries", "US/Canada calling — additional cost"],
       ["India integrations (IndiaMART, Tally)", "Yes — native", "Not available"],
       ["Setup complexity", "15 minutes — no consultant needed", "Complex — often requires certified partner"],
-      ["Free plan", "Yes — 200 leads, no credit card", "No free plan"],
+      ["Free plan", FREE_PLAN_CELL, "No free plan"],
       ["INR pricing", "₹899/user/month", "USD only"],
     ],
     migrationSteps: [
@@ -1176,7 +1177,7 @@ const SWITCH_GUIDES: SwitchGuide[] = [
       ["WhatsApp messaging", "Native two-way WhatsApp", "No WhatsApp integration"],
       ["Mobile app", "Dedicated iOS and Android app", "Gmail mobile app dependency"],
       ["Team collaboration", "Shared pipeline, role-based access", "Shared pipelines — limited permissions"],
-      ["Free plan", "Yes — up to 200 leads", "Free tier — very limited (1 pipeline only)"],
+      ["Free plan", FREE_PLAN_CELL, "Free tier — very limited (1 pipeline only)"],
     ],
     migrationSteps: [
       "Export your Streak pipelines: open a pipeline in Streak, click Export, and download as CSV. Repeat for each pipeline.",
@@ -1270,12 +1271,12 @@ const SWITCH_GUIDES: SwitchGuide[] = [
     reasons: [
       { title: "Full CRM that Trello simply doesn't have", desc: "Trello has no contacts, no deal values, no pipeline forecasting, and no AI lead scoring. HelloGrowthCRM is a complete sales CRM — contacts, deals, AI scoring, and pipeline analytics — with Kanban boards included." },
       { title: "Native WhatsApp at no extra cost", desc: "Trello has no WhatsApp integration on any plan. HelloGrowthCRM includes native two-way WhatsApp — conversations logged against leads automatically, broadcast campaigns, and sequence automation." },
-      { title: "Free-plan limits you hit in week 3", desc: "Trello free caps at 10 boards and 10 users. Butler automations exhaust their monthly quota in days. HelloGrowthCRM's free plan has unlimited boards, pipelines, and automation for up to 200 leads." },
+      { title: "Free-plan limits you hit in week 3", desc: `Trello free caps at 10 boards and 10 users. Butler automations exhaust their monthly quota in days. HelloGrowthCRM's free plan gives one user a sales CRM for up to ${FREE_PLAN.leads} leads with ${FREE_PLAN.taskBoards} task board (${FREE_PLAN.tasks} tasks); unlimited boards and workflow automation come with Growth.` },
       { title: "INR billing with GST invoice every cycle", desc: "Trello bills in USD with no GST invoice. HelloGrowthCRM charges ₹899/user/month with a GST-compliant tax invoice every billing cycle — required for Indian business accounting and input tax credit." },
     ],
     featureRows: [
       ["Sales CRM (contacts, pipeline, deals)", "Full CRM — AI scoring, pipeline, forecasting", "Not available — Trello is PM-only"],
-      ["Kanban boards", "Yes — unlimited boards + swimlanes", "Yes — Kanban only"],
+      ["Kanban boards", `Yes — ${FREE_PLAN.taskBoards} board on Free; unlimited boards + swimlanes on Growth`, "Yes — Kanban only"],
       ["Sprint + burndown + time tracking", "Yes — built in", "Not available natively"],
       ["WhatsApp messaging", "Native — no third-party required", "Not available on any plan"],
       ["IndiaMART / JustDial lead import", "Yes — native lead capture", "Not available"],
