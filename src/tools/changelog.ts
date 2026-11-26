@@ -88,6 +88,18 @@ const CHANGELOG_RELEASES: ChangelogRelease[] = [
 ];
 // >>> END GENERATED <<<
 
+// Items the website changelog carries that this server does not repeat, because
+// the claim is unverified (live audit 2026-11-19: no SOC 2 report has been
+// verified; the claim is withdrawn on every surface of this server). Filtered at
+// serve time so the generated mirror above stays a byte-faithful copy and
+// `check:mirror` keeps working. Fix the source on the website to drop an entry
+// from this set.
+const WITHHELD_ITEM_TITLES: ReadonlySet<string> = new Set(["SOC 2 Type II Attestation"]);
+const SERVED_RELEASES: ChangelogRelease[] = CHANGELOG_RELEASES.map((r) => ({
+  ...r,
+  items: r.items.filter((i) => !WITHHELD_ITEM_TITLES.has(i.title)),
+}));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tools
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,7 +145,7 @@ export const changelogListReleases = defineTool({
   },
   async handle(args) {
     // Curated data is already newest-first; sort defensively by isoDate desc.
-    let releases = [...CHANGELOG_RELEASES].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+    let releases = [...SERVED_RELEASES].sort((a, b) => b.isoDate.localeCompare(a.isoDate));
 
     if (args.tag) {
       const tag = args.tag;
@@ -147,7 +159,7 @@ export const changelogListReleases = defineTool({
     return ok({
       synced_at: SYNCED_AT,
       routes: [`${SITE}/changelog`, `${SITE}/whats-new`],
-      total_releases: CHANGELOG_RELEASES.length,
+      total_releases: SERVED_RELEASES.length,
       filtered_count: releases.length,
       returned: limited.length,
       releases: limited,
@@ -176,10 +188,10 @@ export const changelogGetRelease = defineTool({
   },
   async handle(args) {
     const version = args.version.trim().toLowerCase().replace(/^v/, "");
-    const release = CHANGELOG_RELEASES.find((r) => r.version === version);
+    const release = SERVED_RELEASES.find((r) => r.version === version);
     if (!release) {
       return fail(
-        `Release "${args.version}" not found. Valid versions: ${CHANGELOG_RELEASES.map((r) => r.version).join(", ")}`,
+        `Release "${args.version}" not found. Valid versions: ${SERVED_RELEASES.map((r) => r.version).join(", ")}`,
       );
     }
     return ok({

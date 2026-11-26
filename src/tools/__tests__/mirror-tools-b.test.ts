@@ -41,12 +41,18 @@ describe("changelog tools", () => {
   });
 
   it("changelog_list_releases filters releases and items by tag", async () => {
-    const { json } = await run(changelogListReleases, { limit: 20, tag: "infra" });
+    const { json } = await run(changelogListReleases, { limit: 20, tag: "feature" });
     const releases = json.releases as { version: string; items: { tag: string }[] }[];
-    expect(json.filtered_count).toBe(1);
-    expect(releases.length).toBe(1);
-    expect(releases[0]!.version).toBe("1.0.0");
-    expect(releases[0]!.items.every((i) => i.tag === "infra")).toBe(true);
+    expect(releases.length).toBeGreaterThan(0);
+    expect(releases.every((r) => r.items.length > 0 && r.items.every((i) => i.tag === "feature"))).toBe(true);
+  });
+
+  it("changelog withholds the unverified SOC 2 attestation item (audit 2026-11-19)", async () => {
+    const infra = await run(changelogListReleases, { limit: 20, tag: "infra" });
+    // The only infra item the website carries is the SOC 2 claim; nothing is left.
+    expect(infra.json.filtered_count).toBe(0);
+    const all = await run(changelogListReleases, { limit: 20 });
+    expect(JSON.stringify(all.json)).not.toMatch(/SOC ?2/i);
   });
 
   it("changelog_list_releases drops releases with no matching items", async () => {

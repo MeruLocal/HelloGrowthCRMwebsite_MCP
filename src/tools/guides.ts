@@ -90,6 +90,30 @@ const FEATURE_GUIDES: GuideSummary[] = [
 ];
 // >>> END GENERATED <<<
 
+// Product-truth overrides, applied at serve time so the generated mirror above
+// stays byte-faithful to the website (and `check:mirror` keeps passing). The
+// website copy for these two guides says EVERY call is transcribed/summarised
+// automatically; on PROD, AI voice-agent calls are summarised automatically and
+// recorded dialer calls are transcribed only on a rep's request, on Growth, in
+// a path still rolling out (hellocrm PLAN-HGC-0564, re-checked 2026-11-26; live
+// audit 2026-11-19). Remove an entry once the website copy is fixed.
+const PRODUCT_TRUTH_OVERRIDES: Record<string, Partial<GuideSummary> & { product_truth_note: string }> = {
+  "call-transcription": {
+    tagline: "Transcribe a recorded call on request — searchable text on the call log, with PII redacted.",
+    product_truth_note:
+      "Not automatic for every call. A rep requests the transcript of a recorded CRM-dialer call; this is rolling out on the Growth plan. India workspaces use India-resident speech providers.",
+  },
+  "ai-call-summaries": {
+    tagline: "AI voice-agent calls summarised automatically; recorded dialer calls summarised on request.",
+    product_truth_note:
+      "Automatic summaries apply to AI voice-agent calls. For human calls from the CRM dialer, the summary is generated when a rep requests a transcript (rolling out on Growth).",
+  },
+};
+
+const SERVED_GUIDES: (GuideSummary & { product_truth_note?: string })[] = FEATURE_GUIDES.map((g) =>
+  PRODUCT_TRUTH_OVERRIDES[g.slug] ? { ...g, ...PRODUCT_TRUTH_OVERRIDES[g.slug] } : g,
+);
+
 function guideUrl(slug: string): string {
   return `https://hellogrowthcrm.com/feature-guide/${slug}`;
 }
@@ -119,7 +143,7 @@ export const guidesList = defineTool({
     },
   },
   async handle(args) {
-    let guides = FEATURE_GUIDES;
+    let guides = SERVED_GUIDES;
     if (args.search) {
       const q = args.search.toLowerCase();
       guides = guides.filter(
@@ -134,7 +158,7 @@ export const guidesList = defineTool({
     }
     return ok({
       synced_at: GUIDES_SYNCED_AT,
-      total: FEATURE_GUIDES.length,
+      total: SERVED_GUIDES.length,
       filtered_count: guides.length,
       categories: Object.entries(GUIDE_CATEGORIES).map(([slug, label]) => ({ slug, label })),
       guides: guides.map((g) => ({
@@ -173,10 +197,10 @@ export const guidesGet = defineTool({
   },
   async handle(args) {
     const slug = args.slug.trim().toLowerCase();
-    const guide = FEATURE_GUIDES.find((g) => g.slug === slug);
+    const guide = SERVED_GUIDES.find((g) => g.slug === slug);
     if (!guide) {
       return fail(
-        `Feature guide "${args.slug}" not found. Valid slugs: ${FEATURE_GUIDES.map((g) => g.slug).join(", ")}`,
+        `Feature guide "${args.slug}" not found. Valid slugs: ${SERVED_GUIDES.map((g) => g.slug).join(", ")}`,
       );
     }
     return ok({
