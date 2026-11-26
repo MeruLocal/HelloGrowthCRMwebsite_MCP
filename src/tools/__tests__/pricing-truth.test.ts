@@ -69,11 +69,11 @@ describe("pricing truth — no response carries a price that matches nothing bil
     expect(growth.tax_note).toMatch(/1,060\.82/);
   });
 
-  it("USD Growth matches website pricing-constants.ts ($10 annual, $12 monthly)", async () => {
+  it("USD Growth matches hellocrm billing ($10 monthly, $100 annual)", async () => {
     const json = JSON.parse(await text(pricingGetPlans, { region: "global", plan: "growth" }));
     const growth = json.global_usd.plans[0];
-    expect(growth.price_annual).toBe("$10/user/month (billed annually)");
-    expect(growth.price_monthly).toBe("$12/user/month");
+    expect(growth.price_monthly).toBe("$10/user/month");
+    expect(growth.price_annual).toBe("$100/user/year (billed annually; 2 months free)");
   });
 
   it("country hub prices match billing and the website; other markets unchanged", async () => {
@@ -85,7 +85,7 @@ describe("pricing truth — no response carries a price that matches nothing bil
     );
     expect(bySlug.in).toEqual(["₹899/user/mo + GST", "₹899/user/mo + 18% GST billed monthly"]);
     // USD per website src/lib/pricing-constants.ts; every other market is a pre-edit snapshot.
-    expect(bySlug.usa).toEqual(["$10/user/mo", "$12/user/mo monthly"]);
+    expect(bySlug.usa).toEqual(["$10/user/mo", "$10/user/mo monthly ($100/user/yr annual)"]);
     expect(bySlug.uk).toEqual(["£8/user/mo", "£10/user/mo monthly"]);
     expect(bySlug.au).toEqual(["A$16/user/mo", "A$20/user/mo monthly"]);
     expect(bySlug.canada).toEqual(["C$14/user/mo", "C$18/user/mo monthly"]);
