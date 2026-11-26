@@ -147,10 +147,13 @@ const AGENTS: AgentRecord[] = [
     name: "Lead Routing Agent",
     route: "/agentic-ai/lead-routing-agent",
     autonomyLevel: "autonomous",
-    summary: "ML-based smart routing — assigns leads to the right rep in real time.",
-    tagline: "Lead Routing Agent — AI Lead Assignment & Speed-to-Lead",
+    // Was "ML-based smart routing" (live audit 2026-11-19). The product routes by
+    // rules: a named user, a team, or round-robin to the rep with the fewest open
+    // leads (hellocrm features.yaml "Lead Routing", re-checked 2026-11-26). No ML model.
+    summary: "Rules-based routing — assigns each new lead to a user, a team, or round-robin to the rep with the fewest open leads.",
+    tagline: "Lead Routing Agent — Rules-Based Lead Assignment & Speed-to-Lead",
     detail:
-      "AI lead routing agent that assigns every inbound lead to the best-fit rep instantly using territory, capacity, and routing rules.",
+      "Lead routing agent that assigns every inbound lead using your routing rules — to a named user, to a team, or round-robin to the rep with the fewest open leads — and never reassigns a lead that already has an owner.",
     keywords: ["lead routing agent", "ai lead assignment", "routing agent crm", "speed to lead ai"],
     seoSectionHeadings: [
       "AI Lead Routing vs Rule-Based Assignment",
@@ -162,12 +165,17 @@ const AGENTS: AgentRecord[] = [
     name: "Post-Call Agent",
     route: "/agentic-ai/post-call-agent",
     autonomyLevel: "autonomous",
-    summary: "Transcribes, summarises, and logs follow-up actions from every call.",
-    tagline: "Post-Call Agent — Transcribes, Summarises, and Logs Follow-Up Actions Automatically",
+    // Was "transcribes ... every call" (live audit 2026-11-19). AI voice-agent calls
+    // are summarised automatically. Recorded CRM-dialer calls are transcribed and
+    // summarised only when a rep requests it, on Growth, and that path is still in
+    // testing behind a kill switch (hellocrm PLAN-HGC-0564, re-checked 2026-11-26).
+    summary: "Summarises AI voice-agent calls and logs follow-up actions; recorded dialer calls can be transcribed on request (rolling out on Growth).",
+    tagline: "Post-Call Agent — Summarises Calls and Logs Follow-Up Actions",
     detail:
-      "Every call ends. Most reps spend 5-10 minutes on post-call admin. The Post-Call Agent does it in 30 seconds — transcribing the call, extracting key commitments, updating CRM fields, and creating follow-up tasks automatically.",
+      "Most reps spend 5-10 minutes on post-call admin. For AI voice-agent calls the Post-Call Agent writes the summary automatically, extracts key commitments and suggests follow-up tasks. For a recorded call made from the CRM dialer, a rep can request a transcript and AI summary of the recording; that capability is rolling out on the Growth plan and is not applied to every call automatically.",
     capabilities: [
-      "Full call transcription with speaker labels",
+      "Automatic summaries for AI voice-agent calls",
+      "On-request transcript and summary of a recorded dialer call (rolling out, Growth)",
       "AI-generated structured call summary",
       "Commitment and next-step extraction",
       "Automatic CRM field updates",
@@ -175,14 +183,13 @@ const AGENTS: AgentRecord[] = [
       "Objection and concern tagging",
       "Budget and timeline detection",
       "Sentiment analysis per speaker",
-      "Searchable transcript library",
       "Slack/email rep notification",
       "Manager coaching flags on key moments",
       "Full audit log of every agent action",
     ],
     howItWorks: [
-      { step: "1", title: "Call ends", desc: "Works with any call source: CRM dialer, SIP trunk, inbound queue, or Twilio. Agent activates on call completion." },
-      { step: "2", title: "Transcription (< 30 seconds)", desc: "Full call transcript generated via Deepgram or AssemblyAI. Speaker labels separate rep and prospect. Timestamps on every turn." },
+      { step: "1", title: "Call ends", desc: "AI voice-agent calls are processed on completion. A recorded CRM-dialer call is processed when a rep requests a transcript." },
+      { step: "2", title: "Transcript", desc: "AI voice-agent calls carry the voice provider's transcript. A requested dialer-call transcript is generated from the stored recording; India workspaces use India-resident speech providers, and card/PAN/Aadhaar/OTP numbers are redacted before storage." },
       { step: "3", title: "AI Summary & Extraction", desc: "LLM extracts: key decisions made, next steps committed, objections raised, budget/timeline mentions, requested follow-ups. Output is structured, not a wall of text." },
       { step: "4", title: "CRM Updated Automatically", desc: "Deal stage, contact fields (pain point, budget, timeline), and pipeline notes updated without rep touching the keyboard." },
       { step: "5", title: "Follow-up Tasks Created", desc: "Tasks created for every committed next step — assigned to the right rep, due on the committed date, linked to the deal." },
@@ -190,8 +197,8 @@ const AGENTS: AgentRecord[] = [
     ],
     faqs: [
       { q: "How much time does the Post-Call Agent actually save?", a: "Sales reps typically spend 5 to 10 minutes after each call updating CRM notes, logging activity, creating follow-up tasks, and sending a summary email. At 20 calls per day, the agent recovers 1.5 to 3 hours of selling time per rep per day by completing the same workflow in under 30 seconds per call." },
-      { q: "Which call sources does the Post-Call Agent support?", a: "The Post-Call Agent integrates with HelloGrowthCRM's built-in dialer, SIP trunks, Twilio-powered inbound call queues, and the Voice Agent's autonomous outbound calls. All calls are transcribed using Deepgram or AssemblyAI with speaker diarization." },
-      { q: "How accurate is the AI extraction of commitments and next steps?", a: "The extraction model is trained specifically on sales conversation patterns. Accuracy on well-recorded calls is consistently above 90% for structured outputs, and the rep can review and correct what the agent extracted before confirming." },
+      { q: "Which call sources does the Post-Call Agent support?", a: "AI voice-agent calls are summarised automatically. Recorded calls from HelloGrowthCRM's built-in dialer can be transcribed and summarised when a rep requests it — rolling out on the Growth plan, not automatic for every call." },
+      { q: "How accurate is the AI extraction of commitments and next steps?", a: "The summary and extracted next steps are AI-generated and can be wrong, so the rep reviews and corrects them before confirming." },
       { q: "Can the Post-Call Agent update custom CRM fields?", a: "Yes. Any custom field you have configured in HelloGrowthCRM can be mapped to an extraction pattern in the Post-Call Agent settings. Standard field updates (deal stage, contact status, next activity date) are pre-configured out of the box." },
       { q: "Is call data stored and is it GDPR compliant?", a: "Call transcripts are stored in your HelloGrowthCRM account, can auto-delete after a retention period, and support PII masking. HelloGrowthCRM is designed to comply with GDPR and India's DPDPA framework." },
     ],
@@ -307,9 +314,12 @@ const AGENTS: AgentRecord[] = [
     route: "/agentic-ai/mcp",
     autonomyLevel: "supervised",
     summary: "Connect ChatGPT, Claude, or Gemini directly to your CRM data via MCP protocol.",
-    tagline: "The Only CRM MCP Server with Native WhatsApp Tools",
+    // Was "The Only CRM MCP Server with Native WhatsApp Tools" plus a "90% of deals
+    // close on WhatsApp" line: an unverifiable superlative and WhatsApp-led framing
+    // (live audit 2026-11-19). The product is a multi-channel suite.
+    tagline: "CRM MCP Connector — Bring Your CRM Data into AI Assistants",
     detail:
-      "HelloGrowthCRM ships a public Model Context Protocol (MCP) server. HubSpot, Zoho, and Salesforce all have MCP now — but none can send a WhatsApp from Claude. For Indian SMBs where 90% of deals close on WhatsApp, that changes everything.",
+      "HelloGrowthCRM ships a Model Context Protocol (MCP) server so an AI assistant such as Claude, ChatGPT or Gemini can work with your CRM data — leads, deals, tasks and customer conversations across email, WhatsApp, SMS and calls.",
   },
   {
     slug: "ai-email-composer",

@@ -134,7 +134,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     pricing_href: "/pricing",
     country_name: "your region",
     coverage_hours: "Mon–Fri, 9am–6pm in your team's primary timezone",
-    compliance_line: "GDPR-aware data handling, SOC 2-aligned controls, opt-out + suppression list management.",
+    compliance_line: "GDPR-aware data handling, opt-out + suppression list management.",
     positioning:
       "Managed RevOps team triages inbound leads, runs follow-up cadences, cleans the pipeline, and ships a weekly KPI report — so the sales team only does work that closes deals.",
     pain_points: [
@@ -276,7 +276,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     pricing_href: "/usa/pricing",
     country_name: "the United States",
     coverage_hours: "Mon–Fri, 9am–6pm ET (overlap with PT business hours)",
-    compliance_line: "SOC 2 Type II controls, CCPA-aware data handling, CAN-SPAM + TCPA opt-out + suppression management.",
+    compliance_line: "CCPA-aware data handling, CAN-SPAM + TCPA opt-out + suppression management.",
     positioning:
       "US RevOps team triages every inbound MQL, runs email + SMS cadences, dials with local-presence numbers, and ships a weekly forecast-accuracy report — for a third of an SDR + RevOps hire.",
     pain_points: [
@@ -341,7 +341,7 @@ const REVOPS_MARKETS: ReadonlyArray<RevOpsMarket> = [
     ],
     faqs: [
       { q: "Is this team US-based?", a: "US RevOps Specialists cover ET business hours with PT overlap; trained on HubSpot, Salesforce, Outreach, Apollo, ZoomInfo, HelloGrowthCRM." },
-      { q: "Are you SOC 2 + CCPA compliant?", a: "Yes — SOC 2 Type II controls, CCPA-aware handling, signed BAA available for healthcare-adjacent workloads." },
+      { q: "How do you handle CCPA and compliance documentation?", a: "CCPA-aware data handling with opt-out and suppression management. For security and compliance documentation, see the trust center; confirm requirements with sales before running healthcare-adjacent workloads." },
       { q: "How fast do MQLs get a response?", a: "Sub-5-minute first touch during business hours from a local-presence number; automated email + SMS out-of-hours." },
       { q: "What does the dialer cost?", a: "Local-presence dialing included in both tiers — no separate Aircall / JustCall / Dialpad bill." },
       { q: "Can you operate inside our existing CRM (HubSpot / Salesforce)?", a: "Yes — SOPs adapt to your existing CRM, dialer, and email tool; HelloGrowthCRM optional." },

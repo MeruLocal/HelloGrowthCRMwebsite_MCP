@@ -62,7 +62,9 @@ const SITE_FAQ_ITEMS: SiteFaqItem[] = [
   },
   {
     q: "Is my data secure with HelloGrowthCRM?",
-    a: "Yes. HelloGrowthCRM is SOC 2 Type II with AES-256 encryption at rest, TLS 1.3 in transit, and daily backups in US data centers.",
+    // SOC 2 Type II and "US data centers" withdrawn (live audit 2026-11-19): no SOC 2 report
+    // has been verified, and India tenants are served from India-resident processing.
+    a: "HelloGrowthCRM encrypts data at rest (AES-256) and in transit (TLS 1.3), keeps daily backups, and isolates every workspace's data. For compliance documentation, see the security page and the trust center.",
     links: [{ text: "Learn more about our security", href: "/security" }],
   },
   {

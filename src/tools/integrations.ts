@@ -1026,13 +1026,65 @@ const INTEGRATIONS: IntegrationRecord[] = [
 
 const LIVE_STATUSES = new Set(["live", "backend-ready"]);
 
-/** Integrations that actually work today. The defensible figure. */
-export const LIVE_INTEGRATION_COUNT = INTEGRATIONS.filter(
-  (i) => i.status === undefined || LIVE_STATUSES.has(i.status),
-).length;
+// ─────────────────────────────────────────────────────────────────────────────
+// Product-status overlay — what the PRODUCT does with an integration the
+// website catalog calls live.
+//
+// WHY (live audit 2026-11-19): the website counts these rows as live, but in
+// the product their Connect button is routed to the shared stub router and
+// shows "Coming soon" — the provider's edge function names are listed in
+// hellocrm src/lib/comingSoonIntegrations.ts (COMING_SOON_FUNCTION_NAMES),
+// re-checked against the `app` (PROD) branch on 2026-11-26. Each slug below was
+// matched to a stubbed function name there. Rows whose provider has shipped a
+// real path since the audit (PayU payment links, MSG91 SMS, Odoo OAuth,
+// Pipedream) were deliberately left out.
+//
+// The overlay sits OUTSIDE the generated block, so the mirror rows stay a
+// faithful copy of the website and `check:mirror` keeps working. To retire an
+// entry, ship the integration in the product (remove it from
+// COMING_SOON_FUNCTION_NAMES) and delete it here.
+// ─────────────────────────────────────────────────────────────────────────────
+export const PRODUCT_COMING_SOON_SLUGS: ReadonlySet<string> = new Set([
+  "act-on", "alfred", "bubble", "campaign-monitor", "chili-piper", "chrome-extension", "cleartax",
+  "crisp-marketplace", "customer-io", "dealhub", "drip", "dtdc", "dynamics-365",
+  "microsoft-dynamics-365", "edge-extension", "eloqua", "emma", "figma", "firefox-add-on",
+  "follow-up-boss", "gemini-extensions", "getresponse", "grasshopper", "home-co-in", "huggingface",
+  "hyperverge", "ifttt", "jotform", "kit", "kommo", "linkedin-sales-navigator", "looker",
+  "makemytrip-b2b", "market-leader", "miro", "mistral-ai", "mixmax", "mojo-dialer", "moosend",
+  "n8n", "offrs", "olx-leads", "omnisend", "pandadoc-cpq", "pardot", "paytm", "power-bi",
+  "quikr-leads", "radar-io", "raycast", "rechat", "redx", "rera-compliance", "retool",
+  "sharpspring", "smartzip", "acuity-scheduling",
+]);
+
+const PRODUCT_COMING_SOON_NOTE =
+  "Listed as live on hellogrowthcrm.com, but in the product its Connect button shows Coming soon — not usable today.";
+
+function websiteSaysLive(i: IntegrationRecord): boolean {
+  return i.status === undefined || LIVE_STATUSES.has(i.status);
+}
+
+function worksToday(i: IntegrationRecord): boolean {
+  return websiteSaysLive(i) && !PRODUCT_COMING_SOON_SLUGS.has(i.slug);
+}
+
+/** Fields added to a row the product does not support yet. */
+function productStatusFields(i: IntegrationRecord): { product_status?: "coming-soon"; product_note?: string } {
+  return PRODUCT_COMING_SOON_SLUGS.has(i.slug)
+    ? { product_status: "coming-soon", product_note: PRODUCT_COMING_SOON_NOTE }
+    : {};
+}
+
+/** Integrations the website lists as live. Kept for transparency, never quoted. */
+export const WEBSITE_LIVE_INTEGRATION_COUNT = INTEGRATIONS.filter(websiteSaysLive).length;
+
+/** Integrations that actually work today: website-live minus product stubs. The defensible figure. */
+export const LIVE_INTEGRATION_COUNT = INTEGRATIONS.filter(worksToday).length;
 
 /** Scaffolded but unbuilt. Exposed so the gap stays visible. */
-export const SCAFFOLDED_INTEGRATION_COUNT = INTEGRATIONS.length - LIVE_INTEGRATION_COUNT;
+export const SCAFFOLDED_INTEGRATION_COUNT = INTEGRATIONS.length - WEBSITE_LIVE_INTEGRATION_COUNT;
+
+/** Listed as live on the website, but the product shows Coming soon. */
+export const PRODUCT_COMING_SOON_COUNT = WEBSITE_LIVE_INTEGRATION_COUNT - LIVE_INTEGRATION_COUNT;
 
 /** The one number that may appear in customer-facing copy. */
 export const PUBLIC_INTEGRATION_COUNT = LIVE_INTEGRATION_COUNT;
@@ -1050,11 +1102,14 @@ const INTEGRATION_COUNTS = {
   live_integration_count: LIVE_INTEGRATION_COUNT,
   /** Catalogued but not built. Never quote this as an integration count. */
   scaffolded_count: SCAFFOLDED_INTEGRATION_COUNT,
+  /** Website calls these live; the product's Connect shows Coming soon. Not counted as working. */
+  product_coming_soon_count: PRODUCT_COMING_SOON_COUNT,
+  website_live_count: WEBSITE_LIVE_INTEGRATION_COUNT,
   /** Every row in the catalog, scaffolded included. Directory sizing only. */
   total_documented: INTEGRATIONS.length,
   category_count: INTEGRATION_CATEGORIES.length,
   counts_note:
-    "public_integration_count is the number of integrations that work today. total_documented also counts scaffolded directory entries that are not built yet — do not quote it as an integration count.",
+    "public_integration_count is the number of integrations that work today in the product. website_live_count is what hellogrowthcrm.com lists as live; the difference (product_coming_soon_count) are rows whose Connect button shows Coming soon in the product — each is marked product_status: coming-soon. total_documented also counts scaffolded directory entries that are not built yet — do not quote it as an integration count.",
 } as const;
 
 function categoryTitle(slug: string): string {
@@ -1077,7 +1132,7 @@ export const integrationsList = defineTool({
   definition: {
     name: "integrations_list",
     description:
-      `List the HelloGrowthCRM integrations catalog mirrored from hellogrowthcrm.com/integrations. ${LIVE_INTEGRATION_COUNT} integrations work today across ${INTEGRATION_CATEGORY_COUNT} categories; the catalog also carries ${SCAFFOLDED_INTEGRATION_COUNT} scaffolded directory entries that are NOT built, for ${TOTAL_DOCUMENTED_INTEGRATIONS} rows in total \u2014 quote the live figure, never the total. More apps are reachable indirectly through Zapier and n8n. Filterable by category and keyword.`,
+      `List the HelloGrowthCRM integrations catalog mirrored from hellogrowthcrm.com/integrations. ${LIVE_INTEGRATION_COUNT} integrations work today across ${INTEGRATION_CATEGORY_COUNT} categories; ${PRODUCT_COMING_SOON_COUNT} more are listed as live on the website but show Coming soon in the product (marked product_status: coming-soon), and the catalog also carries ${SCAFFOLDED_INTEGRATION_COUNT} scaffolded directory entries that are NOT built, for ${TOTAL_DOCUMENTED_INTEGRATIONS} rows in total \u2014 quote the live figure, never the total. Filterable by category and keyword.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -1119,6 +1174,7 @@ export const integrationsList = defineTool({
         category: i.category,
         description: i.description,
         ...(i.status ? { status: i.status } : {}),
+        ...productStatusFields(i),
         url: `${SITE}${i.route}`,
       })),
     });
@@ -1163,6 +1219,7 @@ export const integrationsGet = defineTool({
       category_title: categoryTitle(record.category),
       description: record.description,
       ...(record.status ? { status: record.status } : {}),
+      ...productStatusFields(record),
       route: record.route,
       url: `${SITE}${record.route}`,
     });
