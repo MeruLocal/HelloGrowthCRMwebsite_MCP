@@ -46,7 +46,9 @@ const CALLS: [string, Tool, unknown][] = [
 // follows it, so a legitimate thousands price like "$13,500" would not trip
 // it — there is no such figure today, but the negative lookahead keeps the
 // guard honest if one is ever added.
-const FORBIDDEN = [/1,099/, /\b1099\b/, /unlimited users/i, /\$13\b(?!,)/];
+// Audit 2026-11-19: no fixed GST rate and no GST-inclusive billed total on any
+// pricing surface (₹899 is quoted as the list price before tax).
+const FORBIDDEN = [/1,099/, /\b1099\b/, /unlimited users/i, /\$13\b(?!,)/, /1,060/, /1060\.82/, /18% GST/, /\+ ?GST/];
 
 describe("pricing truth — no response carries a price that matches nothing billed", () => {
   for (const [label, tool, args] of CALLS) {
@@ -56,13 +58,14 @@ describe("pricing truth — no response carries a price that matches nothing bil
     });
   }
 
-  it("India Growth states ₹899 and GST, monthly and annual", async () => {
+  it("India Growth states the ₹899 list price before tax, monthly and annual", async () => {
     const json = JSON.parse(await text(pricingGetPlans, { region: "india", plan: "growth" }));
     const growth = json.india_inr.plans[0];
-    expect(growth.price_monthly).toBe("₹899/user/month + 18% GST (same rate; annual adds 2 months free)");
+    expect(growth.price_monthly).toBe("₹899/user/month (list price, before tax) — same rate; annual adds 2 months free");
     expect(growth.price_annual).toBe(
-      "₹899/user/month + 18% GST (annual — 10 months paid, 2 months free = ₹8,990/user/year + GST)",
+      "₹899/user/month (list price, before tax) — annual: 10 months paid, 2 months free (₹8,990/user/year before tax)",
     );
+    expect(growth.tax_note).toMatch(/before tax/);
   });
 
   it("USD Growth matches website pricing-constants.ts ($10 annual, $12 monthly)", async () => {
@@ -79,7 +82,7 @@ describe("pricing truth — no response carries a price that matches nothing bil
         (r) => [r.countrySlug, [r.growthPriceShort, r.growthPriceMonthly]],
       ),
     );
-    expect(bySlug.in).toEqual(["₹899/user/mo + GST", "₹899/user/mo + 18% GST billed monthly"]);
+    expect(bySlug.in).toEqual(["₹899/user/mo", "₹899/user/mo billed monthly (list price, before tax)"]);
     // USD per website src/lib/pricing-constants.ts; every other market is a pre-edit snapshot.
     expect(bySlug.usa).toEqual(["$10/user/mo", "$12/user/mo monthly"]);
     expect(bySlug.uk).toEqual(["£8/user/mo", "£10/user/mo monthly"]);

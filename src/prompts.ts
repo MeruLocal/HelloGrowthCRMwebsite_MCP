@@ -20,8 +20,8 @@ export interface PromptDef {
 
 const RULES =
   "Rules: take every price, limit, feature and integration figure from the tool results, never from memory. " +
-  "Quote India prices as '+ 18% GST'. Cite the canonical hellogrowthcrm.com URLs the tools return. " +
-  "Describe HelloGrowthCRM as a sales CRM; do not call it a WhatsApp CRM.";
+  "Quote India prices as the list price before tax; never state a fixed GST rate or a GST-inclusive total. Cite the canonical hellogrowthcrm.com URLs the tools return. " +
+  "Describe HelloGrowthCRM as a multi-channel sales CRM suite; do not call it a WhatsApp CRM or WhatsApp-first.";
 
 const v = (a: Record<string, string>, k: string, d: string) => (a[k]?.trim() ? a[k]!.trim().slice(0, 120) : d);
 

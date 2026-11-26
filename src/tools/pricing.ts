@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineTool, ok } from "./tool-types.js";
 import { COUNTRY_PRICING, MANAGED_REVOPS, SYNCED_AT } from "../data/website-mirror.js";
+import { FREE_PLAN, GROWTH_PLAN, INDIA_GROWTH_PRICE, INDIA_TAX_NOTE } from "../data/plan-truth.js";
 // The integration figure is DERIVED from the mirrored catalog rows (see
 // src/tools/integrations.ts). Typing a digit here is how "630+ integrations"
 // survived three months inside a plan feature bullet after the website
@@ -28,37 +29,61 @@ import { LIVE_INTEGRATION_COUNT, INTEGRATION_CATEGORY_COUNT } from "./integratio
 //   • "Enterprise" (custom pricing) was missing entirely from the global ladder.
 //
 // The live ladder in every market is: Free Forever → Growth → Enterprise.
+//
+// UPDATED 2026-11-26 (live audit of 2026-11-19): the Free plan is now built
+// from src/data/plan-truth.ts after the Free-plan rebalance went live on PROD
+// (500 leads, 1 task board, 1 booking page, 1 landing page, 30-day analytics);
+// the enforced AI allowance is 100 credits/user/month on Free and 1,000 on
+// Growth (the 2,500 / 10,000 / "50 total" figures matched nothing enforced).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GLOBAL_PLANS = [
-  {
+// The Free plan is built from FREE_PLAN (src/data/plan-truth.ts) so its caps
+// cannot drift from the FAQ, switch-guide and comparison copy that quote them.
+function freePlan(zero: string, bestFor: string) {
+  const f = FREE_PLAN;
+  return {
     name: "Free Forever",
     slug: "free",
-    price_annual: "$0",
-    price_monthly: "$0",
-    billing: "Free forever · No credit card · 1 user · 150 leads · Never expires",
-    best_for: "Our default starter — not a trial",
-    ai_credits: "50 total",
-    limits: { users: 1, leads: 150, accounts: 20, pipelines: 1, tasks: 100 },
+    price_annual: zero,
+    price_monthly: zero,
+    billing: `Free forever · No credit card · ${f.users} user · ${f.leads} leads · Never expires`,
+    best_for: bestFor,
+    ai_credits: `${f.aiCreditsPerUserPerMonth} per user/month`,
+    limits: {
+      users: f.users,
+      leads: f.leads,
+      accounts: f.accounts,
+      pipelines: f.pipelines,
+      tasks: f.tasks,
+      task_boards: f.taskBoards,
+      booking_pages: f.bookingPages,
+      landing_pages: f.landingPages,
+      analytics_window_days: f.analyticsWindowDays,
+      email_templates: f.emailTemplates,
+      custom_fields: f.customFields,
+    },
     features: [
-      "Lead & Contact Management (150 leads/contacts cap)",
-      "Accounts (20 cap) + 1 deal pipeline",
+      `Lead & Contact Management (${f.leads} leads cap)`,
+      `Accounts (${f.accounts} cap) + ${f.pipelines} deal pipeline`,
       "Pipeline Management (Kanban)",
-      "Task Board (100 tasks, Kanban only)",
+      `Task Boards (${f.taskBoards} board, ${f.tasks} tasks)`,
+      `Scheduler (${f.bookingPages} booking page)`,
+      `Landing pages (${f.landingPages} page)`,
+      `Analytics dashboard (last ${f.analyticsWindowDays} days)`,
       "Basic activity logging",
-      "2 Basic Email Templates",
-      "3 Custom Fields",
-      "WhatsApp click-to-chat only (no API-backed inbox)",
-      "AI Writing Assistant (capped, 5 uses/month)",
-      "AI Chatbot — 1 conversation/month",
-      "Mobile dashboard (read-only)",
-      "30-day analytics",
-      "1 Growth Audit included",
+      `${f.emailTemplates} Basic Email Templates`,
+      `${f.customFields} Custom Fields`,
+      "WhatsApp click-to-chat only (the WhatsApp hub and team inbox are Growth)",
+      `AI assistance — ${f.aiCreditsPerUserPerMonth} AI credits/user/month`,
       "Community support",
       "\"Powered by HelloGrowthCRM\" branding shown",
     ],
     cta_url: "https://app.hellogrowthcrm.com/signup",
-  },
+  };
+}
+
+const GLOBAL_PLANS = [
+  freePlan("$0", "Our default starter — not a trial"),
   {
     name: "Growth",
     slug: "growth",
@@ -68,7 +93,7 @@ const GLOBAL_PLANS = [
     price_monthly: "$12/user/month",
     billing: "Per-user pricing · Annual or monthly billing · 14-day free trial",
     best_for: "Growing sales teams outside India (US, UK, Canada, Australia, UAE, Singapore, New Zealand)",
-    ai_credits: "2,500 per user/month",
+    ai_credits: `${GROWTH_PLAN.aiCreditsPerUserPerMonth.toLocaleString("en-US")} per user/month`,
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     popular: true,
     features: [
@@ -85,14 +110,14 @@ const GLOBAL_PLANS = [
       "Products, proposals, invoices, expenses & revenue tracking",
       "Customer portal, referrals, references & landing pages",
       "Tickets + knowledge base",
-      `API access & all ${LIVE_INTEGRATION_COUNT} live integrations across ${INTEGRATION_CATEGORY_COUNT} categories`,
+      `${LIVE_INTEGRATION_COUNT} live integrations across ${INTEGRATION_CATEGORY_COUNT} categories`,
       "Custom fields, modules, pipeline stages & workflows",
       "Territory & team management with map view",
-      "AI-assisted sales forecasting",
+      "Probability-weighted pipeline forecast (stage probabilities)",
       "Role-based access control",
       "Priority support + dedicated onboarding",
       "Managed RevOps add-on available — our specialists run your pipeline (from $1,499/mo flat)",
-      "2,500 AI credits/user/month",
+      `${GROWTH_PLAN.aiCreditsPerUserPerMonth.toLocaleString("en-US")} AI credits/user/month`,
     ],
     guarantees: ["14-day free trial", "14-day money-back guarantee on annual plans (7-day on monthly renewals)"],
     cta_url: "https://app.hellogrowthcrm.com/signup",
@@ -104,18 +129,17 @@ const GLOBAL_PLANS = [
     price_monthly: "Annual contract · Custom pricing",
     billing: "Annual contract · Custom per-company pricing",
     best_for: "Large enterprises outside India with complex needs",
-    ai_credits: "10,000 per user/month + 3-month rollover",
+    ai_credits: "Set per contract",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     features: [
       "Everything in Growth, PLUS:",
       "Dedicated named Account Manager",
       "Custom workflow automation (multi-step, approval flows)",
-      "Advanced revenue intelligence, attribution & churn prediction",
       "Multi-location / branch management",
       "Audit trails, compliance reporting & full activity audit",
       "White-label customer portal & custom agents",
       "SLA policies, approval flows & multi-currency commerce",
-      "Unlimited exports + scheduled reports",
+      "Unlimited exports",
       `All ${LIVE_INTEGRATION_COUNT} live integrations + custom integration support`,
       "Managed RevOps included — dedicated RevOps Specialists run your pipeline (Growth Engine + RevOps Partner tiers)",
       "Custom training (up to 4 sessions/year)",
@@ -123,7 +147,7 @@ const GLOBAL_PLANS = [
       "Priority phone support",
       "Custom API rate limits",
       "Data migration & onboarding support",
-      "10,000 AI credits/user/month + 3-month rollover",
+      "AI credit allowance set per contract",
     ],
     cta_url:
       "https://app.hellogrowthcrm.com/book/hellogrowthcrm-app-free-demo?token=77396889-c602-4e59-be14-d16f8663e5ba",
@@ -131,47 +155,22 @@ const GLOBAL_PLANS = [
 ];
 
 const INDIA_PLANS = [
-  {
-    name: "Free Forever",
-    slug: "free",
-    price_annual: "₹0",
-    price_monthly: "₹0",
-    billing: "Free forever · No credit card · 1 user · 150 leads · Never expires",
-    best_for: "Default starter — not a trial",
-    ai_credits: "50 total",
-    limits: { leads: 150, accounts: 20, pipelines: 1, tasks: 100 },
-    features: [
-      "Lead & Contact Management (150 leads/contacts cap)",
-      "Accounts (20 cap) + 1 deal pipeline",
-      "Pipeline Management (Kanban)",
-      "Task Board (100 tasks, Kanban only)",
-      "Basic activity logging",
-      "2 Basic Email Templates",
-      "3 Custom Fields",
-      "WhatsApp click-to-chat only (no API-backed inbox)",
-      "AI Writing Assistant (capped, 5 uses/month)",
-      "AI Chatbot — 1 conversation/month",
-      "Mobile dashboard (read-only)",
-      "30-day analytics",
-      "1 Growth Audit included",
-      "Community support",
-      "\"Powered by HelloGrowthCRM\" branding shown",
-    ],
-    cta_url: "https://app.hellogrowthcrm.com/signup",
-  },
+  freePlan("₹0", "Default starter — not a trial"),
   // The India Starter plan (₹99/user/mo) was removed from the website —
   // Growth (₹899) is now the entry paid self-serve plan for India.
   {
     name: "Growth",
     slug: "growth",
-    // Canonical INR rule (billing ground truth, hellocrm gstPlanSync.ts,
-    // founder decision 2026-09-03): ₹899 + 18% GST on BOTH billing modes
-    // (billed ₹1,060.82/mo). ₹1,099 matched no Razorpay plan — never reintroduce.
-    price_annual: "₹899/user/month + 18% GST (annual — 10 months paid, 2 months free = ₹8,990/user/year + GST)",
-    price_monthly: "₹899/user/month + 18% GST (same rate; annual adds 2 months free)",
+    // ₹899 is the list price on BOTH billing modes. Stated before tax: this
+    // server quotes no fixed GST rate and no GST-inclusive billed total (see
+    // INDIA_TAX_NOTE in src/data/plan-truth.ts). ₹1,099 matched no Razorpay
+    // plan — never reintroduce.
+    price_annual: `${INDIA_GROWTH_PRICE} — annual: 10 months paid, 2 months free (₹8,990/user/year before tax)`,
+    price_monthly: `${INDIA_GROWTH_PRICE} — same rate; annual adds 2 months free`,
+    tax_note: INDIA_TAX_NOTE,
     billing: "Per-user pricing · Annual or monthly billing · 14-day free trial · Hero tier",
     best_for: "Growing Indian sales teams",
-    ai_credits: "2,500 per user/month · Overage ₹0.60/K",
+    ai_credits: `${GROWTH_PLAN.aiCreditsPerUserPerMonth.toLocaleString("en-US")} per user/month`,
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     popular: true,
     features: [
@@ -187,13 +186,13 @@ const INDIA_PLANS = [
       "Products, proposals, invoices, expenses & revenue tracking",
       "Customer portal, referrals, references & landing pages",
       "Tickets + knowledge base",
-      `API access & all ${LIVE_INTEGRATION_COUNT} live integrations across ${INTEGRATION_CATEGORY_COUNT} categories`,
+      `${LIVE_INTEGRATION_COUNT} live integrations across ${INTEGRATION_CATEGORY_COUNT} categories`,
       "Custom fields, modules, pipeline stages & workflows",
       "Territory & team management with map view",
-      "AI-assisted sales forecasting",
+      "Probability-weighted pipeline forecast (stage probabilities)",
       "Role-based access control",
       "Priority support + dedicated onboarding",
-      "2,500 AI credits/user/month",
+      `${GROWTH_PLAN.aiCreditsPerUserPerMonth.toLocaleString("en-US")} AI credits/user/month`,
     ],
     guarantees: ["14-day free trial", "14-day money-back window on annual plans (7-day on monthly renewals; pro-rated on India annual plans)"],
     cta_url: "https://app.hellogrowthcrm.com/signup",
@@ -205,18 +204,17 @@ const INDIA_PLANS = [
     price_monthly: "Annual contract · Custom per-company pricing",
     billing: "Annual contract · Custom pricing · Dedicated Account Manager",
     best_for: "Large Indian businesses with complex needs",
-    ai_credits: "10,000 per user/month + 3-month rollover",
+    ai_credits: "Set per contract",
     limits: { leads: "Unlimited", accounts: "Unlimited", pipelines: "Unlimited", tasks: "Unlimited" },
     features: [
       "Everything in Growth, PLUS:",
       "Dedicated named Account Manager",
       "Custom workflow automation (multi-step, approval flows)",
-      "Advanced revenue intelligence, attribution & churn prediction",
       "Multi-branch / location management",
       "Audit trails, compliance reporting & full activity audit",
       "White-label customer portal & custom agents",
       "SLA policies, approval flows & multi-currency commerce",
-      "Unlimited exports + scheduled reports",
+      "Unlimited exports",
       "Test cases for SaaS / QA teams",
       `All ${LIVE_INTEGRATION_COUNT} live integrations + custom integration support`,
       "Custom training (up to 4 sessions/year)",
@@ -224,33 +222,25 @@ const INDIA_PLANS = [
       "Priority phone support",
       "Custom API rate limits",
       "Data migration & onboarding support",
-      "10,000 AI credits/user/month + 3-month rollover",
+      "AI credit allowance set per contract",
     ],
     cta_url: "https://calendly.com/hellogrowthcrm-sales/demo",
   },
 ];
 
+// Add-ons. The dialer tiers ($15/$29/$49, ₹799/₹1,499/₹2,499) and the India
+// AI-credit top-up bundles that used to live here matched no billing SKU in the
+// product (re-checked against hellocrm `app` 2026-11-26), and the top-up notes
+// compared against a 2,500-credit Growth allowance that is not enforced. They
+// are withdrawn until a purchasable SKU exists; the tool now says so instead of
+// quoting a price nobody can pay.
+const ADDONS_NOTE =
+  "No add-on is sold at a published self-serve price today. Calling, extra AI credits and other add-ons are quoted by sales — see https://hellogrowthcrm.com/pricing or contact sales.";
 const ADDONS = {
-  global_usd: {
-    dialer: [
-      { name: "Dialer Starter", price: "$15/user/month", desc: "Solo seller — single-line dialing with call recording" },
-      { name: "Dialer Pro", price: "$29/user/month", desc: "Power dialer + call notes + sequences + dispositions" },
-      { name: "Dialer Business", price: "$49/user/month", desc: "Multi-line, IVR, call routing, supervisor barge-in" },
-    ],
-  },
+  global_usd: { dialer: [] as { name: string; price: string; desc: string }[] },
   india_inr: {
-    dialer: [
-      { name: "Dialer Starter", price: "₹799/user/month", desc: "Solo seller — single-line dialing with call recording" },
-      { name: "Dialer Pro", price: "₹1,499/user/month", desc: "Power dialer + call notes + sequences + dispositions" },
-      { name: "Dialer Business", price: "₹2,499/user/month", desc: "Multi-line, IVR, call routing, supervisor barge-in" },
-    ],
-    ai_credit_topups: [
-      { credits: "100", price: "₹69", per_credit: "₹0.69", note: "Impulse buy for free users trying AI" },
-      { credits: "500", price: "₹299", per_credit: "₹0.60", note: "Repeat top-up habit — consider upgrading to Growth" },
-      { credits: "1,000", price: "₹549", per_credit: "₹0.55", note: "Growth gives 2,500/user for just ₹350 more per month" },
-      { credits: "2,500", price: "₹1,499", per_credit: "₹0.60", note: "Growth (₹899) gives the same credits + the full AI CRM. Upgrade saves ₹600" },
-      { credits: "5,000", price: "₹2,499", per_credit: "₹0.50", note: "At ₹2,499 top-up vs ₹899/user Growth — upgrading wins every time" },
-    ],
+    dialer: [] as { name: string; price: string; desc: string }[],
+    ai_credit_topups: [] as { credits: string; price: string; per_credit: string; note: string }[],
   },
 };
 
@@ -262,8 +252,8 @@ const PRICING_FAQ = [
   { q: "Are there setup fees?", a: "No setup fees and no hidden costs on any plan." },
   { q: "What are the plan tiers?", a: "Free Forever, Growth, and Enterprise — the same ladder in every market. Growth is the hero plan at $10/user/mo annually ($12 monthly in the US); Enterprise is custom-priced. Managed RevOps is a separate flat-fee service, available as an add-on on Growth and included with Enterprise." },
   { q: "Do you offer nonprofit discounts?", a: "Yes — 50% off Growth for nonprofits with documentation." },
-  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices are exclusive of GST — 18% GST is added on top (₹899 bills as ₹1,060.82). Call pricing_get_country_plans for a specific market." },
-  { q: "Is there a minimum number of users?", a: "No minimum. The Free plan supports 1 user (150 leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge." },
+  { q: "What payment methods are accepted?", a: "Varies by market — US: credit card, ACH, PayPal, Stripe. India: UPI, Razorpay, Net Banking, credit/debit card. UK: card, Stripe, GoCardless, bank transfer. India prices are list prices before tax; applicable GST is shown at checkout and on the invoice. Call pricing_get_country_plans for a specific market." },
+  { q: "Is there a minimum number of users?", a: `No minimum. The Free plan supports ${FREE_PLAN.users} user (${FREE_PLAN.leads} leads). Growth and Enterprise scale from 1 user upward. The Managed RevOps tiers (Growth Engine, RevOps Partner) are flat monthly retainers with no per-seat charge.` },
   { q: "Does the Managed RevOps service require a long-term contract?", a: "No long-term contract required, but a 3-month initial engagement is recommended." },
   { q: "How does annual billing work?", a: "Annual plans are 10 months paid, 2 months free — effectively a 17% discount. Billed upfront annually." },
 ];
@@ -281,7 +271,7 @@ const PRICING_FAQ = [
 export const MARKET_SCOPE = {
   summary:
     "HelloGrowthCRM is sold worldwide with country-aware pricing. India is billed in INR; every other market is billed in USD or its local currency.",
-  india: "India: Growth is INR 899 per user per month plus 18% GST, billed in INR (UPI, Razorpay, net banking, card).",
+  india: "India: Growth lists at INR 899 per user per month before tax, billed in INR (UPI, Razorpay, net banking, card). Applicable GST is shown at checkout and on the invoice.",
   outside_india:
     "Outside India: Growth is USD 12 per user per month on monthly billing, with a lower per-month rate on yearly billing. Local-currency prices exist for the UK (GBP), Canada (CAD), Australia (AUD), UAE (AED), Singapore (SGD) and New Zealand (NZD).",
   yearly_discount: "Yearly billing is discounted in every market (India: two months free).",
@@ -336,7 +326,7 @@ export const pricingGetAddons = defineTool({
   }),
   definition: {
     name: "pricing_get_addons",
-    description: "Get HelloGrowthCRM add-on pricing: dialer tiers (USD/INR) and India AI credit top-up bundles.",
+    description: "Get HelloGrowthCRM add-on pricing. No add-on currently has a published self-serve price (dialer tiers and AI-credit top-ups were withdrawn because no billing SKU exists); the result says how add-ons are quoted.",
     inputSchema: {
       type: "object",
       properties: {
@@ -366,6 +356,7 @@ export const pricingGetAddons = defineTool({
       }
     }
 
+    result.note = ADDONS_NOTE;
     return ok(result);
   },
 });

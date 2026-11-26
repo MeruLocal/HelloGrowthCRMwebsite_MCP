@@ -9,6 +9,27 @@ callers; a **patch** is internal.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed (output shape — callers reading `availability` must update)
+- `features_list` / `features_get`: plan availability is keyed `free` / `growth` / `enterprise`
+  (was `free` / `t1` / `t2` / `t3`, i.e. Starter / Growth Engine / RevOps Partner, which are not
+  CRM plans). The `plan` filter accepts `growth` and `enterprise`; legacy `t1`/`t2`/`t3` are still
+  accepted and treated as `growth`.
+
+### Fixed (live audit 2026-11-19)
+- Free plan served from one constant (`src/data/plan-truth.ts`) after the Free-plan rebalance went
+  live: 500 leads, 20 accounts, 100 tasks, 1 task board, 1 booking page, 1 landing page, 30-day
+  analytics. Replaces 200 / 150 leads, "500 tasks" and "unlimited boards" across pricing, FAQs,
+  switch guides and features.
+- AI allowance: Free 100 and Growth 1,000 credits per user per month (was "50 total" / 2,500 /
+  10,000). Enterprise is "set per contract".
+- India pricing: ₹899 is quoted as the list price before tax; no fixed "+ 18% GST" and no
+  ₹1,060.82 billed total on any surface.
+- `pricing_get_addons`: dialer tiers and AI-credit top-ups withdrawn (no billing SKU exists).
+- Growth/Enterprise cards: "AI-assisted forecasting" → probability-weighted forecast; churn
+  prediction / attribution and scheduled reports removed from Enterprise extras.
+
 ## [2.1.0] — 2026-10-27
 
 ### Added
